@@ -313,7 +313,7 @@
   <body>
     <header>
       <h1>duck-geocoder ダッシュボード</h1>
-      <span class="meta">更新 2026-10-10 13:00 (日本時間)</span>
+      <span class="meta">更新 2026-10-10 14:35 (日本時間)</span>
       <span class="meta">
         <a href="https://strorkis.github.io/duck-geocoder/">公開サイト</a> ·
         <a href="roadmap.md">方針 (roadmap.md)</a> · STAC 配布形式の実験
@@ -328,12 +328,12 @@
         <div class="meter" role="img" aria-label="無料枠の99%">
           <span style="width: 99%; background: var(--warning)"></span>
         </div>
-        <span class="status you">無料枠の99%。R2 には概観 (0.41GB) が残っていて、消すまでは超える</span>
+        <span class="status you">無料枠の99% (古いファイルは消した)</span>
       </div>
       <div class="card kpi">
         <div class="label">公開待ちのコミット</div>
-        <div class="value">10 <small>件</small></div>
-        <span class="status you">引いた表示をタイルにした。タイルとカタログを R2 へ → push 待ち</span>
+        <div class="value">1 <small>件</small></div>
+        <span class="status you">公開済み (10-10 14:03)。ボードの更新だけ残る</span>
       </div>
       <div class="card kpi">
         <div class="label">建物</div>
@@ -384,19 +384,18 @@
             鉄道を起点にした周辺検索は、押した地点の前後1.5kmだけを調べるように直した
           </span>
         </li>
-        <li class="current">
-          <b>タイルとカタログを上げて push</b><span class="status you">あなたの番</span>
+        <li>
+          <b>タイルとカタログを上げて push</b><span class="status done">済み</span>
           <span class="sub">
-            <a href="deploy.md">deploy.md</a>「2026-10-10 の分」。① タイル 2つ (162MB) → ② items.parquet と JSON 全部 (89個。日本語の JSON もここで済む) → ③ push。
-            ① を ② より先に
+            10-10 14:03 にデプロイの CI が通り、引いた表示をタイルで描く版が公開された (実サイトの中身で確かめた)。
           </span>
         </li>
         <li>
-          <b>公開されたら古いファイルを消す</b><span class="status todo">まだ</span>
-          <span class="sub">同じ節の ④。概観 48個 (409MB)・古い <code>*-items.json</code> (15個)・<code>overture_buildings_minato.parquet</code> (<code>--dry-run</code> で先に見る)</span>
+          <b>古いファイルを消す</b><span class="status done">済み</span>
+          <span class="sub">10-10 に消した (概観 48個・古い <code>*-items.json</code>・<code>overture_buildings_minato.parquet</code>)。R2 は無料枠に収まった</span>
         </li>
-        <li>
-          <b>公開を確かめる</b><span class="status todo">まだ</span>
+        <li class="current">
+          <b>公開を確かめる</b><span class="status you">あなたの番</span>
           <span class="sub">実サイトで間引き・地理院・周辺検索を触る</span>
         </li>
       </ol>
