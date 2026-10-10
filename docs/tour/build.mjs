@@ -252,6 +252,25 @@ DuckDB は文字列の統計を頭の数文字でしか比べないため、<cod
         code: [{ file: 'web/src/lib/tiles.ts', anchor: 'export function gsiDemHeight(' }],
       },
       {
+        id: 'cog-dem',
+        title: 'COG (AW3D30) を地形のタイルにする',
+        lead: 'JAXA の AW3D30 (全球の DSM) は COG で配られていて、Range と CORS が開いている。MapLibre は COG をそのまま読めない。',
+        body: `
+<p>地理院の標高と同じく独自のプロトコルで地図のタイルを受け、<b>表示の細かさに見合う段と縮小版を選び、掛かる COG から要る窓だけを読む</b>。
+Web メルカトルに並べ直して Terrarium の画像にして返すので、地形 (立体) にも陰影にも MapLibre の仕組みがそのまま使える。
+R2 には何も置かない (カタログから公開元を直接読む)。</p>
+<ul>
+<li>並べ方 (段ごとのファイルの広さ・画素数・URL の組み立て方) はカタログの <code>duck:dem</code> の <code>grid</code> から読む。
+画素の大きさはファイルの実際の幅から求める (カタログの画素数を思い込みで書いて、引いた表示がずれたことがある)</li>
+<li>geotiff.js は <code>blockSize</code> を渡さないと、内部タイルの位置の表を4バイトずつ読みに行く。64KB のブロックにまとめて、富士山 z11 で 1,403回 → 92回</li>
+</ul>`,
+        code: [
+          { file: 'web/src/lib/cog-dem.ts', anchor: 'export function chooseCog(' },
+          { file: 'web/src/lib/cog-dem.ts', anchor: 'const open = (url: string) =>' },
+        ],
+        docs: [['format-survey.md', 'format-survey.md の「測ったこと: COG を読む」']],
+      },
+      {
         id: 'wkb',
         title: 'DuckDB の返すジオメトリ (WKB) を自前で読む',
         lead: 'SQL でジオメトリを GeoJSON の文字列にしてから JSON.parse すると、文字列を作って読むぶん遅い。',
@@ -338,6 +357,7 @@ const SUMMARY = {
   nearby: '周辺検索: 起点付近を<b>メートルに直してから</b>距離で判定。鉄道は押した地点の前後1.5km',
   'gsi-vector': '地理院のタイルを<b>データだけ</b>読み、形の種類から描く',
   'gsi-dem': '地理院の標高 (独自形式) を読み込むときに Terrarium へ詰め直す',
+  'cog-dem': 'COG (AW3D30) を<b>要る窓だけ読んで</b>地形のタイルにする。R2 を通さずカタログから描く',
   wkb: 'DuckDB が返す GeoArrow (WKB) を<b>自前で読む</b> (GeoJSON の文字列を作らない)',
   'draw-shape': 'データの描き方の共通の形 (<b>世代を最初に進める</b>・空なら setData しない)',
   export: 'ブラウザの中で GeoParquet を書き、<b>出典と規約を KV に入れる</b>',

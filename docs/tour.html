@@ -47,7 +47,7 @@
       </header>
       <p class="intro">各項目は <b>何のための仕組みか → どう解いたか → 要のコード</b> の順。コードはソースから抜き出していて、見出しのファイル名から元のファイルを開ける。
       測った数字の詳しい表は <a href="geoparquet-layout.md">geoparquet-layout.md</a> と <a href="pipeline.md">pipeline.md</a> にある。</p>
-      <nav class="toc" aria-label="目次"><ol><li>配り方 (パイプライン)<ol><li><a href="#remote-zip">zip を落とさずに中身を取る (remote-zip)</a></li><li><a href="#spatial-pack">行を場所で並べ、行グループで切る (STR・場所ごと・段ごと)</a></li><li><a href="#coarse-lod">線の粗い段 — 統合して簡略化した行を「足す」</a></li><li><a href="#quadkey">件数でファイルを割る (適応的な QuadKey)</a></li><li><a href="#tiers">重要度の段と使う条件を「規則・データ」として持つ</a></li><li><a href="#stac-layout">STAC の置き方 — 実データの隣に、Item はまとめて</a></li><li><a href="#stac-geoparquet">Item の一覧も GeoParquet に (stac-geoparquet)</a></li><li><a href="#i18n">英語版のカタログ — 訳の無い日本語はエラー</a></li><li><a href="#building-tiles">引いた表示のための建物のタイル (PMTiles)</a></li><li><a href="#pmtiles">PMTiles をヘッダだけ読んでカタログに載せる</a></li></ol></li><li>使い方 (アプリ)<ol><li><a href="#catalog-load">カタログを読む — まとめ1つと、Item を行番号の範囲で</a></li><li><a href="#files-in-view">表示範囲からファイルを選び、ズームから段を決める</a></li><li><a href="#buildings">建物の出し方 — 全部 / 重要な段だけ (タイル) / 整備範囲</a></li><li><a href="#nearby">周辺検索 — メートルに直してから距離で判定</a></li><li><a href="#gsi-vector">地理院のベクトルタイルを、データだけで描く</a></li><li><a href="#gsi-dem">地理院の標高 (独自形式) を読み込むときに直す</a></li><li><a href="#wkb">DuckDB の返すジオメトリ (WKB) を自前で読む</a></li><li><a href="#draw-shape">データの描き方の共通の形</a></li><li><a href="#export">ブラウザの中で GeoParquet を書き、出典と規約を入れる</a></li><li><a href="#layer-order">一覧の順番を地図の層へ写す</a></li><li><a href="#hover">吹き出しを層ごとの表で1つの仕掛けに</a></li><li><a href="#dev-server">手元の配信をオブジェクトストレージと同じ流儀に (と、R2 の遅さの再現)</a></li><li><a href="#stac-browser">STAC Browser にパッチを1つ当ててビルドする</a></li></ol></li></ol></nav>
+      <nav class="toc" aria-label="目次"><ol><li>配り方 (パイプライン)<ol><li><a href="#remote-zip">zip を落とさずに中身を取る (remote-zip)</a></li><li><a href="#spatial-pack">行を場所で並べ、行グループで切る (STR・場所ごと・段ごと)</a></li><li><a href="#coarse-lod">線の粗い段 — 統合して簡略化した行を「足す」</a></li><li><a href="#quadkey">件数でファイルを割る (適応的な QuadKey)</a></li><li><a href="#tiers">重要度の段と使う条件を「規則・データ」として持つ</a></li><li><a href="#stac-layout">STAC の置き方 — 実データの隣に、Item はまとめて</a></li><li><a href="#stac-geoparquet">Item の一覧も GeoParquet に (stac-geoparquet)</a></li><li><a href="#i18n">英語版のカタログ — 訳の無い日本語はエラー</a></li><li><a href="#building-tiles">引いた表示のための建物のタイル (PMTiles)</a></li><li><a href="#pmtiles">PMTiles をヘッダだけ読んでカタログに載せる</a></li></ol></li><li>使い方 (アプリ)<ol><li><a href="#catalog-load">カタログを読む — まとめ1つと、Item を行番号の範囲で</a></li><li><a href="#files-in-view">表示範囲からファイルを選び、ズームから段を決める</a></li><li><a href="#buildings">建物の出し方 — 全部 / 重要な段だけ (タイル) / 整備範囲</a></li><li><a href="#nearby">周辺検索 — メートルに直してから距離で判定</a></li><li><a href="#gsi-vector">地理院のベクトルタイルを、データだけで描く</a></li><li><a href="#gsi-dem">地理院の標高 (独自形式) を読み込むときに直す</a></li><li><a href="#cog-dem">COG (AW3D30) を地形のタイルにする</a></li><li><a href="#wkb">DuckDB の返すジオメトリ (WKB) を自前で読む</a></li><li><a href="#draw-shape">データの描き方の共通の形</a></li><li><a href="#export">ブラウザの中で GeoParquet を書き、出典と規約を入れる</a></li><li><a href="#layer-order">一覧の順番を地図の層へ写す</a></li><li><a href="#hover">吹き出しを層ごとの表で1つの仕掛けに</a></li><li><a href="#dev-server">手元の配信をオブジェクトストレージと同じ流儀に (と、R2 の遅さの再現)</a></li><li><a href="#stac-browser">STAC Browser にパッチを1つ当ててビルドする</a></li></ol></li></ol></nav>
 <h2>配り方 (パイプライン)</h2>
 <p class="intro">原典を GeoParquet と STAC に変換して、静的な置き場所 (R2) に置く側。ブラウザが <b>必要な範囲だけを HTTP Range で読める形</b>に整えるのが仕事で、速さの大半はここで決まる。</p>
 <section class="card" id="remote-zip">
@@ -386,37 +386,37 @@ HTTP Range で末尾を読み、目次から欲しいファイルの位置だけ
 使い回すので、起動時に要る行政区域のような1〜2件の Collection はフッターと同じブロックで読める。</p>
 
 <figure class="code">
-<figcaption><a href="../pipeline/src/stac_geoparquet.rs">pipeline/src/stac_geoparquet.rs</a> <span class="lines">194〜223 行</span></figcaption>
-<pre><code><span class="ln">194</span>/// Item を stac-geoparquet にして書く。**Collection ごとに行グループを分ける。**
-<span class="ln">195</span>///
-<span class="ln">196</span>/// **Item の多い Collection を前に、少ないものを後ろ (フッターの隣) に置く。** 読む側
-<span class="ln">197</span>/// (DuckDB-WASM) は 16KB のブロック単位で取り、取ったブロックは使い回す。起動時に要るのは
-<span class="ln">198</span>/// 行政区域や整備範囲のような1〜2件の Collection なので、フッターと同じブロックに入れておけば
-<span class="ln">199</span>/// 読み足さずに済む。件数が同じなら渡された順。
-<span class="ln">200</span>pub fn write(path: &amp;Path, items: &amp;[Value]) -&gt; Result&lt;()&gt; {
-<span class="ln">201</span>    let mut fields = json_fields();
-<span class="ln">202</span>    fields.push(Field::new("geometry", DataType::Binary, true));
-<span class="ln">203</span>    fields.push(Field::new("bbox", DataType::Struct(bbox_fields()), true));
-<span class="ln">204</span>    let schema = Arc::new(Schema::new(fields));
-<span class="ln">205</span>
-<span class="ln">206</span>    // Collection ごとに束ねる (出てきた順を保つ)。
-<span class="ln">207</span>    let mut groups: Vec&lt;(String, Vec&lt;&amp;Value&gt;)&gt; = Vec::new();
-<span class="ln">208</span>    for item in items {
-<span class="ln">209</span>        let collection = item["collection"]
-<span class="ln">210</span>            .as_str()
-<span class="ln">211</span>            .context("Item に collection がありません")?;
-<span class="ln">212</span>        match groups.last_mut() {
-<span class="ln">213</span>            Some((id, members)) if id == collection =&gt; members.push(item),
-<span class="ln">214</span>            _ =&gt; {
-<span class="ln">215</span>                if groups.iter().any(|(id, _)| id == collection) {
-<span class="ln">216</span>                    bail!(
-<span class="ln">217</span>                        "{collection} の Item が離れて並んでいます (Collection ごとにまとめて渡すこと)"
-<span class="ln">218</span>                    );
-<span class="ln">219</span>                }
-<span class="ln">220</span>                groups.push((collection.to_string(), vec![item]));
-<span class="ln">221</span>            }
-<span class="ln">222</span>        }
-<span class="ln">223</span>    }</code></pre><div class="more">… 続きは <a href="../pipeline/src/stac_geoparquet.rs">pipeline/src/stac_geoparquet.rs</a> で</div>
+<figcaption><a href="../pipeline/src/stac_geoparquet.rs">pipeline/src/stac_geoparquet.rs</a> <span class="lines">198〜227 行</span></figcaption>
+<pre><code><span class="ln">198</span>/// Item を stac-geoparquet にして書く。**Collection ごとに行グループを分ける。**
+<span class="ln">199</span>///
+<span class="ln">200</span>/// **Item の多い Collection を前に、少ないものを後ろ (フッターの隣) に置く。** 読む側
+<span class="ln">201</span>/// (DuckDB-WASM) は 16KB のブロック単位で取り、取ったブロックは使い回す。起動時に要るのは
+<span class="ln">202</span>/// 行政区域や整備範囲のような1〜2件の Collection なので、フッターと同じブロックに入れておけば
+<span class="ln">203</span>/// 読み足さずに済む。件数が同じなら渡された順。
+<span class="ln">204</span>pub fn write(path: &amp;Path, items: &amp;[Value]) -&gt; Result&lt;()&gt; {
+<span class="ln">205</span>    let mut fields = json_fields();
+<span class="ln">206</span>    fields.push(Field::new("geometry", DataType::Binary, true));
+<span class="ln">207</span>    fields.push(Field::new("bbox", DataType::Struct(bbox_fields()), true));
+<span class="ln">208</span>    let schema = Arc::new(Schema::new(fields));
+<span class="ln">209</span>
+<span class="ln">210</span>    // Collection ごとに束ねる (出てきた順を保つ)。
+<span class="ln">211</span>    let mut groups: Vec&lt;(String, Vec&lt;&amp;Value&gt;)&gt; = Vec::new();
+<span class="ln">212</span>    for item in items {
+<span class="ln">213</span>        let collection = item["collection"]
+<span class="ln">214</span>            .as_str()
+<span class="ln">215</span>            .context("Item に collection がありません")?;
+<span class="ln">216</span>        match groups.last_mut() {
+<span class="ln">217</span>            Some((id, members)) if id == collection =&gt; members.push(item),
+<span class="ln">218</span>            _ =&gt; {
+<span class="ln">219</span>                if groups.iter().any(|(id, _)| id == collection) {
+<span class="ln">220</span>                    bail!(
+<span class="ln">221</span>                        "{collection} の Item が離れて並んでいます (Collection ごとにまとめて渡すこと)"
+<span class="ln">222</span>                    );
+<span class="ln">223</span>                }
+<span class="ln">224</span>                groups.push((collection.to_string(), vec![item]));
+<span class="ln">225</span>            }
+<span class="ln">226</span>        }
+<span class="ln">227</span>    }</code></pre><div class="more">… 続きは <a href="../pipeline/src/stac_geoparquet.rs">pipeline/src/stac_geoparquet.rs</a> で</div>
 </figure>
 </section>
 <section class="card" id="i18n">
@@ -427,42 +427,42 @@ HTTP Range で末尾を読み、目次から欲しいファイルの位置だけ
 日本語版と英語版を結ぶ。</p>
 
 <figure class="code">
-<figcaption><a href="../pipeline/src/stac_i18n.rs">pipeline/src/stac_i18n.rs</a> <span class="lines">419〜453 行</span></figcaption>
-<pre><code><span class="ln">419</span>/// 題名・説明・名前を英語にする。**訳の無い日本語が残ったらエラー**。
-<span class="ln">420</span>fn translate(value: &amp;mut Value, table: &amp;BTreeMap&lt;&amp;str, &amp;str&gt;, at: &amp;str) -&gt; Result&lt;()&gt; {
-<span class="ln">421</span>    match value {
-<span class="ln">422</span>        Value::Object(map) =&gt; {
-<span class="ln">423</span>            for (key, child) in map.iter_mut() {
-<span class="ln">424</span>                // 出典の文言は規約が書き方を指定しているので訳さない。語彙はデータの中身。
-<span class="ln">425</span>                if key == "duck:attribution" || key == "summaries" {
-<span class="ln">426</span>                    continue;
-<span class="ln">427</span>                }
-<span class="ln">428</span>                let translatable = matches!(
-<span class="ln">429</span>                    key.as_str(),
-<span class="ln">430</span>                    "title" | "description" | "name" | "duck:vintage"
-<span class="ln">431</span>                );
-<span class="ln">432</span>                match child {
-<span class="ln">433</span>                    Value::String(text) if translatable &amp;&amp; has_japanese(text) =&gt; {
-<span class="ln">434</span>                        let Some(english) = table.get(text.as_str()) else {
-<span class="ln">435</span>                            bail!(
-<span class="ln">436</span>                                "{at}: 英語の訳がありません (stac_i18n.rs の EN に足すこと): {text}"
-<span class="ln">437</span>                            );
-<span class="ln">438</span>                        };
-<span class="ln">439</span>                        *text = (*english).to_string();
-<span class="ln">440</span>                    }
-<span class="ln">441</span>                    _ =&gt; translate(child, table, at)?,
-<span class="ln">442</span>                }
-<span class="ln">443</span>            }
-<span class="ln">444</span>        }
-<span class="ln">445</span>        Value::Array(items) =&gt; {
-<span class="ln">446</span>            for child in items {
-<span class="ln">447</span>                translate(child, table, at)?;
-<span class="ln">448</span>            }
-<span class="ln">449</span>        }
-<span class="ln">450</span>        _ =&gt; {}
-<span class="ln">451</span>    }
-<span class="ln">452</span>    Ok(())
-<span class="ln">453</span>}</code></pre>
+<figcaption><a href="../pipeline/src/stac_i18n.rs">pipeline/src/stac_i18n.rs</a> <span class="lines">423〜457 行</span></figcaption>
+<pre><code><span class="ln">423</span>/// 題名・説明・名前を英語にする。**訳の無い日本語が残ったらエラー**。
+<span class="ln">424</span>fn translate(value: &amp;mut Value, table: &amp;BTreeMap&lt;&amp;str, &amp;str&gt;, at: &amp;str) -&gt; Result&lt;()&gt; {
+<span class="ln">425</span>    match value {
+<span class="ln">426</span>        Value::Object(map) =&gt; {
+<span class="ln">427</span>            for (key, child) in map.iter_mut() {
+<span class="ln">428</span>                // 出典の文言は規約が書き方を指定しているので訳さない。語彙はデータの中身。
+<span class="ln">429</span>                if key == "duck:attribution" || key == "summaries" {
+<span class="ln">430</span>                    continue;
+<span class="ln">431</span>                }
+<span class="ln">432</span>                let translatable = matches!(
+<span class="ln">433</span>                    key.as_str(),
+<span class="ln">434</span>                    "title" | "description" | "name" | "duck:vintage"
+<span class="ln">435</span>                );
+<span class="ln">436</span>                match child {
+<span class="ln">437</span>                    Value::String(text) if translatable &amp;&amp; has_japanese(text) =&gt; {
+<span class="ln">438</span>                        let Some(english) = table.get(text.as_str()) else {
+<span class="ln">439</span>                            bail!(
+<span class="ln">440</span>                                "{at}: 英語の訳がありません (stac_i18n.rs の EN に足すこと): {text}"
+<span class="ln">441</span>                            );
+<span class="ln">442</span>                        };
+<span class="ln">443</span>                        *text = (*english).to_string();
+<span class="ln">444</span>                    }
+<span class="ln">445</span>                    _ =&gt; translate(child, table, at)?,
+<span class="ln">446</span>                }
+<span class="ln">447</span>            }
+<span class="ln">448</span>        }
+<span class="ln">449</span>        Value::Array(items) =&gt; {
+<span class="ln">450</span>            for child in items {
+<span class="ln">451</span>                translate(child, table, at)?;
+<span class="ln">452</span>            }
+<span class="ln">453</span>        }
+<span class="ln">454</span>        _ =&gt; {}
+<span class="ln">455</span>    }
+<span class="ln">456</span>    Ok(())
+<span class="ln">457</span>}</code></pre>
 </figure>
 </section>
 <section class="card" id="building-tiles">
@@ -820,47 +820,47 @@ DuckDB は文字列の統計を頭の数文字でしか比べないため、<cod
 出し入れでき、出るズームはタイル側の minzoom・maxzoom に従う。</p>
 
 <figure class="code">
-<figcaption><a href="../web/src/lib/tiles.ts">web/src/lib/tiles.ts</a> <span class="lines">86〜125 行</span></figcaption>
-<pre><code><span class="ln"> 86</span>/**
-<span class="ln"> 87</span> * タイルの層1つを描く地図の層。**カタログに書いた形の種類だけから決める**
-<span class="ln"> 88</span> * (面は塗りと輪郭、線は線、文字を持つ点は文字、それ以外の点は丸)。
-<span class="ln"> 89</span> *
-<span class="ln"> 90</span> * 配布元の描き方 (地理院の `std.json`) は使わない。規約が明示しているのはタイル
-<span class="ln"> 91</span> * (データ) で、スタイル・記号・フォントの扱いは書かれていないため。
-<span class="ln"> 92</span> * 文字はブラウザのフォントで描く (`glyphs` を指定しなければ MapLibre がそうする)。
-<span class="ln"> 93</span> */
-<span class="ln"> 94</span>function vectorLayerSpecs(
-<span class="ln"> 95</span>  source: string,
-<span class="ln"> 96</span>  layer: VectorLayerInfo,
-<span class="ln"> 97</span>  look: VectorLook,
-<span class="ln"> 98</span>): LayerSpecification[] {
-<span class="ln"> 99</span>  const base = {
-<span class="ln">100</span>    source,
-<span class="ln">101</span>    'source-layer': layer.id,
-<span class="ln">102</span>    // 入れるまでは出さない。入り切りは `VectorOverlay.apply` が写す。
-<span class="ln">103</span>    layout: { visibility: 'none' as const },
-<span class="ln">104</span>  };
-<span class="ln">105</span>  const id = (suffix: string) =&gt; `${source}/${layer.id}/${suffix}`;
-<span class="ln">106</span>  const width: ExpressionSpecification = ['interpolate', ['linear'], ['zoom'], 8, 0.4, 16, 1.6];
-<span class="ln">107</span>  switch (layer.geometry) {
-<span class="ln">108</span>    case 'Polygon':
-<span class="ln">109</span>      return [
-<span class="ln">110</span>        { ...base, id: id('fill'), type: 'fill', paint: { 'fill-color': look.color, 'fill-opacity': 0.2 } },
-<span class="ln">111</span>        {
-<span class="ln">112</span>          ...base,
-<span class="ln">113</span>          id: id('outline'),
-<span class="ln">114</span>          type: 'line',
-<span class="ln">115</span>          paint: { 'line-color': look.color, 'line-width': 0.6, 'line-opacity': 0.6 },
-<span class="ln">116</span>        },
-<span class="ln">117</span>      ];
-<span class="ln">118</span>    case 'LineString':
-<span class="ln">119</span>      return [
-<span class="ln">120</span>        {
-<span class="ln">121</span>          ...base,
-<span class="ln">122</span>          id: id('line'),
-<span class="ln">123</span>          type: 'line',
-<span class="ln">124</span>          paint: {
-<span class="ln">125</span>            'line-color': look.color,</code></pre><div class="more">… 続きは <a href="../web/src/lib/tiles.ts">web/src/lib/tiles.ts</a> で</div>
+<figcaption><a href="../web/src/lib/tiles.ts">web/src/lib/tiles.ts</a> <span class="lines">87〜126 行</span></figcaption>
+<pre><code><span class="ln"> 87</span>/**
+<span class="ln"> 88</span> * タイルの層1つを描く地図の層。**カタログに書いた形の種類だけから決める**
+<span class="ln"> 89</span> * (面は塗りと輪郭、線は線、文字を持つ点は文字、それ以外の点は丸)。
+<span class="ln"> 90</span> *
+<span class="ln"> 91</span> * 配布元の描き方 (地理院の `std.json`) は使わない。規約が明示しているのはタイル
+<span class="ln"> 92</span> * (データ) で、スタイル・記号・フォントの扱いは書かれていないため。
+<span class="ln"> 93</span> * 文字はブラウザのフォントで描く (`glyphs` を指定しなければ MapLibre がそうする)。
+<span class="ln"> 94</span> */
+<span class="ln"> 95</span>function vectorLayerSpecs(
+<span class="ln"> 96</span>  source: string,
+<span class="ln"> 97</span>  layer: VectorLayerInfo,
+<span class="ln"> 98</span>  look: VectorLook,
+<span class="ln"> 99</span>): LayerSpecification[] {
+<span class="ln">100</span>  const base = {
+<span class="ln">101</span>    source,
+<span class="ln">102</span>    'source-layer': layer.id,
+<span class="ln">103</span>    // 入れるまでは出さない。入り切りは `VectorOverlay.apply` が写す。
+<span class="ln">104</span>    layout: { visibility: 'none' as const },
+<span class="ln">105</span>  };
+<span class="ln">106</span>  const id = (suffix: string) =&gt; `${source}/${layer.id}/${suffix}`;
+<span class="ln">107</span>  const width: ExpressionSpecification = ['interpolate', ['linear'], ['zoom'], 8, 0.4, 16, 1.6];
+<span class="ln">108</span>  switch (layer.geometry) {
+<span class="ln">109</span>    case 'Polygon':
+<span class="ln">110</span>      return [
+<span class="ln">111</span>        { ...base, id: id('fill'), type: 'fill', paint: { 'fill-color': look.color, 'fill-opacity': 0.2 } },
+<span class="ln">112</span>        {
+<span class="ln">113</span>          ...base,
+<span class="ln">114</span>          id: id('outline'),
+<span class="ln">115</span>          type: 'line',
+<span class="ln">116</span>          paint: { 'line-color': look.color, 'line-width': 0.6, 'line-opacity': 0.6 },
+<span class="ln">117</span>        },
+<span class="ln">118</span>      ];
+<span class="ln">119</span>    case 'LineString':
+<span class="ln">120</span>      return [
+<span class="ln">121</span>        {
+<span class="ln">122</span>          ...base,
+<span class="ln">123</span>          id: id('line'),
+<span class="ln">124</span>          type: 'line',
+<span class="ln">125</span>          paint: {
+<span class="ln">126</span>            'line-color': look.color,</code></pre><div class="more">… 続きは <a href="../web/src/lib/tiles.ts">web/src/lib/tiles.ts</a> で</div>
 </figure>
 </section>
 <section class="card" id="gsi-dem">
@@ -870,19 +870,74 @@ DuckDB は文字列の統計を頭の数文字でしか比べないため、<cod
 負の値 (2の補数) は正しく負にする。背景地図と地形はカタログから組み立てる。</p>
 
 <figure class="code">
-<figcaption><a href="../web/src/lib/tiles.ts">web/src/lib/tiles.ts</a> <span class="lines">293〜304 行</span></figcaption>
-<pre><code><span class="ln">293</span>/**
-<span class="ln">294</span> * 地理院の標高を1画素ずつ高さ (m) に直す。**独自の形式**で、線形の部分は Terrain-RGB と
-<span class="ln">295</span> * 同じ形 (x = R×2¹⁶ + G×2⁸ + B、高さ = x × 0.01 m) だが、そのままでは読めない値が2つある:
-<span class="ln">296</span> *
-<span class="ln">297</span> * - **値なし** (x = 2²³ = (128,0,0)。海など): そのまま読むと 83,886 m の針が立つ → 0 m にする
-<span class="ln">298</span> * - **負の値** (x &gt; 2²³、2の補数): そのまま読むと 8万m台に化ける → (x − 2²⁴) × 0.01 m
-<span class="ln">299</span> */
-<span class="ln">300</span>export function gsiDemHeight(r: number, g: number, b: number): number {
-<span class="ln">301</span>  const x = r * 65536 + g * 256 + b;
-<span class="ln">302</span>  if (x === 8388608) return 0;
-<span class="ln">303</span>  return (x &lt; 8388608 ? x : x - 16777216) * 0.01;
-<span class="ln">304</span>}</code></pre>
+<figcaption><a href="../web/src/lib/tiles.ts">web/src/lib/tiles.ts</a> <span class="lines">337〜348 行</span></figcaption>
+<pre><code><span class="ln">337</span>/**
+<span class="ln">338</span> * 地理院の標高を1画素ずつ高さ (m) に直す。**独自の形式**で、線形の部分は Terrain-RGB と
+<span class="ln">339</span> * 同じ形 (x = R×2¹⁶ + G×2⁸ + B、高さ = x × 0.01 m) だが、そのままでは読めない値が2つある:
+<span class="ln">340</span> *
+<span class="ln">341</span> * - **値なし** (x = 2²³ = (128,0,0)。海など): そのまま読むと 83,886 m の針が立つ → 0 m にする
+<span class="ln">342</span> * - **負の値** (x &gt; 2²³、2の補数): そのまま読むと 8万m台に化ける → (x − 2²⁴) × 0.01 m
+<span class="ln">343</span> */
+<span class="ln">344</span>export function gsiDemHeight(r: number, g: number, b: number): number {
+<span class="ln">345</span>  const x = r * 65536 + g * 256 + b;
+<span class="ln">346</span>  if (x === 8388608) return 0;
+<span class="ln">347</span>  return (x &lt; 8388608 ? x : x - 16777216) * 0.01;
+<span class="ln">348</span>}</code></pre>
+</figure>
+</section>
+<section class="card" id="cog-dem">
+<h3><a class="anchor" href="#cog-dem">#</a>COG (AW3D30) を地形のタイルにする</h3>
+<p class="lead">JAXA の AW3D30 (全球の DSM) は COG で配られていて、Range と CORS が開いている。MapLibre は COG をそのまま読めない。</p>
+<p>地理院の標高と同じく独自のプロトコルで地図のタイルを受け、<b>表示の細かさに見合う段と縮小版を選び、掛かる COG から要る窓だけを読む</b>。
+Web メルカトルに並べ直して Terrarium の画像にして返すので、地形 (立体) にも陰影にも MapLibre の仕組みがそのまま使える。
+R2 には何も置かない (カタログから公開元を直接読む)。</p>
+<ul>
+<li>並べ方 (段ごとのファイルの広さ・画素数・URL の組み立て方) はカタログの <code>duck:dem</code> の <code>grid</code> から読む。
+画素の大きさはファイルの実際の幅から求める (カタログの画素数を思い込みで書いて、引いた表示がずれたことがある)</li>
+<li>geotiff.js は <code>blockSize</code> を渡さないと、内部タイルの位置の表を4バイトずつ読みに行く。64KB のブロックにまとめて、富士山 z11 で 1,403回 → 92回</li>
+</ul>
+<p class="docs">関連: <a href="format-survey.md">format-survey.md の「測ったこと: COG を読む」</a></p>
+<figure class="code">
+<figcaption><a href="../web/src/lib/cog-dem.ts">web/src/lib/cog-dem.ts</a> <span class="lines">36〜52 行</span></figcaption>
+<pre><code><span class="ln">36</span>/**
+<span class="ln">37</span> * 地図のタイル1画素の大きさ (度) に見合う読み方を選ぶ。**画面より粗くならない中でいちばん粗いもの**。
+<span class="ln">38</span> * どれも画面より粗ければ (寄りすぎ)、いちばん細かいもの。
+<span class="ln">39</span> */
+<span class="ln">40</span>export function chooseCog(grid: CogGrid, degreesPerPixel: number): CogChoice {
+<span class="ln">41</span>  const candidates = grid.levels.flatMap(({ level, tile_deg, pixels }) =&gt;
+<span class="ln">42</span>    Array.from({ length: grid.overviews + 1 }, (_, overview) =&gt; ({
+<span class="ln">43</span>      level,
+<span class="ln">44</span>      tileDeg: tile_deg,
+<span class="ln">45</span>      overview,
+<span class="ln">46</span>      resolution: (tile_deg / pixels) * 2 ** overview,
+<span class="ln">47</span>    })),
+<span class="ln">48</span>  );
+<span class="ln">49</span>  const fine = candidates.filter((c) =&gt; c.resolution &lt;= degreesPerPixel);
+<span class="ln">50</span>  if (fine.length &gt; 0) return fine.reduce((a, b) =&gt; (b.resolution &gt; a.resolution ? b : a));
+<span class="ln">51</span>  return candidates.reduce((a, b) =&gt; (b.resolution &lt; a.resolution ? b : a));
+<span class="ln">52</span>}</code></pre>
+</figure>
+<figure class="code">
+<figcaption><a href="../web/src/lib/cog-dem.ts">web/src/lib/cog-dem.ts</a> <span class="lines">77〜95 行</span></figcaption>
+<pre><code><span class="ln">77</span>const open = (url: string) =&gt; {
+<span class="ln">78</span>  let tiff = opened.get(url);
+<span class="ln">79</span>  if (!tiff) {
+<span class="ln">80</span>    // **展開した内部タイルをためる** (`cache`)。隣り合う地図のタイルは同じ内部タイルを読むので、
+<span class="ln">81</span>    // ためないと読み込みの回数が地図のタイルの数だけ増える (富士山 z11 で 848回だった)。
+<span class="ln">82</span>    // (`fromUrl` は `cache` を受け取らないので、開いてから立てる。画像を取り出すときにこれを見る。)
+<span class="ln">83</span>    // **64KB のブロックで読み、読んだブロックを使い回す** (`blockSize`)。指定しないと、内部タイルの位置の表を
+<span class="ln">84</span>    // 1項目 (4バイト) ずつ別々に読みに行く (内部タイル1つにつき3回。富士山 z11 で 1,403回だった)。
+<span class="ln">85</span>    // (型の定義には blockSize・cacheSize が無いが、makeRemoteSource が読んで BlockedSource を挟む。)
+<span class="ln">86</span>    tiff = fromUrl(url, { allowFullFile: false, blockSize: 65536, cacheSize: 512 } as Parameters&lt;typeof fromUrl&gt;[1])
+<span class="ln">87</span>      .then((opened) =&gt; {
+<span class="ln">88</span>        opened.cache = true;
+<span class="ln">89</span>        return opened;
+<span class="ln">90</span>      })
+<span class="ln">91</span>      .catch(() =&gt; null);
+<span class="ln">92</span>    opened.set(url, tiff);
+<span class="ln">93</span>  }
+<span class="ln">94</span>  return tiff;
+<span class="ln">95</span>};</code></pre>
 </figure>
 </section>
 <section class="card" id="wkb">
@@ -961,30 +1016,30 @@ DuckDB は文字列の統計を頭の数文字でしか比べないため、<cod
 ライセンスを持ち回れるようにするのが、このリポジトリの軸の1つ。</p>
 
 <figure class="code">
-<figcaption><a href="../web/src/lib/duckdb.ts">web/src/lib/duckdb.ts</a> <span class="lines">521〜543 行</span></figcaption>
-<pre><code><span class="ln">521</span>/**
-<span class="ln">522</span> * 問い合わせの結果を Parquet にして返す (ダウンロード用)。
-<span class="ln">523</span> *
-<span class="ln">524</span> * DuckDB-WASM の中の空のファイルに書いてから取り出す。ジオメトリの列が
-<span class="ln">525</span> * GEOMETRY 型なら DuckDB が `geo` メタデータを書くので、GeoParquet として読める。
-<span class="ln">526</span> * `kv` に出典や規約を入れて、**切り出したファイルにも条件が付いて回る**ようにする。
-<span class="ln">527</span> */
-<span class="ln">528</span>const exportParquet = async (select: string, kv: Record&lt;string, string&gt;): Promise&lt;Uint8Array&gt; =&gt; {
-<span class="ln">529</span>  const name = `export_${Date.now()}.parquet`;
-<span class="ln">530</span>  await db.registerEmptyFileBuffer(name);
-<span class="ln">531</span>  const escape = (text: string) =&gt; text.replace(/'/g, "''");
-<span class="ln">532</span>  const kvSql = Object.entries(kv)
-<span class="ln">533</span>    .map(([key, value]) =&gt; `'${escape(key)}': '${escape(value)}'`)
-<span class="ln">534</span>    .join(', ');
-<span class="ln">535</span>  try {
-<span class="ln">536</span>    await conn.query(
-<span class="ln">537</span>      `COPY (${select}) TO '${name}' (FORMAT PARQUET${kvSql ? `, KV_METADATA {${kvSql}}` : ''});`,
-<span class="ln">538</span>    );
-<span class="ln">539</span>    return await db.copyFileToBuffer(name);
-<span class="ln">540</span>  } finally {
-<span class="ln">541</span>    await db.dropFile(name);
-<span class="ln">542</span>  }
-<span class="ln">543</span>};</code></pre>
+<figcaption><a href="../web/src/lib/duckdb.ts">web/src/lib/duckdb.ts</a> <span class="lines">523〜545 行</span></figcaption>
+<pre><code><span class="ln">523</span>/**
+<span class="ln">524</span> * 問い合わせの結果を Parquet にして返す (ダウンロード用)。
+<span class="ln">525</span> *
+<span class="ln">526</span> * DuckDB-WASM の中の空のファイルに書いてから取り出す。ジオメトリの列が
+<span class="ln">527</span> * GEOMETRY 型なら DuckDB が `geo` メタデータを書くので、GeoParquet として読める。
+<span class="ln">528</span> * `kv` に出典や規約を入れて、**切り出したファイルにも条件が付いて回る**ようにする。
+<span class="ln">529</span> */
+<span class="ln">530</span>const exportParquet = async (select: string, kv: Record&lt;string, string&gt;): Promise&lt;Uint8Array&gt; =&gt; {
+<span class="ln">531</span>  const name = `export_${Date.now()}.parquet`;
+<span class="ln">532</span>  await db.registerEmptyFileBuffer(name);
+<span class="ln">533</span>  const escape = (text: string) =&gt; text.replace(/'/g, "''");
+<span class="ln">534</span>  const kvSql = Object.entries(kv)
+<span class="ln">535</span>    .map(([key, value]) =&gt; `'${escape(key)}': '${escape(value)}'`)
+<span class="ln">536</span>    .join(', ');
+<span class="ln">537</span>  try {
+<span class="ln">538</span>    await conn.query(
+<span class="ln">539</span>      `COPY (${select}) TO '${name}' (FORMAT PARQUET${kvSql ? `, KV_METADATA {${kvSql}}` : ''});`,
+<span class="ln">540</span>    );
+<span class="ln">541</span>    return await db.copyFileToBuffer(name);
+<span class="ln">542</span>  } finally {
+<span class="ln">543</span>    await db.dropFile(name);
+<span class="ln">544</span>  }
+<span class="ln">545</span>};</code></pre>
 </figure>
 </section>
 <section class="card" id="layer-order">

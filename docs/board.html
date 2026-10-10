@@ -313,7 +313,7 @@
   <body>
     <header>
       <h1>duck-geocoder ダッシュボード</h1>
-      <span class="meta">更新 2026-10-10 15:25 (日本時間)</span>
+      <span class="meta">更新 2026-10-10 16:37 (日本時間)</span>
       <span class="meta">
         <a href="https://strorkis.github.io/duck-geocoder/">公開サイト</a> ·
         <a href="roadmap.md">方針 (roadmap.md)</a> · STAC 配布形式の実験
@@ -332,8 +332,8 @@
       </div>
       <div class="card kpi">
         <div class="label">公開待ちのコミット</div>
-        <div class="value">5 <small>件</small></div>
-        <span class="status you">カタログを上げて push 待ち (Item の名前・Overture の出典)</span>
+        <div class="value">7 <small>件</small></div>
+        <span class="status you">カタログを上げて push 待ち (Item の名前・Overture の出典・AW3D30)</span>
       </div>
       <div class="card kpi">
         <div class="label">建物</div>
@@ -396,7 +396,7 @@
         </li>
         <li class="current">
           <b>カタログを上げて push</b><span class="status you">あなたの番</span>
-          <span class="sub"><a href="deploy.md">deploy.md</a>「2026-10-10 の分 その2」。items.parquet と JSON (89個) → push。データのファイルは変えていない (Item の名前と年度・Overture の出典)</span>
+          <span class="sub"><a href="deploy.md">deploy.md</a>「2026-10-10 の分 その2」。items.parquet と JSON (89個) → push。データのファイルは変えていない (Item の名前と年度・Overture の出典・AW3D30 を地形に)</span>
         </li>
         <li>
           <b>公開を確かめる</b><span class="status you">あなたの番</span>
@@ -516,6 +516,10 @@
               <td>地理院の標高 (独自形式) を読み込むときに Terrarium へ詰め直す</td>
             </tr>
             <tr>
+              <td><a href="tour.html#cog-dem">COG (AW3D30) を地形のタイルにする</a></td>
+              <td>COG (AW3D30) を<b>要る窓だけ読んで</b>地形のタイルにする。R2 を通さずカタログから描く</td>
+            </tr>
+            <tr>
               <td><a href="tour.html#wkb">DuckDB の返すジオメトリ (WKB) を自前で読む</a></td>
               <td>DuckDB が返す GeoArrow (WKB) を<b>自前で読む</b> (GeoJSON の文字列を作らない)</td>
             </tr>
@@ -579,9 +583,9 @@
             </span>
           </li>
           <li>
-            <b>AW3D30 を地図に出すか</b>
+            <b>AW3D30 を地図に出す</b> <span class="status done">済み</span>
             <span class="sub">
-              参照だけ足した。出すなら COG を直接読む部品が要る (R2 は使わない)。画像に「©JAXA」を出す。
+              10-10。地形の欄で選べる (日本の外も)。⚙ の「陰影を描く」で日本の外も見える。JAXA の COG を直接読む (R2 は使わない)。
               NASA の2つはログインかトークンが要るので後回し
             </span>
           </li>

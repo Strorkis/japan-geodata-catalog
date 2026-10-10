@@ -428,10 +428,11 @@ rclone delete "$R2/overture/overture_buildings_minato.parquet"
 - 4 の概観は 48ファイル・409MB。消すと R2 の合計は無料枠に収まる (下のボードの数字)
 - 選ばれるのは 1 が2ファイル、2 が89ファイル (`rclone --config /dev/null lsf -R data/output --files-only --filter …`)
 
-### 2026-10-10 の分 その2 (Item の名前と時点・Overture の出典)
+### 2026-10-10 の分 その2 (Item の名前と時点・Overture の出典・AW3D30 を地形に)
 
 **カタログだけを上げる** (データのファイルは変えていない)。PLATEAU の Item に都市の名前と年度を載せ、
-Overture の建物の出典を日本に実際に入っている出所に絞った。
+Overture の建物の出典を日本に実際に入っている出所に絞った。AW3D30 を地形に選べるようにした (Collection の JSON が変わった。
+COG は JAXA から直接読むので、R2 には何も足さない)。
 
 ```sh
 # 1. カタログ (items.parquet と JSON 全部。89ファイル)
