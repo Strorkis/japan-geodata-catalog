@@ -313,7 +313,7 @@
   <body>
     <header>
       <h1>duck-geocoder ダッシュボード</h1>
-      <span class="meta">更新 2026-10-10 16:37 (日本時間)</span>
+      <span class="meta">更新 2026-10-10 17:15 (日本時間)</span>
       <span class="meta">
         <a href="https://strorkis.github.io/duck-geocoder/">公開サイト</a> ·
         <a href="roadmap.md">方針 (roadmap.md)</a> · STAC 配布形式の実験
@@ -332,8 +332,8 @@
       </div>
       <div class="card kpi">
         <div class="label">公開待ちのコミット</div>
-        <div class="value">7 <small>件</small></div>
-        <span class="status you">カタログを上げて push 待ち (Item の名前・Overture の出典・AW3D30)</span>
+        <div class="value">10 <small>件</small></div>
+        <span class="status you">カタログを上げて push 待ち (Item の名前・Overture の出典・AW3D30・世界の背景地図・3D のページ)</span>
       </div>
       <div class="card kpi">
         <div class="label">建物</div>
@@ -605,10 +605,10 @@
             </span>
           </li>
           <li>
-            <b>3D の別モード (後で)</b>
+            <b>3D の別モード</b> <span class="status todo">1段目まで (10-10)</span>
             <span class="sub">
-              Navara モード・Cesium モード。MapLibre ＋ Three.js (3DTilesRendererJS) で重ねる道も。Navara は試作で描けた。
-              案: 変換 (WASM → 3D Tiles) を先に作り、Cesium で確かめてから重ね方を決める
+              Cesium の別ページを作った。地図の右上の「3D」で同じ場所を開き、戻ると同じ場所になる。背景地図と 3D Tiles はカタログから
+              (ion は使わない)。次は地形 (カタログの標高) と 3D Tiles 2.0。Navara・MapLibre ＋ Three.js はそのあと
             </span>
           </li>
           <li>

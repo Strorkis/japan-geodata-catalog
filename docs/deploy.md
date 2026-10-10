@@ -117,6 +117,8 @@ DATA_LATENCY_MS=450 DATA_BANDWIDTH_MBPS=16 pnpm test:dist
 | N03・基盤地図情報 (標高) | **配らない** (参照だけ) | 複製に測量法の承認が要る | ✅ |
 | AW3D30 (JAXA) | 表示 (公開元の COG を直接読む。10-10 から地形に選べる) | 出典「提供：AW3D30 (JAXA)」、商用なら事前に連絡 | ✅ 出典の欄に出る |
 | NASADEM・ASTER GDEM | **配らない** (参照だけ) | パブリックドメイン・制限なし (入手にログインが要る) | ✅ |
+| CesiumJS (3D のページ) | ビルドに含めて配る・実行時の資産を写して配る | Apache-2.0: 許諾文 (NOTICE は無い) | ✅ `THIRD-PARTY-LICENSES.md` と `cesium/LICENSE.md`。ion (登録が要る) は使わない |
+| Natural Earth II (3D のページの下地) | Cesium に同梱のものを写して配る | パブリックドメイン | ✅ |
 | OpenFreeMap (世界の背景地図) | 表示 (公開元のスタイルとタイルを直接読む。10-10 に足した) | 無料・登録不要・商用可。出典「OpenFreeMap © OpenMapTiles Data from OpenStreetMap」が要る | ✅ 保証 (SLA) なし・寄付で運営 |
 
 **残っている心配 (どれも公開を止めるものではない):**

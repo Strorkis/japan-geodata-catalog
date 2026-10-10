@@ -427,42 +427,42 @@ HTTP Range で末尾を読み、目次から欲しいファイルの位置だけ
 日本語版と英語版を結ぶ。</p>
 
 <figure class="code">
-<figcaption><a href="../pipeline/src/stac_i18n.rs">pipeline/src/stac_i18n.rs</a> <span class="lines">423〜457 行</span></figcaption>
-<pre><code><span class="ln">423</span>/// 題名・説明・名前を英語にする。**訳の無い日本語が残ったらエラー**。
-<span class="ln">424</span>fn translate(value: &amp;mut Value, table: &amp;BTreeMap&lt;&amp;str, &amp;str&gt;, at: &amp;str) -&gt; Result&lt;()&gt; {
-<span class="ln">425</span>    match value {
-<span class="ln">426</span>        Value::Object(map) =&gt; {
-<span class="ln">427</span>            for (key, child) in map.iter_mut() {
-<span class="ln">428</span>                // 出典の文言は規約が書き方を指定しているので訳さない。語彙はデータの中身。
-<span class="ln">429</span>                if key == "duck:attribution" || key == "summaries" {
-<span class="ln">430</span>                    continue;
-<span class="ln">431</span>                }
-<span class="ln">432</span>                let translatable = matches!(
-<span class="ln">433</span>                    key.as_str(),
-<span class="ln">434</span>                    "title" | "description" | "name" | "duck:vintage"
-<span class="ln">435</span>                );
-<span class="ln">436</span>                match child {
-<span class="ln">437</span>                    Value::String(text) if translatable &amp;&amp; has_japanese(text) =&gt; {
-<span class="ln">438</span>                        let Some(english) = table.get(text.as_str()) else {
-<span class="ln">439</span>                            bail!(
-<span class="ln">440</span>                                "{at}: 英語の訳がありません (stac_i18n.rs の EN に足すこと): {text}"
-<span class="ln">441</span>                            );
-<span class="ln">442</span>                        };
-<span class="ln">443</span>                        *text = (*english).to_string();
-<span class="ln">444</span>                    }
-<span class="ln">445</span>                    _ =&gt; translate(child, table, at)?,
-<span class="ln">446</span>                }
-<span class="ln">447</span>            }
-<span class="ln">448</span>        }
-<span class="ln">449</span>        Value::Array(items) =&gt; {
-<span class="ln">450</span>            for child in items {
-<span class="ln">451</span>                translate(child, table, at)?;
-<span class="ln">452</span>            }
-<span class="ln">453</span>        }
-<span class="ln">454</span>        _ =&gt; {}
-<span class="ln">455</span>    }
-<span class="ln">456</span>    Ok(())
-<span class="ln">457</span>}</code></pre>
+<figcaption><a href="../pipeline/src/stac_i18n.rs">pipeline/src/stac_i18n.rs</a> <span class="lines">432〜466 行</span></figcaption>
+<pre><code><span class="ln">432</span>/// 題名・説明・名前を英語にする。**訳の無い日本語が残ったらエラー**。
+<span class="ln">433</span>fn translate(value: &amp;mut Value, table: &amp;BTreeMap&lt;&amp;str, &amp;str&gt;, at: &amp;str) -&gt; Result&lt;()&gt; {
+<span class="ln">434</span>    match value {
+<span class="ln">435</span>        Value::Object(map) =&gt; {
+<span class="ln">436</span>            for (key, child) in map.iter_mut() {
+<span class="ln">437</span>                // 出典の文言は規約が書き方を指定しているので訳さない。語彙はデータの中身。
+<span class="ln">438</span>                if key == "duck:attribution" || key == "summaries" {
+<span class="ln">439</span>                    continue;
+<span class="ln">440</span>                }
+<span class="ln">441</span>                let translatable = matches!(
+<span class="ln">442</span>                    key.as_str(),
+<span class="ln">443</span>                    "title" | "description" | "name" | "duck:vintage"
+<span class="ln">444</span>                );
+<span class="ln">445</span>                match child {
+<span class="ln">446</span>                    Value::String(text) if translatable &amp;&amp; has_japanese(text) =&gt; {
+<span class="ln">447</span>                        let Some(english) = table.get(text.as_str()) else {
+<span class="ln">448</span>                            bail!(
+<span class="ln">449</span>                                "{at}: 英語の訳がありません (stac_i18n.rs の EN に足すこと): {text}"
+<span class="ln">450</span>                            );
+<span class="ln">451</span>                        };
+<span class="ln">452</span>                        *text = (*english).to_string();
+<span class="ln">453</span>                    }
+<span class="ln">454</span>                    _ =&gt; translate(child, table, at)?,
+<span class="ln">455</span>                }
+<span class="ln">456</span>            }
+<span class="ln">457</span>        }
+<span class="ln">458</span>        Value::Array(items) =&gt; {
+<span class="ln">459</span>            for child in items {
+<span class="ln">460</span>                translate(child, table, at)?;
+<span class="ln">461</span>            }
+<span class="ln">462</span>        }
+<span class="ln">463</span>        _ =&gt; {}
+<span class="ln">464</span>    }
+<span class="ln">465</span>    Ok(())
+<span class="ln">466</span>}</code></pre>
 </figure>
 </section>
 <section class="card" id="building-tiles">
@@ -700,21 +700,21 @@ DuckDB は文字列の統計を頭の数文字でしか比べないため、<cod
 <span class="ln">121</span>};</code></pre>
 </figure>
 <figure class="code">
-<figcaption><a href="../web/src/ui/map.ts">web/src/ui/map.ts</a> <span class="lines">118〜131 行</span></figcaption>
-<pre><code><span class="ln">118</span>/**
-<span class="ln">119</span> * 建物の塗りの式を、タイルの層で使える形にする。**塗りの規則は1つに保つ** (`BUILDING_COLOR_BY_*`)。
-<span class="ln">120</span> * GeoJSON の地物は出所の番号 (`palette`) と段の順位 (`tierRank`) を持つが、タイルの地物は持たない。
-<span class="ln">121</span> * 出所の番号は層ごとに決まった値に、段の順位はタイルの `lod` (段の順位そのもの) に置き換える。
-<span class="ln">122</span> */
-<span class="ln">123</span>export function tileColor(expression: ExpressionSpecification, palette: number): ExpressionSpecification {
-<span class="ln">124</span>  const replace = (value: unknown): unknown =&gt; {
-<span class="ln">125</span>    if (!Array.isArray(value)) return value;
-<span class="ln">126</span>    if (value.length === 2 &amp;&amp; value[0] === 'get' &amp;&amp; value[1] === 'palette') return palette;
-<span class="ln">127</span>    if (value.length === 2 &amp;&amp; value[0] === 'get' &amp;&amp; value[1] === 'tierRank') return ['get', 'lod'];
-<span class="ln">128</span>    return value.map(replace);
-<span class="ln">129</span>  };
-<span class="ln">130</span>  return replace(expression) as ExpressionSpecification;
-<span class="ln">131</span>}</code></pre>
+<figcaption><a href="../web/src/ui/map.ts">web/src/ui/map.ts</a> <span class="lines">120〜133 行</span></figcaption>
+<pre><code><span class="ln">120</span>/**
+<span class="ln">121</span> * 建物の塗りの式を、タイルの層で使える形にする。**塗りの規則は1つに保つ** (`BUILDING_COLOR_BY_*`)。
+<span class="ln">122</span> * GeoJSON の地物は出所の番号 (`palette`) と段の順位 (`tierRank`) を持つが、タイルの地物は持たない。
+<span class="ln">123</span> * 出所の番号は層ごとに決まった値に、段の順位はタイルの `lod` (段の順位そのもの) に置き換える。
+<span class="ln">124</span> */
+<span class="ln">125</span>export function tileColor(expression: ExpressionSpecification, palette: number): ExpressionSpecification {
+<span class="ln">126</span>  const replace = (value: unknown): unknown =&gt; {
+<span class="ln">127</span>    if (!Array.isArray(value)) return value;
+<span class="ln">128</span>    if (value.length === 2 &amp;&amp; value[0] === 'get' &amp;&amp; value[1] === 'palette') return palette;
+<span class="ln">129</span>    if (value.length === 2 &amp;&amp; value[0] === 'get' &amp;&amp; value[1] === 'tierRank') return ['get', 'lod'];
+<span class="ln">130</span>    return value.map(replace);
+<span class="ln">131</span>  };
+<span class="ln">132</span>  return replace(expression) as ExpressionSpecification;
+<span class="ln">133</span>}</code></pre>
 </figure>
 </section>
 <section class="card" id="nearby">
@@ -820,47 +820,47 @@ DuckDB は文字列の統計を頭の数文字でしか比べないため、<cod
 出し入れでき、出るズームはタイル側の minzoom・maxzoom に従う。</p>
 
 <figure class="code">
-<figcaption><a href="../web/src/lib/tiles.ts">web/src/lib/tiles.ts</a> <span class="lines">87〜126 行</span></figcaption>
-<pre><code><span class="ln"> 87</span>/**
-<span class="ln"> 88</span> * タイルの層1つを描く地図の層。**カタログに書いた形の種類だけから決める**
-<span class="ln"> 89</span> * (面は塗りと輪郭、線は線、文字を持つ点は文字、それ以外の点は丸)。
-<span class="ln"> 90</span> *
-<span class="ln"> 91</span> * 配布元の描き方 (地理院の `std.json`) は使わない。規約が明示しているのはタイル
-<span class="ln"> 92</span> * (データ) で、スタイル・記号・フォントの扱いは書かれていないため。
-<span class="ln"> 93</span> * 文字はブラウザのフォントで描く (`glyphs` を指定しなければ MapLibre がそうする)。
-<span class="ln"> 94</span> */
-<span class="ln"> 95</span>function vectorLayerSpecs(
-<span class="ln"> 96</span>  source: string,
-<span class="ln"> 97</span>  layer: VectorLayerInfo,
-<span class="ln"> 98</span>  look: VectorLook,
-<span class="ln"> 99</span>): LayerSpecification[] {
-<span class="ln">100</span>  const base = {
-<span class="ln">101</span>    source,
-<span class="ln">102</span>    'source-layer': layer.id,
-<span class="ln">103</span>    // 入れるまでは出さない。入り切りは `VectorOverlay.apply` が写す。
-<span class="ln">104</span>    layout: { visibility: 'none' as const },
-<span class="ln">105</span>  };
-<span class="ln">106</span>  const id = (suffix: string) =&gt; `${source}/${layer.id}/${suffix}`;
-<span class="ln">107</span>  const width: ExpressionSpecification = ['interpolate', ['linear'], ['zoom'], 8, 0.4, 16, 1.6];
-<span class="ln">108</span>  switch (layer.geometry) {
-<span class="ln">109</span>    case 'Polygon':
-<span class="ln">110</span>      return [
-<span class="ln">111</span>        { ...base, id: id('fill'), type: 'fill', paint: { 'fill-color': look.color, 'fill-opacity': 0.2 } },
-<span class="ln">112</span>        {
-<span class="ln">113</span>          ...base,
-<span class="ln">114</span>          id: id('outline'),
-<span class="ln">115</span>          type: 'line',
-<span class="ln">116</span>          paint: { 'line-color': look.color, 'line-width': 0.6, 'line-opacity': 0.6 },
-<span class="ln">117</span>        },
-<span class="ln">118</span>      ];
-<span class="ln">119</span>    case 'LineString':
-<span class="ln">120</span>      return [
-<span class="ln">121</span>        {
-<span class="ln">122</span>          ...base,
-<span class="ln">123</span>          id: id('line'),
-<span class="ln">124</span>          type: 'line',
-<span class="ln">125</span>          paint: {
-<span class="ln">126</span>            'line-color': look.color,</code></pre><div class="more">… 続きは <a href="../web/src/lib/tiles.ts">web/src/lib/tiles.ts</a> で</div>
+<figcaption><a href="../web/src/lib/tiles.ts">web/src/lib/tiles.ts</a> <span class="lines">88〜127 行</span></figcaption>
+<pre><code><span class="ln"> 88</span>/**
+<span class="ln"> 89</span> * タイルの層1つを描く地図の層。**カタログに書いた形の種類だけから決める**
+<span class="ln"> 90</span> * (面は塗りと輪郭、線は線、文字を持つ点は文字、それ以外の点は丸)。
+<span class="ln"> 91</span> *
+<span class="ln"> 92</span> * 配布元の描き方 (地理院の `std.json`) は使わない。規約が明示しているのはタイル
+<span class="ln"> 93</span> * (データ) で、スタイル・記号・フォントの扱いは書かれていないため。
+<span class="ln"> 94</span> * 文字はブラウザのフォントで描く (`glyphs` を指定しなければ MapLibre がそうする)。
+<span class="ln"> 95</span> */
+<span class="ln"> 96</span>function vectorLayerSpecs(
+<span class="ln"> 97</span>  source: string,
+<span class="ln"> 98</span>  layer: VectorLayerInfo,
+<span class="ln"> 99</span>  look: VectorLook,
+<span class="ln">100</span>): LayerSpecification[] {
+<span class="ln">101</span>  const base = {
+<span class="ln">102</span>    source,
+<span class="ln">103</span>    'source-layer': layer.id,
+<span class="ln">104</span>    // 入れるまでは出さない。入り切りは `VectorOverlay.apply` が写す。
+<span class="ln">105</span>    layout: { visibility: 'none' as const },
+<span class="ln">106</span>  };
+<span class="ln">107</span>  const id = (suffix: string) =&gt; `${source}/${layer.id}/${suffix}`;
+<span class="ln">108</span>  const width: ExpressionSpecification = ['interpolate', ['linear'], ['zoom'], 8, 0.4, 16, 1.6];
+<span class="ln">109</span>  switch (layer.geometry) {
+<span class="ln">110</span>    case 'Polygon':
+<span class="ln">111</span>      return [
+<span class="ln">112</span>        { ...base, id: id('fill'), type: 'fill', paint: { 'fill-color': look.color, 'fill-opacity': 0.2 } },
+<span class="ln">113</span>        {
+<span class="ln">114</span>          ...base,
+<span class="ln">115</span>          id: id('outline'),
+<span class="ln">116</span>          type: 'line',
+<span class="ln">117</span>          paint: { 'line-color': look.color, 'line-width': 0.6, 'line-opacity': 0.6 },
+<span class="ln">118</span>        },
+<span class="ln">119</span>      ];
+<span class="ln">120</span>    case 'LineString':
+<span class="ln">121</span>      return [
+<span class="ln">122</span>        {
+<span class="ln">123</span>          ...base,
+<span class="ln">124</span>          id: id('line'),
+<span class="ln">125</span>          type: 'line',
+<span class="ln">126</span>          paint: {
+<span class="ln">127</span>            'line-color': look.color,</code></pre><div class="more">… 続きは <a href="../web/src/lib/tiles.ts">web/src/lib/tiles.ts</a> で</div>
 </figure>
 </section>
 <section class="card" id="gsi-dem">
@@ -870,19 +870,19 @@ DuckDB は文字列の統計を頭の数文字でしか比べないため、<cod
 負の値 (2の補数) は正しく負にする。背景地図と地形はカタログから組み立てる。</p>
 
 <figure class="code">
-<figcaption><a href="../web/src/lib/tiles.ts">web/src/lib/tiles.ts</a> <span class="lines">337〜348 行</span></figcaption>
-<pre><code><span class="ln">337</span>/**
-<span class="ln">338</span> * 地理院の標高を1画素ずつ高さ (m) に直す。**独自の形式**で、線形の部分は Terrain-RGB と
-<span class="ln">339</span> * 同じ形 (x = R×2¹⁶ + G×2⁸ + B、高さ = x × 0.01 m) だが、そのままでは読めない値が2つある:
-<span class="ln">340</span> *
-<span class="ln">341</span> * - **値なし** (x = 2²³ = (128,0,0)。海など): そのまま読むと 83,886 m の針が立つ → 0 m にする
-<span class="ln">342</span> * - **負の値** (x &gt; 2²³、2の補数): そのまま読むと 8万m台に化ける → (x − 2²⁴) × 0.01 m
-<span class="ln">343</span> */
-<span class="ln">344</span>export function gsiDemHeight(r: number, g: number, b: number): number {
-<span class="ln">345</span>  const x = r * 65536 + g * 256 + b;
-<span class="ln">346</span>  if (x === 8388608) return 0;
-<span class="ln">347</span>  return (x &lt; 8388608 ? x : x - 16777216) * 0.01;
-<span class="ln">348</span>}</code></pre>
+<figcaption><a href="../web/src/lib/tiles.ts">web/src/lib/tiles.ts</a> <span class="lines">390〜401 行</span></figcaption>
+<pre><code><span class="ln">390</span>/**
+<span class="ln">391</span> * 地理院の標高を1画素ずつ高さ (m) に直す。**独自の形式**で、線形の部分は Terrain-RGB と
+<span class="ln">392</span> * 同じ形 (x = R×2¹⁶ + G×2⁸ + B、高さ = x × 0.01 m) だが、そのままでは読めない値が2つある:
+<span class="ln">393</span> *
+<span class="ln">394</span> * - **値なし** (x = 2²³ = (128,0,0)。海など): そのまま読むと 83,886 m の針が立つ → 0 m にする
+<span class="ln">395</span> * - **負の値** (x &gt; 2²³、2の補数): そのまま読むと 8万m台に化ける → (x − 2²⁴) × 0.01 m
+<span class="ln">396</span> */
+<span class="ln">397</span>export function gsiDemHeight(r: number, g: number, b: number): number {
+<span class="ln">398</span>  const x = r * 65536 + g * 256 + b;
+<span class="ln">399</span>  if (x === 8388608) return 0;
+<span class="ln">400</span>  return (x &lt; 8388608 ? x : x - 16777216) * 0.01;
+<span class="ln">401</span>}</code></pre>
 </figure>
 </section>
 <section class="card" id="cog-dem">
@@ -1116,77 +1116,77 @@ R2 には何も置かない (カタログから公開元を直接読む)。</p>
 <b>R2 と同じ待ちを足せる</b>。<code>DATA_DIR</code> で配るディレクトリを差し替えれば、並べ方を変えたデータをアプリはそのままで比べられる。</p>
 
 <figure class="code">
-<figcaption><a href="../web/vite.config.ts">web/vite.config.ts</a> <span class="lines">67〜136 行</span></figcaption>
-<pre><code><span class="ln"> 67</span>function serveLikeObjectStorage(urlPath: string, directory: string): Plugin {
-<span class="ln"> 68</span>  const root = fileURLToPath(new URL(directory, import.meta.url));
-<span class="ln"> 69</span>  // ベースパス配下で配信されることがあるので、解決後の base を前置きしてマウントする。
-<span class="ln"> 70</span>  let mountPath = urlPath;
-<span class="ln"> 71</span>
-<span class="ln"> 72</span>  const handle: Connect.NextHandleFunction = (request, response, next) =&gt; {
-<span class="ln"> 73</span>    // マウントした接頭辞は取り除かれた状態で渡ってくるので、残りがファイル名。
-<span class="ln"> 74</span>    const path = (request.url ?? '').split('?')[0].replace(/^\//, '');
-<span class="ln"> 75</span>    // 開発サーバーとはいえ、指定したディレクトリの外は出さない。
-<span class="ln"> 76</span>    const relative = normalize(decodeURIComponent(path));
-<span class="ln"> 77</span>    if (relative.startsWith('..')) return next();
-<span class="ln"> 78</span>    const file = join(root, relative);
+<figcaption><a href="../web/vite.config.ts">web/vite.config.ts</a> <span class="lines">75〜144 行</span></figcaption>
+<pre><code><span class="ln"> 75</span>function serveLikeObjectStorage(urlPath: string, directory: string): Plugin {
+<span class="ln"> 76</span>  const root = fileURLToPath(new URL(directory, import.meta.url));
+<span class="ln"> 77</span>  // ベースパス配下で配信されることがあるので、解決後の base を前置きしてマウントする。
+<span class="ln"> 78</span>  let mountPath = urlPath;
 <span class="ln"> 79</span>
-<span class="ln"> 80</span>    let size: number;
-<span class="ln"> 81</span>    try {
-<span class="ln"> 82</span>      size = statSync(file).size;
-<span class="ln"> 83</span>    } catch {
-<span class="ln"> 84</span>      return next();
-<span class="ln"> 85</span>    }
-<span class="ln"> 86</span>
-<span class="ln"> 87</span>    response.setHeader('Accept-Ranges', 'bytes');
-<span class="ln"> 88</span>    // 別オリジンに置いたときにDuckDB-WASMがこれらを読めるようにする。
-<span class="ln"> 89</span>    response.setHeader('Access-Control-Allow-Origin', '*');
-<span class="ln"> 90</span>    response.setHeader(
-<span class="ln"> 91</span>      'Access-Control-Expose-Headers',
-<span class="ln"> 92</span>      'Content-Range, Content-Length, Accept-Ranges',
-<span class="ln"> 93</span>    );
-<span class="ln"> 94</span>    const contentType = CONTENT_TYPES[extname(file)];
-<span class="ln"> 95</span>    if (contentType) response.setHeader('Content-Type', contentType);
-<span class="ln"> 96</span>
-<span class="ln"> 97</span>    // "bytes=100-199" / "bytes=100-" の2形だけ扱う (複数レンジは使われない)。
-<span class="ln"> 98</span>    const match = /^bytes=(\d+)-(\d*)$/.exec(request.headers.range ?? '');
-<span class="ln"> 99</span>    const start = match ? Number(match[1]) : 0;
-<span class="ln">100</span>    const end = match &amp;&amp; match[2] !== '' ? Math.min(Number(match[2]), size - 1) : size - 1;
-<span class="ln">101</span>
-<span class="ln">102</span>    if (match &amp;&amp; (start &gt; end || start &gt;= size)) {
-<span class="ln">103</span>      response.statusCode = 416;
-<span class="ln">104</span>      response.setHeader('Content-Range', `bytes */${size}`);
-<span class="ln">105</span>      return response.end();
-<span class="ln">106</span>    }
-<span class="ln">107</span>
-<span class="ln">108</span>    if (match) {
-<span class="ln">109</span>      response.statusCode = 206;
-<span class="ln">110</span>      response.setHeader('Content-Range', `bytes ${start}-${end}/${size}`);
-<span class="ln">111</span>      response.setHeader('Content-Length', end - start + 1);
-<span class="ln">112</span>    } else {
-<span class="ln">113</span>      response.statusCode = 200;
-<span class="ln">114</span>      response.setHeader('Content-Length', size);
-<span class="ln">115</span>    }
-<span class="ln">116</span>
-<span class="ln">117</span>    // HEADは本文を返さない。ヘッダはGETと同じものを返す。
-<span class="ln">118</span>    const send = () =&gt; {
-<span class="ln">119</span>      if (request.method === 'HEAD') return response.end();
-<span class="ln">120</span>      createReadStream(file, { start, end }).pipe(response);
-<span class="ln">121</span>    };
-<span class="ln">122</span>    // **R2 の遅さを手元で再現する** (`DATA_LATENCY_MS` / `DATA_BANDWIDTH_MBPS`)。
-<span class="ln">123</span>    // 手元では往復の待ちがほぼ0なので、読み込みの回数や量が増えても気付けない。
-<span class="ln">124</span>    const bytes = request.method === 'HEAD' ? 0 : end - start + 1;
-<span class="ln">125</span>    const delay = SIMULATED_LATENCY_MS + (SIMULATED_BYTES_PER_MS &gt; 0 ? bytes / SIMULATED_BYTES_PER_MS : 0);
-<span class="ln">126</span>    if (delay &gt; 0) setTimeout(send, delay);
-<span class="ln">127</span>    else send();
-<span class="ln">128</span>  };
-<span class="ln">129</span>
-<span class="ln">130</span>  return {
-<span class="ln">131</span>    name: `serve-like-object-storage${urlPath.replace(/\//g, '-')}`,
-<span class="ln">132</span>    configResolved(config) {
-<span class="ln">133</span>      mountPath = `${config.base.replace(/\/$/, '')}${urlPath}`;
-<span class="ln">134</span>    },
-<span class="ln">135</span>    configureServer(server) {
-<span class="ln">136</span>      server.middlewares.use(mountPath, handle);</code></pre><div class="more">… 続きは <a href="../web/vite.config.ts">web/vite.config.ts</a> で</div>
+<span class="ln"> 80</span>  const handle: Connect.NextHandleFunction = (request, response, next) =&gt; {
+<span class="ln"> 81</span>    // マウントした接頭辞は取り除かれた状態で渡ってくるので、残りがファイル名。
+<span class="ln"> 82</span>    const path = (request.url ?? '').split('?')[0].replace(/^\//, '');
+<span class="ln"> 83</span>    // 開発サーバーとはいえ、指定したディレクトリの外は出さない。
+<span class="ln"> 84</span>    const relative = normalize(decodeURIComponent(path));
+<span class="ln"> 85</span>    if (relative.startsWith('..')) return next();
+<span class="ln"> 86</span>    const file = join(root, relative);
+<span class="ln"> 87</span>
+<span class="ln"> 88</span>    let size: number;
+<span class="ln"> 89</span>    try {
+<span class="ln"> 90</span>      size = statSync(file).size;
+<span class="ln"> 91</span>    } catch {
+<span class="ln"> 92</span>      return next();
+<span class="ln"> 93</span>    }
+<span class="ln"> 94</span>
+<span class="ln"> 95</span>    response.setHeader('Accept-Ranges', 'bytes');
+<span class="ln"> 96</span>    // 別オリジンに置いたときにDuckDB-WASMがこれらを読めるようにする。
+<span class="ln"> 97</span>    response.setHeader('Access-Control-Allow-Origin', '*');
+<span class="ln"> 98</span>    response.setHeader(
+<span class="ln"> 99</span>      'Access-Control-Expose-Headers',
+<span class="ln">100</span>      'Content-Range, Content-Length, Accept-Ranges',
+<span class="ln">101</span>    );
+<span class="ln">102</span>    const contentType = CONTENT_TYPES[extname(file)];
+<span class="ln">103</span>    if (contentType) response.setHeader('Content-Type', contentType);
+<span class="ln">104</span>
+<span class="ln">105</span>    // "bytes=100-199" / "bytes=100-" の2形だけ扱う (複数レンジは使われない)。
+<span class="ln">106</span>    const match = /^bytes=(\d+)-(\d*)$/.exec(request.headers.range ?? '');
+<span class="ln">107</span>    const start = match ? Number(match[1]) : 0;
+<span class="ln">108</span>    const end = match &amp;&amp; match[2] !== '' ? Math.min(Number(match[2]), size - 1) : size - 1;
+<span class="ln">109</span>
+<span class="ln">110</span>    if (match &amp;&amp; (start &gt; end || start &gt;= size)) {
+<span class="ln">111</span>      response.statusCode = 416;
+<span class="ln">112</span>      response.setHeader('Content-Range', `bytes */${size}`);
+<span class="ln">113</span>      return response.end();
+<span class="ln">114</span>    }
+<span class="ln">115</span>
+<span class="ln">116</span>    if (match) {
+<span class="ln">117</span>      response.statusCode = 206;
+<span class="ln">118</span>      response.setHeader('Content-Range', `bytes ${start}-${end}/${size}`);
+<span class="ln">119</span>      response.setHeader('Content-Length', end - start + 1);
+<span class="ln">120</span>    } else {
+<span class="ln">121</span>      response.statusCode = 200;
+<span class="ln">122</span>      response.setHeader('Content-Length', size);
+<span class="ln">123</span>    }
+<span class="ln">124</span>
+<span class="ln">125</span>    // HEADは本文を返さない。ヘッダはGETと同じものを返す。
+<span class="ln">126</span>    const send = () =&gt; {
+<span class="ln">127</span>      if (request.method === 'HEAD') return response.end();
+<span class="ln">128</span>      createReadStream(file, { start, end }).pipe(response);
+<span class="ln">129</span>    };
+<span class="ln">130</span>    // **R2 の遅さを手元で再現する** (`DATA_LATENCY_MS` / `DATA_BANDWIDTH_MBPS`)。
+<span class="ln">131</span>    // 手元では往復の待ちがほぼ0なので、読み込みの回数や量が増えても気付けない。
+<span class="ln">132</span>    const bytes = request.method === 'HEAD' ? 0 : end - start + 1;
+<span class="ln">133</span>    const delay = SIMULATED_LATENCY_MS + (SIMULATED_BYTES_PER_MS &gt; 0 ? bytes / SIMULATED_BYTES_PER_MS : 0);
+<span class="ln">134</span>    if (delay &gt; 0) setTimeout(send, delay);
+<span class="ln">135</span>    else send();
+<span class="ln">136</span>  };
+<span class="ln">137</span>
+<span class="ln">138</span>  return {
+<span class="ln">139</span>    name: `serve-like-object-storage${urlPath.replace(/\//g, '-')}`,
+<span class="ln">140</span>    configResolved(config) {
+<span class="ln">141</span>      mountPath = `${config.base.replace(/\/$/, '')}${urlPath}`;
+<span class="ln">142</span>    },
+<span class="ln">143</span>    configureServer(server) {
+<span class="ln">144</span>      server.middlewares.use(mountPath, handle);</code></pre><div class="more">… 続きは <a href="../web/vite.config.ts">web/vite.config.ts</a> で</div>
 </figure>
 </section>
 <section class="card" id="stac-browser">

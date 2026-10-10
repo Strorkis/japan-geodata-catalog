@@ -596,6 +596,25 @@ Re:Earth Terrain (Terrarium) ＋ 地理院の写真 ＋ Re:Earth Buildings (3D T
   ベクタ・Gaussian Splatting・時間で変わるデータ。年内に OGC で承認の見込み)。Navara は**トレンド**。
   MapLibre ＋ Three.js は **MapLibre (いまの地図・一覧・周辺検索) をそのまま使える**。**Cesium の別ページから始める**
 
+### Cesium の 3D のページ (2026-10-10、1段目)
+
+「同じ場所を別のエンジンで開く」まで作った (`web/3d.html`・`web/src/viewer3d.ts`)。地図の右上の **3D** で開き、
+「地図に戻る」で同じ場所に戻る。
+
+- **位置は URL で渡す** (`?lon=&lat=&zoom=&pitch=&bearing=`。意味は MapLibre に合わせる。`web/src/lib/view-params.ts`)。
+  いまの地図も、この引数があればその場所から始まる。ズームは「MapLibre の画面の縦の広さが Cesium の縦の画角に
+  収まる距離」に直す。往復して位置・ズーム・傾き・向きが戻ることを E2E で確かめている
+- **Cesium ion は使わない** (登録が要る)。背景地図 (地理院のラスタタイル) と 3D Tiles (PLATEAU の公式配信・Re:Earth) は
+  **このカタログから組む**。いちばん下には Cesium に同梱の Natural Earth II を敷く (パブリックドメイン、外へ読みに行かない)。
+  OpenFreeMap はベクタのスタイルなので Cesium では描けない
+- CesiumJS 1.146 (Apache-2.0)。実行時の資産 (Workers・Assets・Widgets) は 7.7MB を `dist/cesium` に写す。
+  JS は 4.2MB (gzip 1.1MB) で、地図のページとは別に読むので、地図の起動は重くならない
+- 地形はまだ平らな楕円体。PLATEAU の 3D Tiles の高さは**楕円体高** (標高＋ジオイド高。東京で約 37m) なので、
+  地形を入れるときは標高にジオイド高を足さないと建物が浮く・沈む
+
+**次の段:** カタログの標高 (地理院・AW3D30) を地形にする (`CustomHeightmapTerrainProvider` など)。そのあと 3D Tiles 2.0
+(glTF 2.1・ベクタ・Gaussian Splatting) の試験データを探して、Cesium の対応を確かめる。
+
 ### 世界の背景地図 (2026-10-10)
 
 地理院タイルは日本とその周りだけなので、日本の外 (AW3D30 の地形など) では背景が白かった。利用者の希望は
