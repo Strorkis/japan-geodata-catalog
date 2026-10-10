@@ -268,6 +268,10 @@ const EN: &[(&str, &str)] = &[
         "A redistribution of Mapterhorn's elevation. You can choose height above sea level (elevation) or height above the WGS84 ellipsoid with the EGM2008 geoid added (ellipsoid). This app uses height above sea level, which suits MapLibre. Use the ellipsoidal version with a 3D globe (Cesium).",
     ),
     (
+        "COG (16ビット整数、m) で、EGM96 ジオイド (海面) からの高さです。-9999 は値なし (海など) で、0 m として描きます。段 0〜3 で1つのファイルが 180°・90°・10°・1° を覆い (段 0 は 900 画素、ほかは 3,600 画素四方)、各ファイルに 1/2・1/4 の縮小版があります。画面の細かさに見合う段を選んで、要る範囲だけを読みます。",
+        "COG (16-bit integers, metres) giving heights above the EGM96 geoid (sea level). -9999 means no data (the sea, for example) and is drawn as 0 m. At levels 0 to 3 one file covers 180°, 90°, 10° and 1° (900 pixels square at level 0, 3,600 at the others), and each file has 1/2 and 1/4 overviews. The app picks the level that matches the screen and reads only the part it needs.",
+    ),
+    (
         "Terrarium (高さ = R×256 + G + B/256 − 32768 m) で、海面からの高さです。同じ形で、楕円体高 (/terrarium/ellipsoid/) と Terrain-RGB (/mapbox/) の版もあります。ズーム14までです。",
         "Terrarium (height = R×256 + G + B/256 − 32768 m), height above sea level. The same tiles also exist as ellipsoidal height (/terrarium/ellipsoid/) and Terrain-RGB (/mapbox/). Up to zoom 14.",
     ),

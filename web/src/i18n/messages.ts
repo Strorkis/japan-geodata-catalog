@@ -56,6 +56,7 @@ const ja = {
   detailMedium: '標準',
   detailHigh: '多め',
   exaggeration: '起伏の強調',
+  hillshade: '陰影を描く',
   lessThan: (value: string) => `${value} 未満`,
   moreThan: (value: string) => `${value} 超`,
 
@@ -362,6 +363,7 @@ const en: Messages = {
   detailMedium: 'Standard',
   detailHigh: 'Rich',
   exaggeration: 'Relief exaggeration',
+  hillshade: 'Draw hillshade',
   lessThan: (value) => `< ${value}`,
   moreThan: (value) => `> ${value}`,
 

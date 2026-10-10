@@ -1214,15 +1214,39 @@ test('3D Tiles は描けない理由を出し、ⓘ からビューアへ案内�
 });
 
 /**
- * **配っていない元データ (AW3D30) も、カタログにあることは見せる。** 足せないが、
- * ⓘ から公開元の STAC (COG) と使う条件 (商用は事前に連絡) が分かる。
+ * **配っていない元データ (NASADEM) も、カタログにあることは見せる。** 足せないが、
+ * ⓘ から中身と公開元が分かる。
  */
-test('参照だけの元データは足せず、ⓘ から公開元の STAC と使う条件が分かる', async ({ page }) => {
-  await openCatalogFor(page, 'jaxa-aw3d30');
-  const row = page.locator('[data-catalog-layer="jaxa-aw3d30"]');
+test('参照だけの元データは足せず、ⓘ から中身が分かる', async ({ page }) => {
+  await openCatalogFor(page, 'nasa-nasadem');
+  const row = page.locator('[data-catalog-layer="nasa-nasadem"]');
   await expect(row.locator('.catalog-add')).toBeDisabled();
   await expect(row).toContainText('配っていません');
   await row.locator('.layer-detail-button').click();
+  const card = page.locator('.collection-card[data-collection="nasa-nasadem"]');
+  await expect(card).toContainText('DSM');
+});
+
+/**
+ * **AW3D30 (JAXA) は地形に選べる。** COG を直接読んで地形のタイルにする (R2 には置かない)。
+ * ⓘ から公開元の STAC (COG) と使う条件 (商用は事前に連絡) が分かる。
+ */
+test('AW3D30 は地形に選べ、ⓘ から公開元の STAC と使う条件が分かる', async ({ page }) => {
+  const select = page.locator('#terrain-source');
+  const label = (await select.locator('option').allTextContents()).find((o) => o.includes('AW3D30'));
+  expect(label, 'AW3D30 が地形の選択肢に無い').toBeDefined();
+  await select.selectOption({ label: label! });
+  // 地形のソースは COG を読む独自のプロトコル (読むときに Terrarium にする)。
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const source = (window as unknown as TestWindow).__map!.getSource('terrain') as unknown as { tiles?: string[] };
+        return source?.tiles?.[0] ?? '';
+      }),
+    )
+    .toMatch(/^cogdem:\/\/jaxa-aw3d30\//);
+
+  await page.locator('#terrain-detail').click();
   const card = page.locator('.collection-card[data-collection="jaxa-aw3d30"]');
   await expect(card).toContainText('DSM');
   await expect(card.locator('.terms-badge', { hasText: '商用は事前に連絡' })).toBeVisible();
@@ -3834,7 +3858,7 @@ test('足せないものは別のタブに分け、目次から出所へ飛べ�
 
   // 見るだけのタブは、どれも足せない (3D Tiles も元データもここ)。
   await tab('view').click();
-  for (const id of ['reearth-buildings', 'jaxa-aw3d30', 'gsi-dem-source']) {
+  for (const id of ['reearth-buildings', 'nasa-nasadem', 'gsi-dem-source']) {
     await expect(dialog.locator(`[data-catalog-layer="${id}"] .catalog-add`)).toBeDisabled();
   }
   expect(await adds.count()).toBe(await adds.filter({ hasText: '描けません' }).count());

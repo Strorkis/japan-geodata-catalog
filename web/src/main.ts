@@ -522,7 +522,7 @@ async function main() {
       case 'terrain':
         // 地形は**1つだけ**選ぶ (MapLibre は地形を1つしか持てない)。行ではなく、
         // 地図タイルの区分の「地形」の欄で、出すかとどの標高かを選ぶ。
-        if (collection.tileLink) terrainCollections.push(collection);
+        if (collection.tileLink || collection.dem?.grid) terrainCollections.push(collection);
         break;
       case '3d_tiles':
         // **この地図では描けない** (MapLibre は 3D Tiles を描かない)。それでも、カタログに

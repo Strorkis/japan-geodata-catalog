@@ -1053,10 +1053,25 @@ mod tests {
         assert!(find(&documents, "gsi/gsi-dem-source.json")["duck:tile_size"].is_null());
         assert_eq!(mapterhorn["duck:tile_size"], 512);
 
-        // AW3D30 は参照だけ。公開元の STAC Collection を JSON の `alternate` で指す
+        // AW3D30 は地形 (COG を UI が読む)。公開元の STAC Collection を JSON の `alternate` で指す
         // (ビューアの `alternate` は HTML)。商用は「事前に連絡」で、「可」と言い切らない。
         let aw3d30 = find(&documents, "jaxa/jaxa-aw3d30.json");
-        assert_eq!(aw3d30["duck:kind"], "reference");
+        assert_eq!(aw3d30["duck:kind"], "terrain");
+        // COG の並べ方を `duck:dem` に持つ (UI はこれで段とファイルを選ぶ)。
+        assert_eq!(aw3d30["duck:dem"]["encoding"], "cog");
+        assert_eq!(
+            aw3d30["duck:dem"]["grid"]["levels"]
+                .as_array()
+                .unwrap()
+                .len(),
+            4
+        );
+        assert!(
+            aw3d30["duck:dem"]["grid"]["template"]
+                .as_str()
+                .unwrap()
+                .contains("{tile}")
+        );
         let stac = aw3d30["links"]
             .as_array()
             .unwrap()
@@ -1071,7 +1086,7 @@ mod tests {
                 .ends_with("AW3D30.v4.1_global/collection.json")
         );
         assert_eq!(aw3d30["duck:terms"]["commercial"], "allowed_with_notice");
-        assert!(aw3d30["duck:tile_size"].is_null());
+        assert_eq!(aw3d30["duck:tile_size"], 256);
         // NASA の2つも参照だけ。サブカタログは出所ごと。
         assert_eq!(
             find(&documents, "nasa/nasa-aster-gdem.json")["license"],

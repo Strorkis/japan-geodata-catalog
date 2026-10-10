@@ -308,6 +308,33 @@ pub struct DemSpec {
     pub vertical: &'static str,
     /// 人向けの説明 (計算式・値なしの扱い・解像度)。
     pub description: &'static str,
+    /// `cog` のときの並べ方。UI はこれを読んで、表示の細かさに見合うファイルを選んで読む。
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub grid: Option<CogGridSpec>,
+}
+
+/// COG の並べ方 (`duck:dem` の `grid`)。**段ごとに1つのファイルが覆う広さが違い、ファイルの中にも縮小版がある。**
+///
+/// いまは JAXA Earth API の並べ方 (経緯度の格子。経度は -180°、緯度は -90° から段の広さごと)。
+/// ファイル名の `{lon_band}` は `E139.00-E140.00`、`{tile}` は `E139.00-N35.00-E140.00-N36.00` の形。
+#[derive(Debug, serde::Serialize)]
+pub struct CogGridSpec {
+    pub template: &'static str,
+    pub levels: &'static [CogLevel],
+    /// ファイルの中の縮小版の数 (1/2・1/4 …)。
+    pub overviews: u8,
+    /// 値の無い画素の値。
+    pub nodata: i32,
+}
+
+/// COG の段1つ。
+#[derive(Debug, serde::Serialize)]
+pub struct CogLevel {
+    pub level: u8,
+    /// 1つのファイルが覆う広さ (度。経度・緯度とも)。
+    pub tile_deg: f64,
+    /// ファイルの1辺の画素数。
+    pub pixels: u32,
 }
 
 /// 外部のラスタタイル1つ。STAC の Collection 1つになる (Item もアセットも無い)。
@@ -531,6 +558,7 @@ pub const EXTERNAL_RASTERS: &[ExternalRaster] = &[
             vertical: "orthometric",
             description: "Terrarium (高さ = R×256 + G + B/256 − 32768 m) で、海面からの高さです。\
                           ズーム16まであります (TileJSON には最大ズームが書かれていません)。",
+            grid: None,
         }),
         // 日本の部分の元データ。
         derived_from: &["gsi-dem-source"],
@@ -561,6 +589,7 @@ pub const EXTERNAL_RASTERS: &[ExternalRaster] = &[
             vertical: "orthometric",
             description: "Terrarium (高さ = R×256 + G + B/256 − 32768 m) で、海面からの高さです。\
                           同じ形で、楕円体高 (/terrarium/ellipsoid/) と Terrain-RGB (/mapbox/) の版もあります。ズーム14までです。",
+            grid: None,
         }),
         derived_from: &["mapterhorn-terrain"],
         viewer: Some("https://terrain.reearth.land/viewer"),
@@ -590,6 +619,7 @@ pub const EXTERNAL_RASTERS: &[ExternalRaster] = &[
             description: "x = R×2¹⁶ + G×2⁸ + B として、x < 2²³ なら 高さ = x × 0.01 m、x = 2²³ (128,0,0) は値なし (海など)、\
                           x > 2²³ なら 高さ = (x − 2²⁴) × 0.01 m (負の値) です。線形の部分は Terrain-RGB と同じ形ですが、\
                           値なしと負の値はそのままでは読めません。z15 は dem5a_png (5m)、z17 は dem1a_png (1m) です。",
+            grid: None,
         }),
         derived_from: &["gsi-dem-source"],
         viewer: None,
@@ -683,7 +713,9 @@ pub const EXTERNAL_RASTERS: &[ExternalRaster] = &[
         viewer: None,
         default: false,
     },
-    // ---- 衛星の標高 (参照だけ。この地図ではまだ描かない) ----
+    // ---- 衛星の標高 ----
+    // AW3D30 は地形として描ける (2026-10-10)。JAXA の COG を UI が直接読み、Terrarium のタイルにする
+    // (web/src/lib/cog-dem.ts)。R2 には置かない。
     ExternalRaster {
         id: "jaxa-aw3d30",
         dir: "jaxa",
@@ -695,15 +727,49 @@ pub const EXTERNAL_RASTERS: &[ExternalRaster] = &[
                       (Range・CORS に対応)。このカタログからは配っていません。",
         attribution: JAXA_AW3D30,
         via: "https://www.eorc.jaxa.jp/ALOS/jp/dataset/aw3d30/aw3d30_j.htm",
-        role: RasterRole::Reference,
+        role: RasterRole::Terrain,
         link: TileLink::Stac {
             url: "https://s3.ap-northeast-1.wasabisys.com/je-pds/cog/v1/JAXA.EORC_ALOS.PRISM_AW3D30.v4.1_global/collection.json",
         },
+        // 段3 (1秒 ≒ 30m) がズーム12の地図の画素 (約38m) に見合う。それより寄ると拡大して描く。
         minzoom: 0,
-        maxzoom: 0,
-        tile_size: 0,
+        maxzoom: 12,
+        tile_size: 256,
         bounds: [-180.0, -90.0, 180.0, 90.0],
-        dem: None,
+        dem: Some(DemSpec {
+            encoding: "cog",
+            vertical: "orthometric",
+            description: "COG (16ビット整数、m) で、EGM96 ジオイド (海面) からの高さです。-9999 は値なし (海など) で、0 m として描きます。\
+                          段 0〜3 で1つのファイルが 180°・90°・10°・1° を覆い (段 0 は 900 画素、ほかは 3,600 画素四方)、各ファイルに 1/2・1/4 の縮小版があります。\
+                          画面の細かさに見合う段を選んで、要る範囲だけを読みます。",
+            grid: Some(CogGridSpec {
+                template: "https://s3.ap-northeast-1.wasabisys.com/je-pds/cog/v1/JAXA.EORC_ALOS.PRISM_AW3D30.v4.1_global/2024-04/{level}/{lon_band}/{tile}-DSM.tiff",
+                levels: &[
+                    CogLevel {
+                        level: 0,
+                        tile_deg: 180.0,
+                        pixels: 900,
+                    },
+                    CogLevel {
+                        level: 1,
+                        tile_deg: 90.0,
+                        pixels: 3600,
+                    },
+                    CogLevel {
+                        level: 2,
+                        tile_deg: 10.0,
+                        pixels: 3600,
+                    },
+                    CogLevel {
+                        level: 3,
+                        tile_deg: 1.0,
+                        pixels: 3600,
+                    },
+                ],
+                overviews: 2,
+                nodata: -9999,
+            }),
+        }),
         derived_from: &[],
         viewer: None,
         default: false,

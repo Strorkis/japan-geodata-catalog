@@ -20,6 +20,7 @@
  * **レイヤーの一覧はこの階層で組む。** サブカタログが見出し、Collectionが行。
  * 画面を読むことがそのままカタログを歩くことになるようにしてある。
  */
+import type { CogGrid } from './cog-dem';
 export interface StacLink {
   rel: string;
   href: string;
@@ -90,12 +91,14 @@ export interface VectorTheme {
  * 使う側が読み方を決められるようにカタログに書く。
  */
 export interface DemInfo {
-  /** `terrarium` / `mapbox` (Terrain-RGB) / `gsi` (地理院の独自形式)。 */
+  /** `terrarium` / `mapbox` (Terrain-RGB) / `gsi` (地理院の独自形式) / `cog` (COG。読むときに Terrarium にする)。 */
   encoding: string;
   /** 高さの基準。`orthometric` (海面から) / `ellipsoid` (WGS84 楕円体から)。 */
   vertical: string;
   /** 人向けの説明 (計算式・値なしの扱い)。 */
   description?: string;
+  /** `cog` のときの並べ方 (段ごとのファイルの広さ・画素数・URL の組み立て方)。 */
+  grid?: CogGrid;
 }
 
 /** STAC のアセット。外部のタイルセットは Collection が直接持つ。 */

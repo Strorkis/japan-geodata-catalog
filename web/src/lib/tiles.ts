@@ -24,6 +24,7 @@ import {
 } from 'maplibre-gl';
 import { Protocol as PmtilesProtocol } from 'pmtiles';
 import type { Collection, DatasetKind, VectorLayerInfo } from './stac';
+import { demTile, type CogGrid } from './cog-dem';
 import { m } from '../i18n';
 
 /** 背景地図の地図上の ID (ソースと層で同じ)。 */
@@ -269,6 +270,19 @@ export function defaultOf(collections: Collection[], kind: DatasetKind): Collect
  * 実際は z16 までしか無い (止めないと建物を見るズームで404を撃ち続ける)。
  */
 export function terrainSource(collection: Collection): RasterDEMSourceSpecification {
+  // **COG の標高** (AW3D30)。読むときに Terrarium のタイルにする ([`registerCogDem`])。
+  const grid = collection.dem?.grid;
+  if (collection.demEncoding === 'cog' && grid) {
+    registerCogDem(collection.id, grid);
+    return {
+      type: 'raster-dem',
+      tiles: [`${COG_DEM_PROTOCOL}://${collection.id}/{z}/{x}/{y}`],
+      tileSize: COG_DEM_TILE_SIZE,
+      minzoom: collection.zoom?.[0] ?? 0,
+      maxzoom: collection.zoom?.[1] ?? 12,
+      encoding: 'terrarium',
+    };
+  }
   const link = collection.tileLink!;
   if (link.rel === 'tilejson') {
     return { type: 'raster-dem', url: link.href, maxzoom: collection.zoom?.[1] ?? 16 };
@@ -284,6 +298,36 @@ export function terrainSource(collection: Collection): RasterDEMSourceSpecificat
     maxzoom: collection.zoom?.[1] ?? 14,
     encoding: collection.demEncoding === 'mapbox' ? 'mapbox' : 'terrarium',
   };
+}
+
+/** COG の標高を Terrarium のタイルにして渡す、MapLibre の取得の仕組み (`cogdem://<Collection ID>/z/x/y`)。 */
+const COG_DEM_PROTOCOL = 'cogdem';
+const COG_DEM_TILE_SIZE = 256;
+/** Collection ID → COG の並べ方。プロトコルは1つで、URL の頭で Collection を見分ける。 */
+const cogGrids = new Map<string, CogGrid>();
+
+function registerCogDem(id: string, grid: CogGrid) {
+  const first = cogGrids.size === 0;
+  cogGrids.set(id, grid);
+  if (!first) return;
+  addProtocol(COG_DEM_PROTOCOL, async (params) => {
+    const [id, z, x, y] = params.url.slice(`${COG_DEM_PROTOCOL}://`.length).split('/');
+    const grid = cogGrids.get(id);
+    if (!grid) throw new Error(`COG の並べ方がありません: ${id}`);
+    const heights = await demTile(grid, Number(z), Number(x), Number(y), COG_DEM_TILE_SIZE);
+    const canvas = new OffscreenCanvas(COG_DEM_TILE_SIZE, COG_DEM_TILE_SIZE);
+    const ctx = canvas.getContext('2d')!;
+    const image = ctx.createImageData(COG_DEM_TILE_SIZE, COG_DEM_TILE_SIZE);
+    for (let i = 0; i < heights.length; i++) {
+      const [r, g, b] = terrariumPixel(heights[i]);
+      image.data[i * 4] = r;
+      image.data[i * 4 + 1] = g;
+      image.data[i * 4 + 2] = b;
+      image.data[i * 4 + 3] = 255;
+    }
+    ctx.putImageData(image, 0, 0);
+    return { data: await (await canvas.convertToBlob({ type: 'image/png' })).arrayBuffer() };
+  });
 }
 
 /** 地理院の標高タイルを Terrarium に詰め直して渡す、MapLibre の取得の仕組み。 */

@@ -8,8 +8,12 @@
 import type { Map as MapLibreMap } from 'maplibre-gl';
 import type { Collection } from '../lib/stac';
 import { TERRAIN_SOURCE, defaultOf, terrainSource } from '../lib/tiles';
-import { sliderSettings } from './layer-list';
+import { LAYER_ANCHORS, sliderSettings } from './layer-list';
 import { m } from '../i18n';
+
+/** 陰影のソースと層 (地形の標高から描く)。 */
+const HILLSHADE_SOURCE = 'terrain-hillshade';
+const HILLSHADE_LAYER = 'terrain-hillshade';
 
 export interface TerrainRowOptions {
   map: MapLibreMap;
@@ -55,6 +59,7 @@ export function createTerrainRow({ map, collections, openDetails }: TerrainRowOp
     if (map.getSource(TERRAIN_SOURCE)) map.removeSource(TERRAIN_SOURCE);
     map.addSource(TERRAIN_SOURCE, terrainSource(next));
     switching = false;
+    showHillshade();
     apply();
   });
   // 起伏の強調は ⚙ で行の下に開く (地図を見ながら動かすもの)。
@@ -64,6 +69,27 @@ export function createTerrainRow({ map, collections, openDetails }: TerrainRowOp
       if (map.getTerrain()) apply();
     }),
   );
+  // **陰影** (日本の外は背景地図が無く、地形だけでは見えない)。地形とは別のソースから描く
+  // (同じソースを共有すると、地形と陰影で細かさの扱いがぶつかることがある)。地図タイルの目印の直下
+  // (背景地図より上、データより下) に置く。
+  const hillshadeLabel = document.createElement('label');
+  hillshadeLabel.className = 'terrain-hillshade';
+  const hillshadeToggle = document.createElement('input');
+  hillshadeToggle.type = 'checkbox';
+  hillshadeToggle.id = 'terrain-hillshade';
+  hillshadeLabel.append(hillshadeToggle, document.createTextNode(m.hillshade));
+  slotEl.append(hillshadeLabel);
+  const showHillshade = () => {
+    if (map.getLayer(HILLSHADE_LAYER)) map.removeLayer(HILLSHADE_LAYER);
+    if (map.getSource(HILLSHADE_SOURCE)) map.removeSource(HILLSHADE_SOURCE);
+    if (!hillshadeToggle.checked || !choice) return;
+    map.addSource(HILLSHADE_SOURCE, terrainSource(choice));
+    map.addLayer(
+      { id: HILLSHADE_LAYER, type: 'hillshade', source: HILLSHADE_SOURCE, paint: { 'hillshade-exaggeration': 0.5 } },
+      map.getLayer(LAYER_ANCHORS.tile) ? LAYER_ANCHORS.tile : undefined,
+    );
+  };
+  hillshadeToggle.addEventListener('change', showHillshade);
   settingsButton.addEventListener('click', () => {
     slotEl.hidden = !slotEl.hidden;
     settingsButton.setAttribute('aria-expanded', String(!slotEl.hidden));
