@@ -264,6 +264,10 @@ export interface StacItem {
     'table:row_count'?: number;
     /** 原典にあるLOD ("1,2,3")。**配信しているものより細かいものが原典にある**ときだけ付く。 */
     'duck:source_lod'?: string;
+    /** 人向けの名前 (PLATEAU なら「港区 (東京都)」)。無ければ ID を出す。 */
+    title?: string;
+    /** いつのデータか (PLATEAU なら「2025年度」)。 */
+    'duck:vintage'?: string;
   };
   assets: { data: { href: string } };
 }

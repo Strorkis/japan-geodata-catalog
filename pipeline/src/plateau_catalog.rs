@@ -40,6 +40,18 @@ pub struct City {
     /// `latest_datasets` から組み立てるので、JSONから直接は読まない。
     #[serde(skip)]
     lods: BTreeMap<String, Vec<u8>>,
+    /// **いつのデータか** (年度)。`latest_citygml` の `year` は `"latest"` なので、年度ごとの一覧
+    /// (`citygml`) の最大の年度を入れる (`latest` の URL はその年度の zip へ飛ぶ)。
+    #[serde(skip)]
+    pub year: Option<u16>,
+    /// その年度の 3D都市モデル標準製品仕様の版 (`"5.0"` など)。
+    #[serde(skip)]
+    pub spec: Option<String>,
+}
+
+/// 年度を配信物に書く形にする (`duck:vintage`)。
+pub fn vintage_label(year: u16) -> String {
+    format!("{year}年度")
 }
 
 impl City {
@@ -76,12 +88,22 @@ struct Dataset {
     lod: Option<String>,
 }
 
+/// 年度ごとの CityGML (カタログの `citygml`)。年度と仕様の版だけを読む。
+#[derive(Debug, Deserialize)]
+struct YearlyCityGml {
+    city_code: String,
+    year: Option<u16>,
+    spec: Option<String>,
+}
+
 #[derive(Debug, Deserialize)]
 struct Catalog {
     #[serde(default)]
     latest_citygml: Vec<City>,
     #[serde(default)]
     latest_datasets: Vec<Dataset>,
+    #[serde(default)]
+    citygml: Vec<YearlyCityGml>,
 }
 
 /// カタログのJSONから都市の一覧を取り出す。
@@ -113,6 +135,18 @@ pub fn parse_catalog(json: &str) -> Result<Vec<City>> {
             .insert(lod);
     }
 
+    // 都市コード → いちばん新しい年度の (年度, 仕様の版)。
+    let mut newest: HashMap<&str, (u16, Option<&str>)> = HashMap::new();
+    for yearly in &catalog.citygml {
+        let Some(year) = yearly.year else { continue };
+        let entry = newest
+            .entry(yearly.city_code.as_str())
+            .or_insert((year, None));
+        if year >= entry.0 {
+            *entry = (year, yearly.spec.as_deref());
+        }
+    }
+
     let mut cities = catalog.latest_citygml;
     for city in &mut cities {
         if let Some(types) = by_city.get(city.city_code.as_str()) {
@@ -120,6 +154,10 @@ pub fn parse_catalog(json: &str) -> Result<Vec<City>> {
                 .iter()
                 .map(|(ty, lods)| (ty.clone(), lods.iter().copied().collect()))
                 .collect();
+        }
+        if let Some((year, spec)) = newest.get(city.city_code.as_str()) {
+            city.year = Some(*year);
+            city.spec = spec.map(str::to_string);
         }
     }
     Ok(cities)
@@ -178,8 +216,26 @@ mod tests {
         { "city_code": "01100", "city": "札幌市", "pref": "北海道",
           "url": "https://api.plateauview.mlit.go.jp/datacatalog/citygml/01100-latest/citygml.zip",
           "file_size": 2718857700, "feature_types": ["fld"] }
+      ],
+      "citygml": [
+        { "city_code": "13103", "year": 2023, "spec": "3.4" },
+        { "city_code": "13103", "year": 2025, "spec": "5.0" },
+        { "city_code": "01100", "year": 2020, "spec": null }
       ]
     }"#;
+
+    /// **年度は年度ごとの一覧のいちばん新しいもの。** `latest_citygml` の `year` は `"latest"` で使えない。
+    #[test]
+    fn reads_the_newest_year_of_each_city() {
+        let cities = parse_catalog(SAMPLE).unwrap();
+        let minato = find_city(&cities, "13103").unwrap();
+        assert_eq!(minato.year, Some(2025));
+        assert_eq!(minato.spec.as_deref(), Some("5.0"));
+        let sapporo = find_city(&cities, "01100").unwrap();
+        assert_eq!(sapporo.year, Some(2020));
+        assert_eq!(sapporo.spec, None);
+        assert_eq!(vintage_label(2025), "2025年度");
+    }
 
     #[test]
     fn reads_cities_from_the_catalog() {

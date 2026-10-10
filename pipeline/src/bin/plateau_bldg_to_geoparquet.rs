@@ -143,7 +143,7 @@ fn from_local(input: PathBuf, output: PathBuf) -> Result<()> {
     let rows = plateau::parse_zip(&input)?;
     // 手元のzipからだと配布元のURLも、原典にどのLODがあるかも分からない。
     // **推測で埋めない** (同じファイル名でも出所が違いうる)。
-    finish(rows, output, None, None)
+    finish(rows, output, None, None, None)
 }
 
 fn from_city(city_code: &str, output: PathBuf) -> Result<()> {
@@ -183,7 +183,15 @@ fn convert_city(city: &plateau_catalog::City, output: &Path) -> Result<()> {
     // 併せて、**原典にどのLODがあるか**も残す。ここが読むのはLOD0だけなので、
     // その差を画面で示せるようにする。
     let lods = plateau_catalog::format_lods(city.lods("bldg"));
-    finish(rows, output.to_path_buf(), Some(&city.url), lods.as_deref())
+    // **いつのデータか** (年度) も残す。`latest` の URL が飛ぶ先の年度 (カタログの年度ごとの一覧の最新)。
+    let vintage = city.year.map(plateau_catalog::vintage_label);
+    finish(
+        rows,
+        output.to_path_buf(),
+        Some(&city.url),
+        lods.as_deref(),
+        vintage.as_deref(),
+    )
 }
 
 fn finish(
@@ -191,13 +199,14 @@ fn finish(
     output: PathBuf,
     via: Option<&str>,
     source_lod: Option<&str>,
+    vintage: Option<&str>,
 ) -> Result<()> {
     println!("{} 棟を読み込みました", rows.len());
     if let Some(lods) = source_lod {
         println!("原典のLOD: {lods} (このパイプラインが読むのはLOD0のみ)");
     }
     plateau::to_wgs84(&mut rows)?;
-    plateau::write_geoparquet(rows, &output, via, source_lod)?;
+    plateau::write_geoparquet(rows, &output, via, source_lod, vintage)?;
 
     // **続けて空間パックまで済ませる。** 別のコマンドに分けると、
     // パックしていないファイルが全都市ぶんディスクに積み上がる。

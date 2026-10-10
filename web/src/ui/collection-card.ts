@@ -159,9 +159,13 @@ export function createCollectionCards(options: CollectionCardOptions): Collectio
       const li = document.createElement('li');
       const ours = document.createElement('a');
       ours.href = dataUrl(itemFile(item));
-      ours.textContent = item.feature.id;
+      // **何の、いつのデータかを言う。** ID (`plateau_bldg_13103`) だけでは分からない。
+      ours.textContent = item.feature.properties.title ?? item.feature.id;
+      ours.title = item.feature.id;
       ours.download = '';
       li.append(ours);
+      const vintage = item.feature.properties['duck:vintage'];
+      if (vintage) li.append(` (${vintage})`);
       const via = item.feature.links?.find((link) => link.rel === 'via')?.href ?? collection.via;
       if (via) li.append(' · ', externalLink(via, m.distributor));
       fileList.append(li);

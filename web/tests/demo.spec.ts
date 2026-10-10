@@ -3616,6 +3616,10 @@ test('この範囲を GeoParquet で保存でき、出典と規約がファイ�
   // ファイルごとのリンク (配信しているもの) と配布元。
   await expect(section.locator('.download-files li').first()).toBeVisible();
   await expect(section.locator('.download-files a', { hasText: '配布元' }).first()).toBeVisible();
+  // **何の都市の、いつのデータかが読める** (ID ではなく「港区 (東京都) (2025年度)」の形)。
+  // 古いカタログ (Item に名前が無い) なら ID のまま。
+  const first = (await section.locator('.download-files li').first().textContent()) ?? '';
+  if (!first.includes('plateau_bldg_')) expect(first).toMatch(/\(.+\) \(\d{4}年度\)/);
 });
 
 /**

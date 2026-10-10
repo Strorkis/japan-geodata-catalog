@@ -131,6 +131,33 @@ fn relative_to(dir: &str, file: &str) -> String {
     }
 }
 
+/// PLATEAU の都市の一覧 (配信カタログのスナップショット。`snapshot_plateau_cities` が書く)。
+#[derive(serde::Deserialize)]
+struct PlateauCity {
+    city_code: String,
+    city: String,
+    pref: String,
+    year: Option<u16>,
+}
+
+/// PLATEAU の建物の Item の名前 (`港区 (東京都)`) と年度 (`2025年度`)。PLATEAU の建物でなければ `None`。
+fn plateau_city_label(entry: &DatasetEntry) -> Option<(String, Option<String>)> {
+    static CITIES: std::sync::OnceLock<Vec<PlateauCity>> = std::sync::OnceLock::new();
+    if entry.kind != DatasetKind::PlateauBuildings {
+        return None;
+    }
+    let code = entry.id.strip_prefix("plateau_bldg_")?;
+    let cities = CITIES.get_or_init(|| {
+        serde_json::from_str(include_str!("../external/plateau-cities.json"))
+            .expect("external/plateau-cities.json が読めない (snapshot_plateau_cities で作り直す)")
+    });
+    let city = cities.iter().find(|c| c.city_code == code)?;
+    Some((
+        format!("{} ({})", city.city, city.pref),
+        city.year.map(crate::plateau_catalog::vintage_label),
+    ))
+}
+
 /// 建物のタイルのアセットの題名。
 const TILES_TITLE: &str = "引いた表示のための建物のベクタタイル (重要な段だけ)";
 
@@ -308,6 +335,16 @@ fn item(entry: &DatasetEntry, dir: &str) -> Value {
     // **都市ごとに違う**のでItemに出す (`via` と同じ判断)。
     if let Some(source_lod) = &entry.source_lod {
         properties["duck:source_lod"] = json!(source_lod);
+    }
+    // **何の都市の、いつのデータか。** ID (`plateau_bldg_13103`) だけでは分からない。
+    // 年度はファイルの `duck:vintage` を優先し、無ければ配信カタログのスナップショットから。
+    if let Some((title, vintage)) = plateau_city_label(entry) {
+        properties["title"] = json!(title);
+        if let Some(vintage) = entry.vintage.clone().or(vintage) {
+            properties["duck:vintage"] = json!(vintage);
+        }
+    } else if let Some(vintage) = &entry.vintage {
+        properties["duck:vintage"] = json!(vintage);
     }
 
     // **Item は stac-geoparquet (配信の起点に置く1ファイル) に入るので、リンクとアセットは
@@ -1654,6 +1691,44 @@ mod tests {
         assert_eq!(asset["pmtiles:layers"], json!(["buildings"]));
         let links = collection["links"].as_array().unwrap();
         assert!(links.iter().any(|link| link["rel"] == "pmtiles"));
+    }
+
+    /// **PLATEAU の Item は都市の名前と年度を名乗る** (スナップショットから)。ファイルに年度があればそちら。
+    /// stac-geoparquet にも書けること (知らない properties は書き出しで止まる)。
+    #[test]
+    fn plateau_items_have_city_names_and_years() {
+        let mut minato = entry(
+            "plateau_bldg_13103",
+            "plateau/plateau_bldg_13103.parquet",
+            None,
+        );
+        minato.kind = DatasetKind::PlateauBuildings;
+        minato.collection = "plateau-buildings";
+        let mut stated = entry(
+            "plateau_bldg_22222",
+            "plateau/plateau_bldg_22222.parquet",
+            None,
+        );
+        stated.kind = DatasetKind::PlateauBuildings;
+        stated.collection = "plateau-buildings";
+        stated.vintage = Some("2099年度".to_string());
+        let plain = entry("a", "a.parquet", None);
+
+        let datasets = [minato, stated, plain];
+        let items = super::build_japanese(&datasets, &[], &[], &[])
+            .unwrap()
+            .items;
+        let props = |id: &str| items.iter().find(|i| i["id"] == id).unwrap()["properties"].clone();
+        assert_eq!(props("plateau_bldg_13103")["title"], "港区 (東京都)");
+        assert_eq!(props("plateau_bldg_13103")["duck:vintage"], "2025年度");
+        assert_eq!(props("plateau_bldg_22222")["title"], "伊豆市 (静岡県)");
+        assert_eq!(props("plateau_bldg_22222")["duck:vintage"], "2099年度");
+        assert!(props("a").get("title").is_none());
+
+        let path =
+            std::env::temp_dir().join(format!("stac-plateau-{}.parquet", std::process::id()));
+        crate::stac_geoparquet::write(&path, &items).unwrap();
+        std::fs::remove_file(&path).ok();
     }
 
     #[test]

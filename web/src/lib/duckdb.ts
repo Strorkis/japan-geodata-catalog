@@ -232,7 +232,7 @@ export async function initDuckDb(collections: Collection[]): Promise<Database> {
     }
     const result = await conn.query(`
       SELECT id, collection, bbox, links,
-             "table:row_count" AS row_count, "duck:source_lod" AS source_lod,
+             "table:row_count" AS row_count, "duck:source_lod" AS source_lod, title, "duck:vintage" AS vintage,
              assets.data.href AS href
       FROM read_parquet('${file}', file_row_number = true) ${where};
     `);
@@ -252,6 +252,8 @@ export async function initDuckDb(collections: Collection[]): Promise<Database> {
           // Int64 は BigInt で返る。
           'table:row_count': row.row_count === null ? undefined : Number(row.row_count),
           'duck:source_lod': row.source_lod ?? undefined,
+          title: row.title ?? undefined,
+          'duck:vintage': row.vintage ?? undefined,
         },
         assets: { data: { href: row.href } },
       };

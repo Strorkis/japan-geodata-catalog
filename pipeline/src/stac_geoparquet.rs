@@ -74,6 +74,8 @@ fn json_fields() -> Vec<Field> {
         Field::new("table:row_count", DataType::Int64, true),
         Field::new("duck:geometry_types", utf8_list(), true),
         Field::new("duck:source_lod", DataType::Utf8, true),
+        Field::new("title", DataType::Utf8, true),
+        Field::new("duck:vintage", DataType::Utf8, true),
         Field::new(
             "assets",
             DataType::Struct(Fields::from(vec![Field::new(
@@ -101,6 +103,8 @@ fn flatten(item: &Value) -> Result<Value> {
         "table:row_count",
         "duck:geometry_types",
         "duck:source_lod",
+        "title",
+        "duck:vintage",
     ];
     if let Some(unknown) = properties.keys().find(|key| !known.contains(&key.as_str())) {
         // **黙って落とさない。** 新しい項目を Item に足したら、ここの列にも足すこと。

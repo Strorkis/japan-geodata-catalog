@@ -664,11 +664,14 @@ fn transform_ring(ring: LineString<f64>, proj: &proj::Proj) -> Result<LineString
 /// `source_lod` は**原典にあるLOD** (`"1,2,3"`)。ここが読むのはLOD0だけなので、
 /// 「表示はLOD0、原典はLOD3まで」と示すために持ち回る。
 /// 配信カタログから取るので、手元のzipから変換したときは `None`。
+///
+/// `vintage` は**いつのデータか** (`"2025年度"`)。これも配信カタログから取る。
 pub fn write_geoparquet(
     rows: Vec<Row>,
     output: &Path,
     via: Option<&str>,
     source_lod: Option<&str>,
+    vintage: Option<&str>,
 ) -> Result<()> {
     let mut building_id = Vec::with_capacity(rows.len());
     let mut name = Vec::with_capacity(rows.len());
@@ -712,9 +715,9 @@ pub fn write_geoparquet(
         file_bbox,
         geoparquet::Provenance {
             via,
-            // PLATEAUは都市ごとに更新年度が違うが、zipからは読めていない。
-            // 分かるようになったらここに入れる (**推測で埋めない**)。
-            vintage: None,
+            // **いつのデータか** (年度)。配信カタログから取る (`plateau_catalog::City::year`)。
+            // 手元の zip から変換したときは分からないので None (**推測で埋めない**)。
+            vintage,
             source_lod,
             // 整備範囲は別ファイル (`build_coverage`) が名乗る。
             covers: None,
