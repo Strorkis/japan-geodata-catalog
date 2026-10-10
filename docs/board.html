@@ -313,7 +313,7 @@
   <body>
     <header>
       <h1>duck-geocoder ダッシュボード</h1>
-      <span class="meta">更新 2026-10-10 14:35 (日本時間)</span>
+      <span class="meta">更新 2026-10-10 15:25 (日本時間)</span>
       <span class="meta">
         <a href="https://strorkis.github.io/duck-geocoder/">公開サイト</a> ·
         <a href="roadmap.md">方針 (roadmap.md)</a> · STAC 配布形式の実験
@@ -332,8 +332,8 @@
       </div>
       <div class="card kpi">
         <div class="label">公開待ちのコミット</div>
-        <div class="value">1 <small>件</small></div>
-        <span class="status you">公開済み (10-10 14:03)。ボードの更新だけ残る</span>
+        <div class="value">5 <small>件</small></div>
+        <span class="status you">カタログを上げて push 待ち (Item の名前・Overture の出典)</span>
       </div>
       <div class="card kpi">
         <div class="label">建物</div>
@@ -395,6 +395,10 @@
           <span class="sub">10-10 に消した (概観 48個・古い <code>*-items.json</code>・<code>overture_buildings_minato.parquet</code>)。R2 は無料枠に収まった</span>
         </li>
         <li class="current">
+          <b>カタログを上げて push</b><span class="status you">あなたの番</span>
+          <span class="sub"><a href="deploy.md">deploy.md</a>「2026-10-10 の分 その2」。items.parquet と JSON (89個) → push。データのファイルは変えていない (Item の名前と年度・Overture の出典)</span>
+        </li>
+        <li>
           <b>公開を確かめる</b><span class="status you">あなたの番</span>
           <span class="sub">実サイトで間引き・地理院・周辺検索を触る</span>
         </li>
@@ -568,7 +572,7 @@
         <h2>次にやること</h2>
         <ol class="tasks">
           <li>
-            <b>配らずに手元で変換する仕組み (構想)</b>
+            <b>配らずに手元で変換する仕組み (構想)</b> <span class="status todo">優先度を下げた (10-10)</span>
             <span class="sub">
               PLATEAU GIS Converter のように、利用者が取ったデータをブラウザの中 (WASM) で変換する。
               測量法のあるデータ (基盤地図情報) の扱いを地理院に確かめてから。3D Tiles のテクスチャもこの形で (roadmap)
@@ -582,17 +586,17 @@
             </span>
           </li>
           <li>
-            <b>Overture の出典を実際の出所に絞る</b>
+            <b>Overture の出典を実際の出所に絞る</b> <span class="status done">済み</span>
             <span class="sub">
-              取り出しで <code>sources</code> 列を落としていて、日本にどの出所が入っているか数えていない。
-              いまは挙げられている出所を全部書いている。次に取り直すときに残して数える
+              10-10 に数えた (<code>count_overture_sources</code>)。日本の建物は OpenStreetMap 55.5%・Microsoft 38.8%・Qian Shi ら 5.7%。
+              Esri と Google は入っていなかったので出典から外した (行政区域と道路はまだ)
             </span>
           </li>
           <li>
-            <b>Item に名前と時点を入れる</b>
+            <b>Item に名前と時点を入れる</b> <span class="status done">済み</span>
             <span class="sub">
-              ⓘ の Item の一覧が <code>plateau_bldg_01100</code> のような ID だけで、時点も無い。次に PLATEAU を書き換えるときに一緒に (306ファイルの上げ直しになるため)。
-              stac-geoparquet に列を足す形になる
+              10-10。PLATEAU の Item に「港区 (東京都)」「2025年度」を載せた (配信カタログのスナップショットから。データは上げ直さない)。
+              カードのファイル一覧に出る
             </span>
           </li>
           <li>

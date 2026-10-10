@@ -119,10 +119,9 @@ DATA_LATENCY_MS=450 DATA_BANDWIDTH_MBPS=16 pnpm test:dist
 
 **残っている心配 (どれも公開を止めるものではない):**
 
-- **Overture の出所を数えていない。** Overture は主題ごとに OSM 以外の出所 (建物なら Microsoft・Esri・
-  Google・Qian Shi ら) にも出典を求めている。取り出すときに `sources` 列を落としていて、日本に実際に
-  どれが入っているか分からないので、**挙げられている出所を全部書いた** (無いものを書いても害は無い)。
-  次に Overture を取り直すときに `sources` を残して数え、出典を実際のものに絞る
+- ~~**Overture の出所を数えていない。**~~ **10-10 に数えた** (`count_overture_sources`)。日本の建物は
+  OpenStreetMap 55.5%・Microsoft 38.8%・Qian Shi ら 5.7% で、Esri と Google は入っていなかったので出典から外した。
+  行政区域と道路はまだ数えていない (挙げられている出所を書いている)。Overture を取り直したら数え直す
 - **無償の配信に頼っている。** Mapterhorn・Re:Earth・PLATEAU の配信 API はどれも保証が無い。
   止まっても地図は使える (地形は地理院の標高に切り替えられる、テストあり)
 - **AW3D30 を地図に出すとき**は、画像に「©JAXA」を出す。商用で使う人には事前の連絡が要ることを示す
@@ -428,6 +427,22 @@ rclone delete "$R2/overture/overture_buildings_minato.parquet"
   都市ごとの GeoParquet を読む (遅いが壊れない)。3 のデプロイで直る
 - 4 の概観は 48ファイル・409MB。消すと R2 の合計は無料枠に収まる (下のボードの数字)
 - 選ばれるのは 1 が2ファイル、2 が89ファイル (`rclone --config /dev/null lsf -R data/output --files-only --filter …`)
+
+### 2026-10-10 の分 その2 (Item の名前と時点・Overture の出典)
+
+**カタログだけを上げる** (データのファイルは変えていない)。PLATEAU の Item に都市の名前と年度を載せ、
+Overture の建物の出典を日本に実際に入っている出所に絞った。
+
+```sh
+# 1. カタログ (items.parquet と JSON 全部。89ファイル)
+rclone copy data/output "$R2" \
+  --filter '+ /items.parquet' --filter '+ *.json' --filter '- **' -P
+
+# 2. push すると CI が流れ直す
+git push
+```
+
+- 公開中のアプリは items.parquet の新しい列 (`title`・`duck:vintage`) を読まないだけで、壊れない
 
 ### 平置きだった頃の古いJSONを消す
 
