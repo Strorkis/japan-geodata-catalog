@@ -115,7 +115,9 @@ DATA_LATENCY_MS=450 DATA_BANDWIDTH_MBPS=16 pnpm test:dist
 | 地理院タイル・ベクトルタイル | 表示 (公開元を直接読む) | 国土地理院コンテンツ利用規約: 出典 | ✅ |
 | Mapterhorn・Re:Earth | 表示 (公開元を直接読む) | 出典 (Mapterhorn の日本は測量法の承認を向こうが取得) | ✅ 利用方針・保証の記載なし |
 | N03・基盤地図情報 (標高) | **配らない** (参照だけ) | 複製に測量法の承認が要る | ✅ |
-| AW3D30 (JAXA)・NASADEM・ASTER GDEM | **配らない** (参照だけ) | JAXA は商用なら事前に連絡 | ✅ |
+| AW3D30 (JAXA) | 表示 (公開元の COG を直接読む。10-10 から地形に選べる) | 出典「提供：AW3D30 (JAXA)」、商用なら事前に連絡 | ✅ 出典の欄に出る |
+| NASADEM・ASTER GDEM | **配らない** (参照だけ) | パブリックドメイン・制限なし (入手にログインが要る) | ✅ |
+| OpenFreeMap (世界の背景地図) | 表示 (公開元のスタイルとタイルを直接読む。10-10 に足した) | 無料・登録不要・商用可。出典「OpenFreeMap © OpenMapTiles Data from OpenStreetMap」が要る | ✅ 保証 (SLA) なし・寄付で運営 |
 
 **残っている心配 (どれも公開を止めるものではない):**
 

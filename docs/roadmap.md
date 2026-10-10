@@ -592,6 +592,22 @@ Re:Earth Terrain (Terrarium) ＋ 地理院の写真 ＋ Re:Earth Buildings (3D T
   「Navara は MapLibre と Three.js を組み合わせる参考」。NASA-AMMOS の 3DTilesRendererJS
   (Three.js で 3D Tiles を読む) が候補
 - **NASA と JAXA の標高** をカタログに足す。調べた結果は下の「NASA と JAXA の標高」
+- **(2026-10-10) エンジンごとのねらい (利用者):** Cesium は **3D Tiles 2.0** を試したい (8月に草案。glTF 2.1 を土台に、
+  ベクタ・Gaussian Splatting・時間で変わるデータ。年内に OGC で承認の見込み)。Navara は**トレンド**。
+  MapLibre ＋ Three.js は **MapLibre (いまの地図・一覧・周辺検索) をそのまま使える**。**Cesium の別ページから始める**
+
+### 世界の背景地図 (2026-10-10)
+
+地理院タイルは日本とその周りだけなので、日本の外 (AW3D30 の地形など) では背景が白かった。利用者の希望は
+「規約に問題がなく、広く使われているもの」。**OpenFreeMap** を足した (サブカタログ「OpenFreeMap」、明るい色の Positron)。
+
+- OpenStreetMap のデータから作ったベクトルタイルとスタイル。**無料・登録不要・API キー不要・回数の制限なし・商用可**。
+  出典「OpenFreeMap © OpenMapTiles Data from OpenStreetMap」が要る。保証 (SLA) は無く、寄付で運営
+- OSM 本家のタイル (tile.openstreetmap.org) は、利用方針でアプリからの多用を控えるよう求めているので採らなかった
+- **スタイルで描く背景地図** (`duck:kind: vector_basemap`、`rel: style` でスタイルの JSON を指す)。足すまでスタイルを
+  読まず、足したら層 (55) をまとめて差し込み、一覧では1行として出し入れ・重ね順・不透明度を扱う
+- 文字はブラウザのフォントで描く (`text-font` を `sans-serif` に置き換え、`glyphs` は設定しない)。`glyphs` は地図全体で
+  1つなので、設定すると地理院のベクトルタイルの文字まで変わる。アイコン (`sprite`) は地図の既定にする
 
 ### NASA と JAXA の標高 (2026-10-05 に調べた)
 
