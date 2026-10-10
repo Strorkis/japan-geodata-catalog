@@ -504,12 +504,13 @@ const OVERTURE: Attribution = Attribution {
 };
 
 /// **Overture は主題ごとに、OSM 以外の出所にも出典を求めている** (上の URL、2026-10-05 に読んだ)。
-/// 取り出すときに `sources` 列を落としているので、日本に実際にどれが入っているかは数えていない。
-/// **挙げられている出所を書く** (無いものを書いても害は無い)。日本に無いと分かっているもの
-/// (スペインの BTN・米国の USGS・ニュージーランドの LINZ) は外す。
+/// **日本に実際に入っている出所だけを書く。** 2026-09-23.1 の日本の建物 5,419万棟を形の出所で数えた
+/// (`count_overture_sources`): OpenStreetMap 55.5%・Microsoft ML Buildings 38.8%・
+/// 東アジアの建物 (doi:10.5281/zenodo.8174931、Qian Shi et al.) 5.7%。Esri と Google Open Buildings は
+/// 日本には入っていなかったので外した。**Overture を取り直したら数え直す。**
 const OVERTURE_BUILDINGS: Attribution = Attribution {
     text: "Overture Maps / © OpenStreetMap contributors (ODbL 1.0) · Microsoft Global ML Building Footprints (ODbL) · \
-           Esri Community Maps contributors, Google Open Buildings, East Asian building data by Qian Shi et al. (CC BY 4.0)",
+           East Asian building data by Qian Shi et al. (CC BY 4.0)",
     ..OVERTURE
 };
 
@@ -1498,10 +1499,17 @@ mod tests {
 
     /// **Overture は主題ごとに OSM 以外の出所にも出典を求める。** 建物・行政区域・道路で、
     /// それぞれの出所が抜けていないこと (<https://docs.overturemaps.org/attribution/>)。
+    /// 建物は日本に入っている出所だけ (Esri と Google は日本に無いので書かない)。
     #[test]
     fn overture_credits_the_other_sources_of_each_theme() {
-        for source in ["Microsoft", "Esri", "Google Open Buildings", "Qian Shi"] {
+        for source in ["Microsoft", "Qian Shi"] {
             assert!(OVERTURE_BUILDINGS.text.contains(source), "{source}");
+        }
+        for absent in ["Esri", "Google"] {
+            assert!(
+                !OVERTURE_BUILDINGS.text.contains(absent),
+                "{absent} は日本の建物に入っていない"
+            );
         }
         assert!(OVERTURE_DIVISIONS.text.contains("geoBoundaries"));
         assert!(OVERTURE_TRANSPORTATION.text.contains("TomTom"));

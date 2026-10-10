@@ -83,7 +83,7 @@ PLATEAU・国土数値情報・国勢調査・位置参照情報から作った�
 | データ | 出典表示 |
 | --- | --- |
 | 建物・整備範囲 (PLATEAU) | 「3D都市モデル（Project PLATEAU）」（国土交通省）をもとに作成 |
-| 建物 (Overture) | Overture Maps / © OpenStreetMap contributors (ODbL 1.0) · Microsoft Global ML Building Footprints (ODbL) · Esri Community Maps contributors, Google Open Buildings, East Asian building data by Qian Shi et al. (CC BY 4.0) |
+| 建物 (Overture) | Overture Maps / © OpenStreetMap contributors (ODbL 1.0) · Microsoft Global ML Building Footprints (ODbL) · East Asian building data by Qian Shi et al. (CC BY 4.0) |
 | 行政区域 (Overture) | Overture Maps / © OpenStreetMap contributors (ODbL 1.0) · geoBoundaries, Esri Community Maps contributors (CC BY 4.0) |
 | 道路 (Overture) | Overture Maps / © OpenStreetMap contributors (ODbL 1.0) · TomTom |
 | 送電線・川 (Overture) | Overture Maps / © OpenStreetMap contributors (ODbL 1.0) |
