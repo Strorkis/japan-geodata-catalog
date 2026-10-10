@@ -1274,6 +1274,46 @@ test('AW3D30 は地形に選べ、ⓘ から公開元の STAC と使う条件が
   );
 });
 
+/**
+ * **世界の背景地図 (OpenFreeMap) はスタイルで描く。** 足すまでスタイルを読まず、足したら層を
+ * まとめて差し込む (層の ID は `basemap/<Collection ID>/<元の層 ID>`)。外の配信は叩かず、小さなスタイルに差し替える。
+ */
+test('世界の背景地図はスタイルを読んで層を差し込み、まとめて出し入れできる', async ({ page }) => {
+  let styleRequests = 0;
+  await page.route(/tiles\.openfreemap\.org\/styles\//, (route) => {
+    styleRequests++;
+    return route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({
+        version: 8,
+        sources: {},
+        layers: [{ id: 'background', type: 'background', paint: { 'background-color': '#eeeeee', 'background-opacity': 0.8 } }],
+      }),
+    });
+  });
+  const id = 'openfreemap-positron';
+  const layerId = `basemap/${id}/background`;
+  const hasLayer = () => page.evaluate((l) => Boolean((window as unknown as TestWindow).__map!.getLayer(l)), layerId);
+  const visibility = () =>
+    page.evaluate((l) => (window as unknown as TestWindow).__map!.getLayoutProperty(l, 'visibility') ?? 'visible', layerId);
+
+  // **足すまで読まない** (起動を遅くしない)。
+  expect(styleRequests).toBe(0);
+  expect(await hasLayer()).toBe(false);
+
+  await showLayer(page, id);
+  await expect.poll(hasLayer).toBe(true);
+  expect(styleRequests).toBe(1);
+  await expect.poll(visibility).toBe('visible');
+
+  await hideLayer(page, id);
+  await expect.poll(visibility).toBe('none');
+  // 出し直しても読み直さない。
+  await showLayer(page, id);
+  await expect.poll(visibility).toBe('visible');
+  expect(styleRequests).toBe(1);
+});
+
 test('地形が有効になっていて、コンパスの下のボタンで切れる', async ({ page }) => {
   const hasTerrain = () =>
     page.evaluate(() => (window as unknown as TestWindow).__map!.getTerrain() !== null);

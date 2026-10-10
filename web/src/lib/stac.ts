@@ -49,6 +49,8 @@ export type DatasetKind =
   | 'vector_tiles'
   // **外部の地図タイル** (背景地図)。いちばん下に敷く。
   | 'raster_tiles'
+  // **外部の背景地図 (ベクトルタイル)**。スタイルの JSON (`rel: style`) で配られている (OpenFreeMap)。
+  | 'vector_basemap'
   // **外部の標高タイル** (地形)。地図を立体にする。
   | 'terrain'
   // **3D Tiles** (Re:Earth Buildings)。この地図 (MapLibre) では描けない。ⓘ からビューアへ。
@@ -353,6 +355,8 @@ export interface Collection {
    * 外部の地図タイル・標高だけが持つ。タイルは1ファイルではないのでアセットにならない。
    */
   tileLink: StacLink | undefined;
+  /** スタイルの JSON (`rel: "style"`)。ベクトルタイルの背景地図だけが持つ。 */
+  styleUrl: string | undefined;
   /** 地図タイルが実際にあるズーム [最小, 最大]。 */
   zoom: [number, number] | undefined;
   tileSize: number | undefined;
@@ -559,6 +563,7 @@ function toCollection(
     ),
     themes: document['duck:themes'],
     generatorOptions: document['duck:generator_options'],
+    styleUrl: document.links.find((link) => link.rel === 'style')?.href,
     tileLink: document.links.find(
       (link) => link.rel === 'xyz' || link.rel === 'tilejson' || link.rel === '3d-tiles',
     ),

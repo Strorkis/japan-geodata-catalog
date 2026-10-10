@@ -131,6 +131,7 @@ const ja = {
 
   // ---- 地図タイルと標高の呼び名 (lib/tiles.ts) ----
   demGsi: '地理院の独自形式 (このアプリで読み込むときに Terrarium へ詰め直しています)',
+  demCog: 'COG (このアプリで要る範囲だけ読み、Terrarium に詰め直しています)',
   verticalOrthometric: '海面から (標高)',
   verticalEllipsoid: 'WGS84 楕円体から (楕円体高)',
   geometryPoint: '点',
@@ -236,6 +237,7 @@ const ja = {
   factFiles: 'ファイル',
   tiles: 'タイル',
   mapTiles: '地図タイル',
+  vectorStyle: 'ベクトルタイル (MapLibre のスタイル)',
   elevationTiles: '標高タイル',
   zoomRange: (min: number, max: number) => `${min}〜${max} (それより寄ると拡大して描きます)`,
   useVectorTiles: '重ねて見るためのものです (表示用に簡略化されています)。検索や周辺検索には使いません',
@@ -432,6 +434,7 @@ const en: Messages = {
   lineClassLabels: { power_line: 'Power line', cable: 'Underground / submarine cable', river: 'River', canal: 'Canal' },
 
   demGsi: 'GSI’s own format (repacked into Terrarium when this app reads it)',
+  demCog: 'COG (this app reads only the part it needs and repacks it into Terrarium)',
   verticalOrthometric: 'From sea level (elevation)',
   verticalEllipsoid: 'From the WGS84 ellipsoid (ellipsoidal height)',
   geometryPoint: 'point',
@@ -541,6 +544,7 @@ const en: Messages = {
   factFiles: 'Files',
   tiles: 'tiles',
   mapTiles: 'Map tiles',
+  vectorStyle: 'Vector tiles (MapLibre style)',
   elevationTiles: 'Elevation tiles',
   zoomRange: (min, max) => `${min}–${max} (enlarged beyond that)`,
   useVectorTiles: 'For viewing as an overlay (simplified for display). Not used for search or nearby search',

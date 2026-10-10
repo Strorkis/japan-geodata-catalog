@@ -222,6 +222,11 @@ const SUB_CATALOGS: &[SubCatalog] = &[
                       このカタログでは複製せず、公開元の配信をそのまま使っています。",
     },
     SubCatalog {
+        dir: "openfreemap",
+        title: "OpenFreeMap",
+        description: "OpenStreetMap のデータから作られた世界の背景地図です。このカタログでは複製せず、公開元の配信をそのまま使っています。",
+    },
+    SubCatalog {
         dir: "mapterhorn",
         title: "Mapterhorn",
         description: "世界の標高タイルです。このカタログでは複製せず、公開元の配信をそのまま使っています。",
@@ -699,6 +704,10 @@ fn raster_collection(
         TileLink::Stac { url } => Some(
             json!({ "rel": "alternate", "href": url, "type": JSON_MEDIA_TYPE, "title": "公開元の STAC (COG)" }),
         ),
+        // **スタイルの JSON** (ベクトルタイルの背景地図)。web-map-links に該当の rel が無いので `style` と書く。
+        TileLink::Style { url } => Some(
+            json!({ "rel": "style", "href": url, "type": "application/vnd.maplibre.style+json", "title": raster.title }),
+        ),
         TileLink::None => None,
     };
     let mut links = vec![
@@ -744,6 +753,7 @@ fn raster_collection(
             RasterRole::Terrain => "terrain",
             RasterRole::ThreeDTiles => "3d_tiles",
             RasterRole::Reference => "reference",
+            RasterRole::VectorBasemap => "vector_basemap",
         },
         "providers": [{
             "name": raster.attribution.provider,
@@ -759,7 +769,10 @@ fn raster_collection(
     // **タイルが実際にあるズームと大きさ。** 無いズームを要求すると 404 を撃ち続ける。
     // 地図タイル (背景地図・標高) だけが持つ。3D Tiles と参照だけの元データには書かない
     // (以前は 0 を書いていて、STAC Browser に「Tile Size 0」と出た)。
-    if matches!(raster.role, RasterRole::Basemap | RasterRole::Terrain) {
+    if matches!(
+        raster.role,
+        RasterRole::Basemap | RasterRole::Terrain | RasterRole::VectorBasemap
+    ) {
         body["duck:zoom"] = json!([raster.minzoom, raster.maxzoom]);
         body["duck:tile_size"] = json!(raster.tile_size);
     }
@@ -1087,6 +1100,23 @@ mod tests {
         );
         assert_eq!(aw3d30["duck:terms"]["commercial"], "allowed_with_notice");
         assert_eq!(aw3d30["duck:tile_size"], 256);
+
+        // 世界の背景地図 (OpenFreeMap) はスタイルで描く。スタイルの JSON を `rel: style` で指す。
+        let ofm = find(&documents, "openfreemap/openfreemap-positron.json");
+        assert_eq!(ofm["duck:kind"], "vector_basemap");
+        let style = ofm["links"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|l| l["rel"] == "style")
+            .unwrap();
+        assert!(
+            style["href"]
+                .as_str()
+                .unwrap()
+                .contains("openfreemap.org/styles/")
+        );
+        assert_eq!(ofm["duck:terms"]["commercial"], "allowed");
         // NASA の2つも参照だけ。サブカタログは出所ごと。
         assert_eq!(
             find(&documents, "nasa/nasa-aster-gdem.json")["license"],

@@ -49,6 +49,15 @@ const EN: &[(&str, &str)] = &[
     // ---- サブカタログ・ルート ----
     ("duck-geocoder のデータ", "duck-geocoder data"),
     (
+        "OpenStreetMap のデータから作られた世界の背景地図です。このカタログでは複製せず、公開元の配信をそのまま使っています。",
+        "Background maps of the whole world made from OpenStreetMap data. This catalogue does not copy them; it uses the publisher's own service.",
+    ),
+    ("世界の地図 (明るい色)", "World map (light)"),
+    (
+        "OpenStreetMap のデータから作られた、世界全体の背景地図です。色が抑えてあり、重ねたデータが読みやすくなります。OpenFreeMap が、無料・登録不要でベクトルタイルとスタイル (Positron) を配っています。このカタログからは配っていません。",
+        "A background map of the whole world made from OpenStreetMap data. Its muted colours keep overlaid data easy to read. OpenFreeMap serves the vector tiles and the style (Positron) free of charge without registration. This catalogue does not distribute it.",
+    ),
+    (
         "日本のオープンな地理空間データを GeoParquet にしたものです。ブラウザから DuckDB-WASM で直接読めます。各 Collection の使う条件の要約 (duck:terms) は、このカタログが独自に規約を読んでまとめた参考情報で、正確さは保証しません。使う前に、必ず各配布元の規約の本文を確かめてください。",
         "Open geospatial data of Japan converted to GeoParquet, readable directly in the browser with DuckDB-WASM. The summary of the terms of use for each Collection (duck:terms) is reference information that this catalog compiled by reading the terms itself, and its accuracy is not guaranteed. Always check the full text of each publisher's terms before use.",
     ),

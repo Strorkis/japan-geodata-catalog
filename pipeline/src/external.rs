@@ -284,6 +284,9 @@ pub enum TileLink {
     None,
     /// 公開元の STAC Collection (中身は COG)。**この地図ではまだ描かない**が、カタログから辿れる。
     Stac { url: &'static str },
+    /// **スタイルの JSON** (MapLibre)。ベクトルタイルの背景地図は、層と描き方をスタイルで配っている。
+    /// UI はこれを読んで層を差し込む (地図タイル1枚の URL ではないので、`Xyz` にはならない)。
+    Style { url: &'static str },
 }
 
 /// ラスタタイルの役割。UI がどう重ねるかを決める。
@@ -297,6 +300,8 @@ pub enum RasterRole {
     ThreeDTiles,
     /// 元データ。配っていない (派生物がどこから来たかを示すためだけに載せる)。
     Reference,
+    /// スタイル (`TileLink::Style`) で描く背景地図。中身はベクトルタイルなので、ラスタの背景地図と分ける。
+    VectorBasemap,
 }
 
 /// 標高タイルの形式 (`duck:dem`)。**同じ「標高タイル」でも中身の約束が違う**ので書く。
@@ -713,6 +718,30 @@ pub const EXTERNAL_RASTERS: &[ExternalRaster] = &[
         viewer: None,
         default: false,
     },
+    // ---- 世界の背景地図 ----
+    // 地理院タイルは日本とその周りだけなので、日本の外 (AW3D30 の地形など) を見るときの背景。
+    ExternalRaster {
+        id: "openfreemap-positron",
+        dir: "openfreemap",
+        title: "世界の地図 (明るい色)",
+        description: "OpenStreetMap のデータから作られた、世界全体の背景地図です。色が抑えてあり、重ねたデータが読みやすくなります。\
+                      OpenFreeMap が、無料・登録不要でベクトルタイルとスタイル (Positron) を配っています。このカタログからは配っていません。",
+        attribution: OPENFREEMAP,
+        via: "https://openfreemap.org/",
+        role: RasterRole::VectorBasemap,
+        link: TileLink::Style {
+            url: "https://tiles.openfreemap.org/styles/positron",
+        },
+        // ベクトルタイルはズーム14まで (それより寄ると拡大して描く)。
+        minzoom: 0,
+        maxzoom: 14,
+        tile_size: 512,
+        bounds: [-180.0, -85.05113, 180.0, 85.05113],
+        dem: None,
+        derived_from: &[],
+        viewer: None,
+        default: false,
+    },
     // ---- 衛星の標高 ----
     // AW3D30 は地形として描ける (2026-10-10)。JAXA の COG を UI が直接読み、Terrarium のタイルにする
     // (web/src/lib/cog-dem.ts)。R2 には置かない。
@@ -894,6 +923,25 @@ const MLIT_KSJ_N03: Attribution = Attribution {
 /// AW3D30。JAXA 第一宇宙技術部門の「研究データ等の利用条件」(2026-10-05 に読んだ)。
 /// 改変・第三者への配布を含めて無償で使えるが、**出所表示 (JAXA とデータの名前) が要り**、
 /// **商用は事前に JAXA へ連絡が要る**。出所表示は利用条件の例「提供：＊＊＊(JAXA)」に合わせる。
+/// OpenFreeMap。OpenStreetMap のデータから作ったベクトルタイル (OpenMapTiles の形) とスタイル。
+/// **無料・登録不要・回数の制限なし・商用可** (利用規約、2026-10-10 に読んだ)。出典の表示が要る
+/// (MapLibre ならタイルの情報から自動で出る)。保証 (SLA) は無く、寄付で運営されている。
+/// 地図の画像は OSM の「produced work」で、継承 (ODbL の share-alike) は掛からない。
+const OPENFREEMAP: Attribution = Attribution {
+    text: "OpenFreeMap © OpenMapTiles Data from OpenStreetMap",
+    url: "https://openfreemap.org/",
+    license: "other",
+    provider: "OpenFreeMap",
+    terms: Terms {
+        name: "OpenFreeMap Terms of Service",
+        url: "https://openfreemap.org/tos/",
+        commercial: Commercial::Allowed,
+        attribution_required: true,
+        note_modification: false,
+        share_alike: false,
+    },
+};
+
 const JAXA_AW3D30: Attribution = Attribution {
     text: "提供：AW3D30 (JAXA)",
     url: "https://www.eorc.jaxa.jp/ALOS/jp/dataset/aw3d30/aw3d30_j.htm",

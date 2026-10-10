@@ -69,6 +69,7 @@ export const DEM_ENCODING_LABELS: Record<string, string> = {
   terrarium: 'Terrarium (Mapzen)',
   mapbox: 'Terrain-RGB (Mapbox)',
   gsi: m.demGsi,
+  cog: m.demCog,
 };
 
 /** 高さの基準の呼び名。 */
@@ -298,6 +299,58 @@ export function terrainSource(collection: Collection): RasterDEMSourceSpecificat
     maxzoom: collection.zoom?.[1] ?? 14,
     encoding: collection.demEncoding === 'mapbox' ? 'mapbox' : 'terrarium',
   };
+}
+
+/**
+ * **スタイルで描く背景地図** (OpenFreeMap)。スタイルの JSON を読み、ソースと層を地図に差し込む。
+ * 層の ID は `basemap/<Collection ID>/<元の層 ID>` (一覧の重ね順で1つの行としてまとめて動かす)。
+ *
+ * - **文字はブラウザのフォントで描く** (`text-font` を `sans-serif` に置き換え、`glyphs` は設定しない)。
+ *   `glyphs` は地図全体で1つなので、設定すると地理院のベクトルタイルの文字まで変わる
+ * - アイコン (`sprite`) は、地図にまだ既定のものが無ければ既定にする
+ * - 出し入れは呼ぶ側 (一覧の行) が層ごとに `visibility` を切り替える
+ */
+export async function addStyleBasemap(map: MapLibreMap, collection: Collection, beforeId?: string): Promise<string[]> {
+  const response = await fetch(collection.styleUrl!);
+  if (!response.ok) throw new Error(`スタイルを読めません (${response.status}): ${collection.styleUrl}`);
+  const style = (await response.json()) as StyleSpecification;
+  const prefix = `${basemapLayerId(collection)}/`;
+  for (const [id, source] of Object.entries(style.sources)) {
+    if (!map.getSource(prefix + id)) map.addSource(prefix + id, source);
+  }
+  if (typeof style.sprite === 'string' && !map.getSprite().length) map.setSprite(style.sprite);
+  const ids: string[] = [];
+  for (const layer of style.layers) {
+    const id = prefix + layer.id;
+    const copy = { ...layer, id } as LayerSpecification & { source?: string; layout?: Record<string, unknown> };
+    if ('source' in layer && typeof layer.source === 'string') copy.source = prefix + layer.source;
+    if (layer.type === 'symbol' && copy.layout?.['text-font']) copy.layout = { ...copy.layout, 'text-font': ['sans-serif'] };
+    if (!map.getLayer(id)) map.addLayer(copy, beforeId && map.getLayer(beforeId) ? beforeId : undefined);
+    ids.push(id);
+  }
+  return ids;
+}
+
+/** スタイルで描く背景地図の不透明度。層の種類ごとの不透明度の値に掛ける (式のものはそのまま)。 */
+export function setStyleBasemapOpacity(map: MapLibreMap, ids: string[], opacity: number, originals: Map<string, unknown>) {
+  const property: Record<string, string> = {
+    background: 'background-opacity',
+    fill: 'fill-opacity',
+    line: 'line-opacity',
+    symbol: 'text-opacity',
+    raster: 'raster-opacity',
+    'fill-extrusion': 'fill-extrusion-opacity',
+  };
+  for (const id of ids) {
+    const layer = map.getLayer(id);
+    const name = layer && property[layer.type];
+    if (!name) continue;
+    const key = `${id}|${name}`;
+    if (!originals.has(key)) originals.set(key, map.getPaintProperty(id, name as never) ?? 1);
+    const original = originals.get(key);
+    // ズームで変わる式は、掛け算に包めない (ズームの式は一番外にしか置けない) ので、そのままにする。
+    if (typeof original === 'number') map.setPaintProperty(id, name as never, (original * opacity) as never);
+  }
 }
 
 /** COG の標高を Terrarium のタイルにして渡す、MapLibre の取得の仕組み (`cogdem://<Collection ID>/z/x/y`)。 */

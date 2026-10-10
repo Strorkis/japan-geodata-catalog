@@ -3,7 +3,14 @@ import type * as duckdb from '@duckdb/duckdb-wasm';
 import { MapLibreMap, GeoJSONSource, setWorkerUrl } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 // 地図タイル (背景地図・地形・外部のベクタータイル) を載せる部品は lib/tiles.ts。
-import { basemapLayerId, createVectorOverlay, defaultOf, type VectorOverlay } from './lib/tiles';
+import {
+  addStyleBasemap,
+  basemapLayerId,
+  createVectorOverlay,
+  defaultOf,
+  setStyleBasemapOpacity,
+  type VectorOverlay,
+} from './lib/tiles';
 // データの出所 (GeoParquet のファイル群) と、表示範囲から読むファイルを選ぶ部品は lib/sources.ts。
 import {
   unionBbox,
@@ -516,6 +523,44 @@ async function main() {
             map.setLayoutProperty(id, 'visibility', isLayerVisible(collection.id) ? 'visible' : 'none');
           },
           mapLayerIds: () => [id],
+        });
+        break;
+      }
+      case 'vector_basemap': {
+        // **スタイルで描く背景地図** (OpenFreeMap)。出すまでスタイルを読まない (起動を遅くしない)。
+        // 層は数十あるので、一覧では1行にまとめて出し入れ・重ね順・不透明度を扱う。
+        if (!collection.styleUrl) break;
+        let ids: string[] = [];
+        let loading: Promise<void> | undefined;
+        let opacity = 1;
+        const originals = new Map<string, unknown>();
+        const apply = () => {
+          const visibility = isLayerVisible(collection.id) ? 'visible' : 'none';
+          for (const id of ids) map.setLayoutProperty(id, 'visibility', visibility);
+        };
+        layers.push({
+          ...tileBase,
+          vintage: `${m.vectorStyle} · ズーム${collection.zoom?.join('〜') ?? ''}`,
+          settings: sliderSettings(m.opacity, 0, 100, 5, 100, (v) => `${v}%`, (v) => {
+            opacity = v / 100;
+            setStyleBasemapOpacity(map, ids, opacity, originals);
+          }),
+          refresh: () => {
+            if (!isLayerVisible(collection.id) && ids.length === 0) return;
+            loading ??= addStyleBasemap(map, collection, LAYER_ANCHORS.tile)
+              .then((added) => {
+                ids = added;
+                setStyleBasemapOpacity(map, ids, opacity, originals);
+                applyLayerOrder();
+              })
+              .catch((e: unknown) => {
+                console.error('[basemap] failed', e);
+                loading = undefined;
+                showFailure(m.loadFailed(collection.title));
+              });
+            void loading.then(apply);
+          },
+          mapLayerIds: () => ids,
         });
         break;
       }

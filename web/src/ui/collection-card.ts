@@ -352,6 +352,9 @@ export function createCollectionCards(options: CollectionCardOptions): Collectio
       const kind = collection.kind === 'terrain' ? m.elevationTiles : m.mapTiles;
       fact(m.factFormat, `${kind} (${tileJson ? 'TileJSON' : 'XYZ'}) `, where);
     }
+    if (!link && collection.styleUrl) {
+      fact(m.factFormat, `${m.vectorStyle} `, externalLink(collection.styleUrl, 'style.json'));
+    }
     // **標高の中身の約束** (エンコード・高さの基準・値なしの扱い)。同じ「標高タイル」でも違う。
     if (collection.dem) {
       fact(m.factDemEncoding, DEM_ENCODING_LABELS[collection.dem.encoding] ?? collection.dem.encoding);
@@ -364,6 +367,7 @@ export function createCollectionCards(options: CollectionCardOptions): Collectio
     const use: Partial<Record<DatasetKind, string>> = {
       terrain: m.useTerrain,
       raster_tiles: m.useRasterTiles,
+      vector_basemap: m.useRasterTiles,
       '3d_tiles': m.use3dTiles,
       reference: m.useReference,
     };
@@ -450,6 +454,7 @@ export function createCollectionCards(options: CollectionCardOptions): Collectio
     derivedFromFact(collection, fact);
     if (
       collection.kind === 'raster_tiles' ||
+      collection.kind === 'vector_basemap' ||
       collection.kind === 'terrain' ||
       collection.kind === '3d_tiles' ||
       collection.kind === 'reference'
