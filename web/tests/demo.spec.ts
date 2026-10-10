@@ -1314,6 +1314,60 @@ test('世界の背景地図はスタイルを読んで層を差し込み、ま�
   expect(styleRequests).toBe(1);
 });
 
+/**
+ * **同じ場所を 3D のページ (Cesium) で開き、同じ場所へ戻る。** 位置・ズーム・傾き・向きを URL で渡す。
+ * 外の配信 (地理院タイル・3D Tiles) は叩かない (描けるかは目で確かめる。ここでは渡し方を見る)。
+ */
+test('3D のボタンで同じ場所を Cesium で開き、地図に戻ると同じ場所になる', async ({ page }) => {
+  const external = /cyberjapandata\.gsi\.go\.jp|api\.plateauview\.mlit\.go\.jp|buildings\.reearth\.land/;
+  await page.route(external, (route) => route.abort());
+  await page.evaluate(() => {
+    (window as unknown as TestWindow).__map!.jumpTo({ center: [139.7671, 35.6812], zoom: 16, pitch: 45, bearing: 30 });
+  });
+  await page.locator('#open-3d').click();
+  await expect(page).toHaveURL(/3d\.html\?/);
+  const url = new URL(page.url());
+  expect(Number(url.searchParams.get('lon'))).toBeCloseTo(139.7671, 3);
+  expect(Number(url.searchParams.get('lat'))).toBeCloseTo(35.6812, 3);
+  expect(Number(url.searchParams.get('zoom'))).toBeCloseTo(16, 1);
+  expect(url.searchParams.get('pitch')).toBe('45');
+  expect(url.searchParams.get('bearing')).toBe('30');
+
+  // 背景地図と 3D Tiles は**カタログから**並ぶ (ion は使わない)。既定は淡色地図と PLATEAU。
+  await expect(page.locator('#basemap-select')).toHaveValue('gsi-pale');
+  await expect(page.locator('#tileset-options input[type=checkbox]')).toHaveCount(2);
+  await expect(page.locator('#tileset-options input[type=checkbox]').first()).toBeChecked();
+  // カメラは渡した場所を見ている (真ん中の地面の経緯度)。
+  const center = () =>
+    page.evaluate(() => {
+      const viewer = (window as unknown as { __viewer?: import('cesium').Viewer }).__viewer;
+      if (!viewer) return null;
+      const canvas = viewer.canvas;
+      const hit = viewer.camera.pickEllipsoid({ x: canvas.clientWidth / 2, y: canvas.clientHeight / 2 } as import('cesium').Cartesian2);
+      if (!hit) return null;
+      const c = viewer.scene.globe.ellipsoid.cartesianToCartographic(hit);
+      return [(c.longitude * 180) / Math.PI, (c.latitude * 180) / Math.PI];
+    });
+  await expect.poll(center).not.toBeNull();
+  const [lon, lat] = (await center())!;
+  expect(lon).toBeCloseTo(139.7671, 3);
+  expect(lat).toBeCloseTo(35.6812, 3);
+
+  await page.unroute(external);
+  await page.locator('#back-to-map').click();
+  await expect(page).toHaveURL(/\?lon=/);
+  await waitForReady(page);
+  const view = await page.evaluate(() => {
+    const map = (window as unknown as TestWindow).__map!;
+    return { ...map.getCenter(), zoom: map.getZoom(), pitch: map.getPitch(), bearing: map.getBearing() };
+  });
+  expect(view.lng).toBeCloseTo(139.7671, 3);
+  expect(view.lat).toBeCloseTo(35.6812, 3);
+  expect(view.zoom).toBeCloseTo(16, 1);
+  expect(view.pitch).toBeCloseTo(45, 0);
+  expect(view.bearing).toBeCloseTo(30, 0);
+});
+
 test('地形が有効になっていて、コンパスの下のボタンで切れる', async ({ page }) => {
   const hasTerrain = () =>
     page.evaluate(() => (window as unknown as TestWindow).__map!.getTerrain() !== null);

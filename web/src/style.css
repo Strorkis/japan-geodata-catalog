@@ -2091,3 +2091,19 @@ a.lang-option {
     width: 96vw;
   }
 }
+
+/* 同じ場所を 3D のページで開くボタン (右上のコントロールの並び)。ボタンと同じ大きさの文字のリンク。 */
+.maplibregl-ctrl-group a.open-3d {
+  display: block;
+  width: 29px;
+  height: 29px;
+  line-height: 29px;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #333;
+  text-decoration: none;
+}
+.maplibregl-ctrl-group a.open-3d:hover {
+  background: rgba(0, 0, 0, 0.05);
+}

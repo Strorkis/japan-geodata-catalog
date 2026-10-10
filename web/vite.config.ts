@@ -13,6 +13,8 @@ const DUCKDB_EXTENSIONS_CACHE = fileURLToPath(new URL('./.duckdb-extensions/', i
 
 /** DuckDB-WASM本体の在り処。開発時の配信元と、ビルド時のコピー元を兼ねる。 */
 const DUCKDB_DIST = './node_modules/@duckdb/duckdb-wasm/dist/';
+/** CesiumJS の実行時の資産 (Workers・Assets・Widgets・ThirdParty)。3D のページ (3d.html) が読む。 */
+const CESIUM_BUILD = './node_modules/cesium/Build/Cesium/';
 
 /**
  * DuckDB-WASM本体のうち、ビルド成果物にそのままコピーするファイル。
@@ -39,6 +41,12 @@ const CONTENT_TYPES: Record<string, string> = {
   '.js': 'text/javascript',
   '.json': 'application/json',
   '.parquet': 'application/octet-stream',
+  // Cesium の資産 (地図の部品の見た目・アイコン・星空の画像など)。
+  '.css': 'text/css',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.svg': 'image/svg+xml',
+  '.xml': 'application/xml',
 };
 
 /**
@@ -189,6 +197,25 @@ function copyDuckDbRuntime(): Plugin {
   };
 }
 
+/**
+ * CesiumJS の実行時の資産をビルド成果物の `cesium/` に置く。3D のページ (3d.html) が `CESIUM_BASE_URL` で読む。
+ * **写して配るので、ライセンス (Apache-2.0) の本文も一緒に置く。**
+ */
+function copyCesiumRuntime(): Plugin {
+  const source = fileURLToPath(new URL(CESIUM_BUILD, import.meta.url));
+  return {
+    name: 'copy-cesium-runtime',
+    apply: 'build',
+    writeBundle(options) {
+      const destination = join(options.dir ?? 'dist', 'cesium');
+      for (const dir of ['Workers', 'ThirdParty', 'Assets', 'Widgets']) {
+        copyDirIfChanged(join(source, dir), join(destination, dir));
+      }
+      copyFileIfChanged(join(source, '..', '..', 'LICENSE.md'), join(destination, 'LICENSE.md'));
+    },
+  };
+}
+
 /** spatialなど拡張のWASM本体をビルド成果物の `duckdb/extensions/` に置く。 */
 function copyDuckDbExtensions(cacheDir: string): Plugin {
   return {
@@ -210,7 +237,11 @@ export default defineConfig(async () => {
     // 束ねた依存 (MapLibre・DuckDB-WASM の JS など) のライセンスを全文で書き出す。
     // どれも「複製に著作権表示と許諾表示を含める」のが条件で、縮めた JS からは注記が消えるため。
     // 隠しディレクトリ (既定の .vite/) にしない。開いて読めるところに置く。
-    build: { license: { fileName: 'THIRD-PARTY-LICENSES.md' } },
+    build: {
+      license: { fileName: 'THIRD-PARTY-LICENSES.md' },
+      // **2つのページ。** 3D (Cesium) は別のページにして、いまの地図の読み込みを重くしない。
+      rolldownOptions: { input: { main: 'index.html', viewer3d: '3d.html' } },
+    },
     plugins: [
       // `DATA_DIR` (web/ からの相対) で配るディレクトリを差し替えられる。並べ方・分け方を変えた
       // データを、アプリはそのままで比べるため (docs/geoparquet-layout.md)。
@@ -219,8 +250,11 @@ export default defineConfig(async () => {
       serveLikeObjectStorage('/duckdb/extensions', DUCKDB_EXTENSIONS_CACHE),
       // 開発時はDuckDB-WASM本体を node_modules から配る (ビルド時はコピーする)。
       serveLikeObjectStorage('/duckdb', DUCKDB_DIST),
+      // 開発時は Cesium の資産を node_modules から配る (ビルド時はコピーする)。
+      serveLikeObjectStorage('/cesium', CESIUM_BUILD),
       copyDuckDbRuntime(),
       copyDuckDbExtensions(DUCKDB_EXTENSIONS_CACHE),
+      copyCesiumRuntime(),
     ],
   };
 });

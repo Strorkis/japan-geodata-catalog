@@ -16,6 +16,7 @@ const ja = {
   sourceData: '元データ',
   viewOnly3dTiles: 'この地図では描けません (3D Tiles)。ⓘ から公式のビューアで見られます',
   viewOnlyReference: 'このカタログからは配っていません。ⓘ から公開元へ辿れます',
+  open3dTitle: '同じ場所を 3D で開きます (Cesium。3D Tiles の建物を見られます)',
   // 検索できるもの
   searchMunicipality: '市区町村',
   searchTown: '町名・丁目',
@@ -328,6 +329,7 @@ const en: Messages = {
   sourceData: 'Source data',
   viewOnly3dTiles: 'Cannot be drawn on this map (3D Tiles). Open the official viewer from ⓘ',
   viewOnlyReference: 'Not distributed by this catalog. Follow ⓘ to the original publisher',
+  open3dTitle: 'Open the same place in 3D (Cesium, with 3D Tiles buildings)',
   searchMunicipality: 'Municipalities',
   searchTown: 'Towns and chōme',
   searchStation: 'Stations',
@@ -611,8 +613,13 @@ const en: Messages = {
 
 export const MESSAGES: Record<'ja' | 'en', Messages> = { ja, en };
 
-/** index.html の `data-i18n*` のキー → 英語。日本語は HTML に書いてある。 */
+/** index.html と 3d.html の `data-i18n*` のキー → 英語。日本語は HTML に書いてある。 */
 export const HTML_EN: Record<string, string> = {
+  // ---- 3d.html ----
+  viewer3dTitle: 'View in 3D (Cesium)',
+  backToMap: '← Back to the map (same place)',
+  viewer3dBasemap: 'Background map',
+  // ---- index.html ----
   // 入力欄は狭い (日本語の「地名・駅・路線で検索」と同じくらいの長さに収める)。日本語で打つことは
   // 「検索できるもの」と使い方で言う。
   searchPlaceholder: 'Search in Japanese',
