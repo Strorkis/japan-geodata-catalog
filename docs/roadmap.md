@@ -609,11 +609,26 @@ Re:Earth Terrain (Terrarium) ＋ 地理院の写真 ＋ Re:Earth Buildings (3D T
   OpenFreeMap はベクタのスタイルなので Cesium では描けない
 - CesiumJS 1.146 (Apache-2.0)。実行時の資産 (Workers・Assets・Widgets) は 7.7MB を `dist/cesium` に写す。
   JS は 4.2MB (gzip 1.1MB) で、地図のページとは別に読むので、地図の起動は重くならない
-- 地形はまだ平らな楕円体。PLATEAU の 3D Tiles の高さは**楕円体高** (標高＋ジオイド高。東京で約 37m) なので、
-  地形を入れるときは標高にジオイド高を足さないと建物が浮く・沈む
+- PLATEAU の 3D Tiles の高さは**楕円体高** (標高＋ジオイド高。東京で約 37m)。標高 (海面から) の地形に乗せると建物が浮く
 
-**次の段:** カタログの標高 (地理院・AW3D30) を地形にする (`CustomHeightmapTerrainProvider` など)。そのあと 3D Tiles 2.0
-(glTF 2.1・ベクタ・Gaussian Splatting) の試験データを探して、Cesium の対応を確かめる。
+**2段目: 地形は Re:Earth Terrain (利用者の指摘、2026-10-11)。**
+
+- [Re:Earth Terrain](https://terrain.reearth.land/) は Mapterhorn に EGM2008 のジオイドを足した**楕円体高**を、Cesium がそのまま読む
+  **quantized-mesh** (`cesium-mesh/ellipsoid/layer.json`、ズーム 0〜14) で配っている (CORS `*`)。
+  PLATEAU も Re:Earth Buildings も楕円体高なので、**ジオイドの補正を書かずに建物が地面に乗る**
+  (東京駅・パリ・富士山の画面で確かめた)
+- 地理院 (Terrarium に詰め直したもの)・AW3D30 (COG) は海面からの高さ。Cesium に渡すなら、点ごとにジオイド高を足す
+  変換が要る (東京で約 37m、場所で違う)。Re:Earth Terrain がそれをサーバーでやってくれているので、**この3D のページでは使わない**
+  (MapLibre の地図では引き続き使う)。日本の細かい地形 (1m・5m) を Cesium で見たくなったら、そのときに変換を考える
+- カタログは `reearth-terrain` に `rel: "quantized-mesh"` のリンク (`duck:vertical: ellipsoid`) を足した。
+  web-map-links に該当の rel が無いので独自 (`style` と同じ)。**TOBE: web-map-links に地形の rel を提案する余地** (投稿はしない)
+- 水面 (`requestWaterMask`) は頼まない。Protomaps (ODbL) 由来で、カタログの出典に載せていないため
+- 注視点の地面の高さを `sampleTerrainMostDetailed` で取ってからカメラを置く (富士山で寄ると地面の下に入るのを防ぐ)。
+  地形があるときは `depthTestAgainstTerrain` を立てる。読めなければ平らに戻して状況の欄に出す
+- URL の `?terrain=flat` / `?terrain=<Collection ID>` で選べる
+
+**次の段:** 3D Tiles 2.0 (glTF 2.1・ベクタ・Gaussian Splatting) の試験データを探して、Cesium の対応を確かめる。
+そのあと MapLibre ＋ Three.js・Navara を見る。
 
 ### 世界の背景地図 (2026-10-10)
 

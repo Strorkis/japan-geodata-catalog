@@ -448,6 +448,7 @@ git push
 ```
 
 - 公開中のアプリは items.parquet の新しい列 (`title`・`duck:vintage`) を読まないだけで、壊れない
+- (10-11 追記) Re:Earth Terrain の JSON に `quantized-mesh` のリンクが増えた (3D のページの地形)。同じ「JSON 全部」に入っている
 
 ### 平置きだった頃の古いJSONを消す
 
