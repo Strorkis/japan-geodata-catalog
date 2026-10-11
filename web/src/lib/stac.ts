@@ -357,6 +357,11 @@ export interface Collection {
   tileLink: StacLink | undefined;
   /** スタイルの JSON (`rel: "style"`)。ベクトルタイルの背景地図だけが持つ。 */
   styleUrl: string | undefined;
+  /**
+   * Cesium 用の地形 (quantized-mesh) の `layer.json` (`rel: "quantized-mesh"`)。**高さは楕円体から**で、
+   * 3D のページだけが使う。MapLibre の地形 (`tileLink`・海面からの高さ) とは別。
+   */
+  quantizedMesh: string | undefined;
   /** 地図タイルが実際にあるズーム [最小, 最大]。 */
   zoom: [number, number] | undefined;
   tileSize: number | undefined;
@@ -564,6 +569,7 @@ function toCollection(
     themes: document['duck:themes'],
     generatorOptions: document['duck:generator_options'],
     styleUrl: document.links.find((link) => link.rel === 'style')?.href,
+    quantizedMesh: document.links.find((link) => link.rel === 'quantized-mesh')?.href,
     tileLink: document.links.find(
       (link) => link.rel === 'xyz' || link.rel === 'tilejson' || link.rel === '3d-tiles',
     ),

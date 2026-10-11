@@ -368,6 +368,9 @@ pub struct ExternalRaster {
     pub derived_from: &'static [&'static str],
     /// 公式のビューア (この地図で描けないものを見る先)。
     pub viewer: Option<&'static str>,
+    /// **3D の地球儀 (Cesium) 用の地形** (quantized-mesh の `layer.json`)。高さは WGS84 楕円体からで、
+    /// 3D Tiles (楕円体高) とそのまま合う。MapLibre 用の `link` (海面からの高さ) とは別の配り方。
+    pub quantized_mesh: Option<&'static str>,
     /// **同じ役割の中で既定に使うもの** (`duck:default`)。地形は1つしか選べないので、
     /// 何を最初に使うかをカタログが示す (並び順に頼ると、サブカタログの順で変わってしまう)。
     pub default: bool,
@@ -430,6 +433,7 @@ pub const EXTERNAL_RASTERS: &[ExternalRaster] = &[
         dem: None,
         derived_from: &[],
         viewer: None,
+        quantized_mesh: None,
         // 背景地図の既定。色を抑えてあり、重ねたデータが読みやすい。
         default: true,
     },
@@ -452,6 +456,7 @@ pub const EXTERNAL_RASTERS: &[ExternalRaster] = &[
         dem: None,
         derived_from: &[],
         viewer: None,
+        quantized_mesh: None,
         default: false,
     },
     ExternalRaster {
@@ -474,6 +479,7 @@ pub const EXTERNAL_RASTERS: &[ExternalRaster] = &[
         dem: None,
         derived_from: &[],
         viewer: None,
+        quantized_mesh: None,
         default: false,
     },
     ExternalRaster {
@@ -495,6 +501,7 @@ pub const EXTERNAL_RASTERS: &[ExternalRaster] = &[
         dem: None,
         derived_from: &[],
         viewer: None,
+        quantized_mesh: None,
         default: false,
     },
     // 起伏を見る2つ。**重ねて使う** (不透明度を下げて淡色地図や写真の上に)。
@@ -518,6 +525,7 @@ pub const EXTERNAL_RASTERS: &[ExternalRaster] = &[
         dem: None,
         derived_from: &["gsi-dem-source"],
         viewer: None,
+        quantized_mesh: None,
         default: false,
     },
     ExternalRaster {
@@ -539,6 +547,7 @@ pub const EXTERNAL_RASTERS: &[ExternalRaster] = &[
         dem: None,
         derived_from: &["gsi-dem-source"],
         viewer: None,
+        quantized_mesh: None,
         default: false,
     },
     // ---- 標高 (地形) — **1つだけ選んで使う** ----
@@ -568,6 +577,7 @@ pub const EXTERNAL_RASTERS: &[ExternalRaster] = &[
         // 日本の部分の元データ。
         derived_from: &["gsi-dem-source"],
         viewer: None,
+        quantized_mesh: None,
         // 地形の既定。ズーム16まであり、世界を覆い、そのまま (変換なしで) 読める。
         default: true,
     },
@@ -577,8 +587,8 @@ pub const EXTERNAL_RASTERS: &[ExternalRaster] = &[
         title: "Re:Earth Terrain 標高",
         description: "Mapterhorn の標高を配り直したものです。海面からの高さ (elevation) と、\
                       EGM2008 のジオイドを足した WGS84 楕円体からの高さ (ellipsoid) を選べます。\
-                      ここでは MapLibre に合う海面からの高さを使っています。3D の地球儀 (Cesium) と\
-                      合わせるときは、楕円体高の版を使ってください。",
+                      この地図 (MapLibre) では海面からの高さを、3D のページ (Cesium) では\
+                      楕円体高の quantized-mesh を使っています。",
         attribution: REEARTH_TERRAIN,
         via: "https://terrain.reearth.land/",
         role: RasterRole::Terrain,
@@ -598,6 +608,7 @@ pub const EXTERNAL_RASTERS: &[ExternalRaster] = &[
         }),
         derived_from: &["mapterhorn-terrain"],
         viewer: Some("https://terrain.reearth.land/viewer"),
+        quantized_mesh: Some("https://terrain.reearth.land/cesium-mesh/ellipsoid/layer.json"),
         default: false,
     },
     ExternalRaster {
@@ -628,6 +639,7 @@ pub const EXTERNAL_RASTERS: &[ExternalRaster] = &[
         }),
         derived_from: &["gsi-dem-source"],
         viewer: None,
+        quantized_mesh: None,
         default: false,
     },
     // ---- 元データ (配っていない。派生物の出どころとして載せる) ----
@@ -649,6 +661,7 @@ pub const EXTERNAL_RASTERS: &[ExternalRaster] = &[
         dem: None,
         derived_from: &[],
         viewer: None,
+        quantized_mesh: None,
         default: false,
     },
     // ---- 3D Tiles (この地図では描けない) ----
@@ -673,6 +686,7 @@ pub const EXTERNAL_RASTERS: &[ExternalRaster] = &[
         dem: None,
         derived_from: &["overture-buildings", "reearth-terrain"],
         viewer: Some("https://buildings.reearth.land/"),
+        quantized_mesh: None,
         default: false,
     },
     ExternalRaster {
@@ -695,6 +709,7 @@ pub const EXTERNAL_RASTERS: &[ExternalRaster] = &[
         dem: None,
         derived_from: &[],
         viewer: Some("https://plateauview.mlit.go.jp/"),
+        quantized_mesh: None,
         default: false,
     },
     // ---- 配っていない元データ (承認が要るもの) ----
@@ -716,6 +731,7 @@ pub const EXTERNAL_RASTERS: &[ExternalRaster] = &[
         dem: None,
         derived_from: &[],
         viewer: None,
+        quantized_mesh: None,
         default: false,
     },
     // ---- 世界の背景地図 ----
@@ -740,6 +756,7 @@ pub const EXTERNAL_RASTERS: &[ExternalRaster] = &[
         dem: None,
         derived_from: &[],
         viewer: None,
+        quantized_mesh: None,
         default: false,
     },
     // ---- 衛星の標高 ----
@@ -801,6 +818,7 @@ pub const EXTERNAL_RASTERS: &[ExternalRaster] = &[
         }),
         derived_from: &[],
         viewer: None,
+        quantized_mesh: None,
         default: false,
     },
     // NASA の2つ。AW3D30 と同じく約30mの DSM。条件はゆるい (パブリックドメイン・制限なし) が、
@@ -825,6 +843,7 @@ pub const EXTERNAL_RASTERS: &[ExternalRaster] = &[
         dem: None,
         derived_from: &[],
         viewer: None,
+        quantized_mesh: None,
         default: false,
     },
     ExternalRaster {
@@ -847,6 +866,7 @@ pub const EXTERNAL_RASTERS: &[ExternalRaster] = &[
         dem: None,
         derived_from: &[],
         viewer: None,
+        quantized_mesh: None,
         default: false,
     },
 ];

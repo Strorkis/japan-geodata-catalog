@@ -5,14 +5,17 @@
  * 建物・鉄道などのデータの描き方は MapLibre の層なので、ここには持ち込まない。
  *
  * - **Cesium ion は使わない** (登録が要る)。背景地図と 3D Tiles はこのカタログ (`collections.json`) から組む
- * - 地形はまだ平らな楕円体 (次の段で、カタログの標高を渡す)
+ * - **地形は Re:Earth Terrain** (楕円体高の quantized-mesh)。3D Tiles (PLATEAU・Re:Earth Buildings) も楕円体高なので、
+ *   ジオイドの補正を書かずに建物が地面に乗る。地理院・AW3D30 は海面からの高さで、そのまま渡すと東京で約37mずれる
  * - Cesium を選んだ理由の1つは **3D Tiles 2.0** を試すこと (利用者のねらい)
  */
 import {
   buildModuleUrl,
   Cartesian2,
   Cartesian3,
+  Cartographic,
   Cesium3DTileset,
+  CesiumTerrainProvider,
   Credit,
   EllipsoidTerrainProvider,
   HeadingPitchRange,
@@ -21,6 +24,8 @@ import {
   Matrix4,
   PerspectiveFrustum,
   Rectangle,
+  sampleTerrainMostDetailed,
+  type TerrainProvider,
   TileMapServiceImageryProvider,
   UrlTemplateImageryProvider,
   Viewer,
@@ -54,7 +59,19 @@ const zoomForRange = (range: number, lat: number, viewportHeight: number, fovy: 
 
 async function main() {
   applyHtmlText();
-  const status = document.querySelector<HTMLParagraphElement>('#viewer3d-status')!;
+  const statusElement = document.querySelector<HTMLParagraphElement>('#viewer3d-status')!;
+  // 読めなかったものを**全部**出す (地形と 3D Tiles が別々に落ちても、最後の1件で上書きしない)。
+  const failures = new Map<string, string>();
+  const status = {
+    fail: (id: string, text: string) => {
+      failures.set(id, text);
+      statusElement.innerText = [...failures.values()].join('\n');
+    },
+    clear: (id: string) => {
+      failures.delete(id);
+      statusElement.innerText = [...failures.values()].join('\n');
+    },
+  };
   // 位置が無ければ東京駅を斜めから (建物が立って見える)。
   const view = readView(location.search, { zoom: 15, pitch: 50, bearing: 0 }) ?? {
     lon: 139.767,
@@ -69,6 +86,7 @@ async function main() {
     baseLayer: false,
     baseLayerPicker: false,
     geocoder: false,
+    // 地形は下で選んだものに替える (読み込みを待つので、最初は平ら)。
     terrainProvider: new EllipsoidTerrainProvider(),
     animation: false,
     timeline: false,
@@ -82,27 +100,84 @@ async function main() {
   viewer.imageryLayers.add(
     ImageryLayer.fromProviderAsync(TileMapServiceImageryProvider.fromUrl(buildModuleUrl('Assets/Textures/NaturalEarthII'))),
   );
-  // 地面より下の 3D Tiles も見えるように (地形が平らな楕円体なので、建物は少し浮く・沈むことがある)。
-  viewer.scene.globe.depthTestAgainstTerrain = false;
-
-  // 注視点を MapLibre と同じにする (lookAt で置いてから、操作できるよう固定を外す)。
-  const target = Cartesian3.fromDegrees(view.lon, view.lat, 0);
   // Cesium の画角 (既定 60°) は**縦と横の長い方**に掛かるので、縦の画角を frustum から取る。
   const fovy = () => (viewer.camera.frustum as PerspectiveFrustum).fovy ?? CesiumMath.toRadians(60);
   const range = rangeForZoom(view.zoom, view.lat, viewer.canvas.clientHeight || 720, fovy());
-  viewer.camera.lookAt(
-    target,
-    new HeadingPitchRange(CesiumMath.toRadians(view.bearing), CesiumMath.toRadians(view.pitch - 90), range),
-  );
-  viewer.camera.lookAtTransform(Matrix4.IDENTITY);
+
+  /** 注視点を MapLibre と同じにする (lookAt で置いてから、操作できるよう固定を外す)。`height` は注視点の楕円体高。 */
+  const placeCamera = (height: number) => {
+    viewer.camera.lookAt(
+      Cartesian3.fromDegrees(view.lon, view.lat, height),
+      new HeadingPitchRange(CesiumMath.toRadians(view.bearing), CesiumMath.toRadians(view.pitch - 90), range),
+    );
+    viewer.camera.lookAtTransform(Matrix4.IDENTITY);
+  };
+  placeCamera(0);
 
   let collections: Collection[];
   try {
     collections = await fetchCollections(lang);
   } catch (e) {
-    status.textContent = m.initFailed;
+    status.fail('catalog', m.initFailed);
     throw e;
   }
+
+  // ---- 地形 (カタログの quantized-mesh) ----
+  const terrainSelect = document.querySelector<HTMLSelectElement>('#terrain-select')!;
+  const terrains = collections.filter((c) => c.quantizedMesh);
+  const flat = document.createElement('option');
+  flat.value = 'flat';
+  flat.textContent = m.flatTerrain;
+  terrainSelect.append(flat);
+  for (const collection of terrains) {
+    const option = document.createElement('option');
+    option.value = collection.id;
+    option.textContent = collection.title;
+    terrainSelect.append(option);
+  }
+  let terrainCredit: Credit | undefined;
+  /** 地形を替える。読めなければ平らに戻して、状況の欄に出す。 */
+  const showTerrain = async (id: string): Promise<boolean> => {
+    if (terrainCredit) viewer.creditDisplay.removeStaticCredit(terrainCredit);
+    terrainCredit = undefined;
+    status.clear('terrain');
+    const collection = terrains.find((c) => c.id === id);
+    let provider: TerrainProvider = new EllipsoidTerrainProvider();
+    if (collection) {
+      try {
+        // layer.json を持つディレクトリを渡す (`fromUrl` が layer.json を足して読む)。
+        // 水面 (watermask) は頼まない: Protomaps (ODbL) 由来で、カタログの出典に載せていないため。
+        provider = await CesiumTerrainProvider.fromUrl(collection.quantizedMesh!.replace(/layer\.json$/, ''), {
+          requestVertexNormals: true,
+        });
+        terrainCredit = new Credit(collection.attribution, true);
+        viewer.creditDisplay.addStaticCredit(terrainCredit);
+      } catch (e) {
+        console.error('[3d] terrain failed', collection.id, e);
+        status.fail('terrain', m.loadFailed(collection.title));
+        terrainSelect.value = 'flat';
+      }
+    }
+    viewer.terrainProvider = provider;
+    // 山の向こうの建物が透けないよう、地形があるときは地形で隠す。
+    viewer.scene.globe.depthTestAgainstTerrain = provider instanceof CesiumTerrainProvider;
+    return provider instanceof CesiumTerrainProvider;
+  };
+  const terrainParam = new URLSearchParams(location.search).get('terrain');
+  terrainSelect.value = terrainParam ?? terrains.find((c) => c.id === 'reearth-terrain')?.id ?? terrains[0]?.id ?? 'flat';
+  if (![...terrainSelect.options].some((o) => o.value === terrainSelect.value)) terrainSelect.value = 'flat';
+  if (await showTerrain(terrainSelect.value)) {
+    // 注視点の地面の高さ (富士山のふもとと山頂では数千 m 違う)。0 に置くと、寄ったときカメラが地面の下に入る。
+    try {
+      const [point] = await sampleTerrainMostDetailed(viewer.terrainProvider, [
+        Cartographic.fromDegrees(view.lon, view.lat),
+      ]);
+      if (Number.isFinite(point?.height)) placeCamera(point.height);
+    } catch (e) {
+      console.warn('[3d] terrain height not sampled', e);
+    }
+  }
+  terrainSelect.addEventListener('change', () => void showTerrain(terrainSelect.value));
 
   // ---- 背景地図 (カタログのラスタタイル) ----
   const select = document.querySelector<HTMLSelectElement>('#basemap-select')!;
@@ -167,7 +242,7 @@ async function main() {
         viewer.scene.primitives.add(await promise);
       } catch (e) {
         console.error('[3d] tileset failed', collection.id, e);
-        status.textContent = m.loadFailed(collection.title);
+        status.fail(collection.id, m.loadFailed(collection.title));
         viewer.creditDisplay.removeStaticCredit(credit);
         loaded.delete(collection.id);
         return;
@@ -192,8 +267,11 @@ async function main() {
   document.querySelector<HTMLAnchorElement>('#back-to-map')!.addEventListener('click', (event) => {
     event.preventDefault();
     const canvas = viewer.canvas;
-    const center = viewer.camera.pickEllipsoid(new Cartesian2(canvas.clientWidth / 2, canvas.clientHeight / 2));
     const camera = viewer.camera;
+    // 真ん中の地面 (地形があれば地形との交点、無ければ楕円体との交点)。
+    const middle = new Cartesian2(canvas.clientWidth / 2, canvas.clientHeight / 2);
+    const ray = camera.getPickRay(middle);
+    const center = (ray && viewer.scene.globe.pick(ray, viewer.scene)) ?? camera.pickEllipsoid(middle);
     let lon = view.lon;
     let lat = view.lat;
     let distance = range;

@@ -1319,7 +1319,7 @@ test('世界の背景地図はスタイルを読んで層を差し込み、ま�
  * 外の配信 (地理院タイル・3D Tiles) は叩かない (描けるかは目で確かめる。ここでは渡し方を見る)。
  */
 test('3D のボタンで同じ場所を Cesium で開き、地図に戻ると同じ場所になる', async ({ page }) => {
-  const external = /cyberjapandata\.gsi\.go\.jp|api\.plateauview\.mlit\.go\.jp|buildings\.reearth\.land/;
+  const external = /cyberjapandata\.gsi\.go\.jp|api\.plateauview\.mlit\.go\.jp|buildings\.reearth\.land|terrain\.reearth\.land/;
   await page.route(external, (route) => route.abort());
   await page.evaluate(() => {
     (window as unknown as TestWindow).__map!.jumpTo({ center: [139.7671, 35.6812], zoom: 16, pitch: 45, bearing: 30 });
@@ -1335,6 +1335,10 @@ test('3D のボタンで同じ場所を Cesium で開き、地図に戻ると同
 
   // 背景地図と 3D Tiles は**カタログから**並ぶ (ion は使わない)。既定は淡色地図と PLATEAU。
   await expect(page.locator('#basemap-select')).toHaveValue('gsi-pale');
+  // 地形は Re:Earth Terrain (楕円体高の quantized-mesh)。ここでは外を止めているので読めず、**平らに戻って**状況の欄に出る。
+  await expect(page.locator('#terrain-select option')).toHaveText(['平ら (楕円体)', 'Re:Earth Terrain 標高']);
+  await expect(page.locator('#viewer3d-status')).toContainText('Re:Earth Terrain 標高');
+  await expect(page.locator('#terrain-select')).toHaveValue('flat');
   await expect(page.locator('#tileset-options input[type=checkbox]')).toHaveCount(2);
   await expect(page.locator('#tileset-options input[type=checkbox]').first()).toBeChecked();
   // カメラは渡した場所を見ている (真ん中の地面の経緯度)。

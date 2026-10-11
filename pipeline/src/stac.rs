@@ -675,6 +675,9 @@ fn external_collection(tileset: &ExternalTileset, dir: &str) -> Result<Value> {
     Ok(body)
 }
 
+/// quantized-mesh (Cesium の地形) の形式名。`layer.json` を指すリンクの `type` に使う。
+const QUANTIZED_MESH_MEDIA_TYPE: &str = "application/vnd.quantized-mesh";
+
 /// 地図タイルへのリンク (`rel: "xyz"` / `"tilejson"` / `"pmtiles"`) の出どころ。
 const WEB_MAP_LINKS_EXTENSION: &str =
     "https://stac-extensions.github.io/web-map-links/v1.3.0/schema.json";
@@ -717,6 +720,17 @@ fn raster_collection(
         via_link(raster.via),
     ];
     links.extend(tiles);
+    // **Cesium 用の地形** (quantized-mesh)。web-map-links に該当の rel が無いので `quantized-mesh` と書く
+    // (`style` と同じ)。高さの基準は `duck:vertical` で示す (3D Tiles の楕円体高と合わせるため)。
+    if let Some(layer_json) = raster.quantized_mesh {
+        links.push(json!({
+            "rel": "quantized-mesh",
+            "href": layer_json,
+            "type": QUANTIZED_MESH_MEDIA_TYPE,
+            "title": raster.title,
+            "duck:vertical": "ellipsoid",
+        }));
+    }
     // **何から作られたか。** 行き先はこのカタログの Collection (無ければ作り方の誤り)。
     for source in raster.derived_from {
         let Some(target_dir) = dirs.get(*source) else {
@@ -1059,6 +1073,27 @@ mod tests {
                 "../overture/overture-buildings.json",
                 "reearth-terrain.json"
             ]
+        );
+        // Re:Earth Terrain は Cesium 用の地形 (楕円体高の quantized-mesh) も指す。ほかの地形は持たない。
+        let reearth_terrain = find(&documents, "reearth/reearth-terrain.json");
+        let mesh: Vec<&Value> = reearth_terrain["links"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|link| link["rel"] == "quantized-mesh")
+            .collect();
+        assert_eq!(mesh.len(), 1);
+        assert_eq!(
+            mesh[0]["href"],
+            "https://terrain.reearth.land/cesium-mesh/ellipsoid/layer.json"
+        );
+        assert_eq!(mesh[0]["duck:vertical"], "ellipsoid");
+        assert!(
+            !mapterhorn["links"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|link| link["rel"] == "quantized-mesh")
         );
         // タイルの大きさとズームは地図タイルだけ。3D Tiles と参照には書かない (0 と書かない)。
         assert!(buildings["duck:tile_size"].is_null());

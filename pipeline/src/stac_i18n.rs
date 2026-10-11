@@ -273,8 +273,8 @@ const EN: &[(&str, &str)] = &[
     ),
     ("Re:Earth Terrain 標高", "Re:Earth Terrain elevation"),
     (
-        "Mapterhorn の標高を配り直したものです。海面からの高さ (elevation) と、EGM2008 のジオイドを足した WGS84 楕円体からの高さ (ellipsoid) を選べます。ここでは MapLibre に合う海面からの高さを使っています。3D の地球儀 (Cesium) と合わせるときは、楕円体高の版を使ってください。",
-        "A redistribution of Mapterhorn's elevation. You can choose height above sea level (elevation) or height above the WGS84 ellipsoid with the EGM2008 geoid added (ellipsoid). This app uses height above sea level, which suits MapLibre. Use the ellipsoidal version with a 3D globe (Cesium).",
+        "Mapterhorn の標高を配り直したものです。海面からの高さ (elevation) と、EGM2008 のジオイドを足した WGS84 楕円体からの高さ (ellipsoid) を選べます。この地図 (MapLibre) では海面からの高さを、3D のページ (Cesium) では楕円体高の quantized-mesh を使っています。",
+        "A redistribution of Mapterhorn's elevation. You can choose height above sea level (elevation) or height above the WGS84 ellipsoid with the EGM2008 geoid added (ellipsoid). This map (MapLibre) uses height above sea level; the 3D page (Cesium) uses the ellipsoidal quantized-mesh.",
     ),
     (
         "COG (16ビット整数、m) で、EGM96 ジオイド (海面) からの高さです。-9999 は値なし (海など) で、0 m として描きます。段 0〜3 で1つのファイルが 180°・90°・10°・1° を覆い (段 0 は 900 画素、ほかは 3,600 画素四方)、各ファイルに 1/2・1/4 の縮小版があります。画面の細かさに見合う段を選んで、要る範囲だけを読みます。",
