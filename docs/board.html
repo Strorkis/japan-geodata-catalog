@@ -313,7 +313,7 @@
   <body>
     <header>
       <h1>duck-geocoder ダッシュボード</h1>
-      <span class="meta">更新 2026-10-12 14:53 (日本時間)</span>
+      <span class="meta">更新 2026-10-12 18:00 (日本時間)</span>
       <span class="meta">
         <a href="https://strorkis.github.io/duck-geocoder/">公開サイト</a> ·
         <a href="roadmap.md">方針 (roadmap.md)</a> · STAC 配布形式の実験
@@ -332,7 +332,7 @@
       </div>
       <div class="card kpi">
         <div class="label">公開待ちのコミット</div>
-        <div class="value">17 <small>件</small></div>
+        <div class="value">19 <small>件</small></div>
         <span class="status you">カタログを上げて push 待ち (Item の名前・Overture の出典・AW3D30・世界の背景地図・3D のページと地形)</span>
       </div>
       <div class="card kpi">
@@ -368,7 +368,8 @@
             JSON のまとめ (Item は stac-geoparquet 1つ・アプリは起動時にまとめを1回読む)・
             建物の並べ直し (場所ごと・段ごと。R2 で寄った表示が約35秒 → 約16秒の見積もり)・
             引いた表示の建物をタイル (PMTiles) で描く (R2 相当の回線で東京駅 z13 39秒 → 10秒。件数は寄った表示でだけ出す)・
-            AW3D30 を地形に (JAXA の COG を直接読む・陰影)・世界の背景地図 (OpenFreeMap)
+            AW3D30 を地形に (JAXA の COG を直接読む・陰影)・世界の背景地図 (OpenFreeMap)・
+            地図を DuckDB で待たせない・バーで MapLibre ⇄ Cesium を切り替え (描けない行は灰色・ベクトルタイルは PMTiles を中継)
           </span>
         </li>
         <li>
@@ -605,12 +606,18 @@
             </span>
           </li>
           <li>
-            <b>地図エンジンの切り替え</b> <span class="status you">SPA にするか決める (10-12)</span>
+            <b>地図エンジンの切り替え</b> <span class="status you">見た目を確かめてほしい (10-12)</span>
             <span class="sub">
-              行き先: 上のバーで MapLibre・Cesium・Navara を切り替え、UI は同じ、描けないものは灰色。
-              先に<b>地図を DuckDB で待たせない</b>ようにした (操作できるまで約4.8秒 → 約0.8秒)。
-              同じページで MapLibre ⇄ Cesium を5往復しても壊れなかったので、SPA で進められる。
-              いまは Cesium の別ページ (3D Tiles 2.0 は 1.146 で読めず、部品のベクタを PMTiles で試した。見た目は未確認) (roadmap)
+              上のバーで MapLibre ⇄ Cesium を同じページのまま切り替えられるようにした (Navara は準備中)。一覧は同じで、
+              Cesium ではデータの行 (DuckDB) が灰色。先に<b>地図を DuckDB で待たせない</b>ようにした (操作できるまで約4.8秒 → 約0.8秒)。
+              <b>3D Tiles・地形・ベクタが地面に乗るかは、GPU のあるブラウザで見てほしい</b> (ヘッドレスで描かせたら WSL が落ちた)。
+              次は Cesium でデータの行を描く口、そのあと Navara (roadmap)
+            </span>
+          </li>
+          <li>
+            <b>背景地図が全部失敗すると「準備中」のまま</b> <span class="status todo">見つけた (10-12)</span>
+            <span class="sub">
+              同じタブで2回目に開いたときだけ。前からある不具合 (エンジンの切り替えとは関係ない)。地理院の配信が落ちると起きうる (roadmap「見つけた不具合」)
             </span>
           </li>
           <li>
