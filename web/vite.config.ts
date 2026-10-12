@@ -240,8 +240,6 @@ export default defineConfig(async () => {
     build: {
       license: { fileName: 'THIRD-PARTY-LICENSES.md' },
       // 地図は1ページ (Cesium はバーで選んだときに動的 import で読むので、起動は重くならない)。
-      // 3d.html は以前の 3D のページへのリンクを地図のページへ転送するだけ。
-      rolldownOptions: { input: { main: 'index.html', viewer3d: '3d.html' } },
     },
     plugins: [
       // `DATA_DIR` (web/ からの相対) で配るディレクトリを差し替えられる。並べ方・分け方を変えた

@@ -15,7 +15,6 @@ import {
   Cartesian2,
   Cartesian3,
   Cartographic,
-  Cesium3DTileFeature,
   Cesium3DTileset,
   Cesium3DTileStyle,
   CesiumTerrainProvider,
@@ -63,6 +62,60 @@ const zoomForRange = (range: number, lat: number, viewportHeight: number, fovy: 
     (EARTH_CIRCUMFERENCE_M * Math.cos(CesiumMath.toRadians(lat)) * (viewportHeight / 2)) /
       (512 * range * Math.tan(fovy / 2)),
   );
+
+/** `scene.pick` で拾った地物のうち、吹き出しに使うところ。 */
+interface PickedTileFeature {
+  tileset: unknown;
+  getPropertyIds: () => string[];
+  getProperty: (name: string) => unknown;
+}
+
+/**
+ * 拾ったものが 3D Tiles の地物なら、その形で返す。**型 (クラス) では判定しない** — 地面に貼り付けたベクタを拾うと
+ * `Cesium3DTileVectorFeature` が返るが、これは公開の型に無い (`Cesium3DTileFeature` で判定していたら、拾えていても
+ * 全部捨てていて、吹き出しが出なかった)。持っているもので判定する。
+ */
+function asTileFeature(picked: unknown): PickedTileFeature | undefined {
+  if (typeof picked !== 'object' || picked === null) return undefined;
+  const candidate = picked as Partial<PickedTileFeature>;
+  return candidate.tileset !== undefined &&
+    typeof candidate.getPropertyIds === 'function' &&
+    typeof candidate.getProperty === 'function'
+    ? (candidate as PickedTileFeature)
+    : undefined;
+}
+
+/**
+ * **地面に貼り付けたベクタを拾えるようにする** (Cesium 1.146 の抜けの穴埋め。Cesium の版を上げたら要るか確かめる)。
+ *
+ * 貼り付けたベクタは地表に焼き込まれ、拾うときは地表を通して「拾うための色」を読む。その色は各線の pick ID から作るが、
+ * ID を作る `_updatePickIds` は集まりの `update` の中でしか呼ばれない。MVT の中身 (`VectorGltf3DTileContent.update`) は
+ * 貼り付けるときに集まりの `update` を呼ばず焼き込みに回すだけなので、ID が作られず、**何も拾えなかった**
+ * (2026-10-12。上流の main でも同じ)。集まりの `update` を代わりに呼ぶと、集まり自身は貼り付けの印を持たないので
+ * 宙にもう一度描かれてしまう。そこで ID を作るところだけを、中身の `update` の前後で呼ぶ。
+ * 中身のクラスは公開されていないので、読み込んだ最初の中身の原型 (prototype) に一度だけ手を入れる。
+ * TOBE: 上流で直れば外す (投稿はしない)。
+ */
+type PickableCollection = { _updatePickIds?: (context: unknown) => void };
+let drapedPickingEnabled = false;
+function enableDrapedVectorPicking(content: unknown) {
+  if (drapedPickingEnabled || typeof content !== 'object' || content === null || !('_collections' in content)) return;
+  const proto = Object.getPrototypeOf(content) as {
+    update?: (this: { _collections?: PickableCollection[] }, tileset: unknown, frameState: { context: unknown }) => void;
+  };
+  const original = proto.update;
+  if (typeof original !== 'function') return;
+  drapedPickingEnabled = true;
+  proto.update = function (tileset, frameState) {
+    // 前: 前のコマまでにできた集まり。後: このコマで初めてできた集まり (焼き込みより前に間に合わせる)。
+    for (const collection of this._collections ?? []) collection._updatePickIds?.(frameState.context);
+    original.call(this, tileset, frameState);
+    for (const collection of this._collections ?? []) collection._updatePickIds?.(frameState.context);
+  };
+}
+
+/** 吹き出しのために拾う広さ (画素)。 */
+const PICK_SIZE = 7;
 
 /** ベクトルタイルを読む広さ (度。片側)。z14 のタイル (約0.022°) で 3×3 ほど。 */
 const VECTOR_HALF_SPAN_DEG = 0.03;
@@ -336,6 +389,8 @@ export function createCesiumEngine(options: CesiumEngineOptions): CesiumEngine {
         heightReference: HeightReference.CLAMP_TO_GROUND,
         scene: viewer.scene,
       });
+      // 貼り付けたベクタを拾えるようにする (最初に読み込んだ中身で一度だけ)。
+      provider.tileset!.tileLoad.addEventListener((tile: { content: unknown }) => enableDrapedVectorPicking(tile.content));
       // 層ごとの色は、地物に付く `_layer` (MVT の層の名前) で分ける。
       provider.tileset!.style = new Cesium3DTileStyle({
         show: layers.map((l) => `\${_layer} === ${quote(l.id)}`).join(' || '),
@@ -412,8 +467,9 @@ export function createCesiumEngine(options: CesiumEngineOptions): CesiumEngine {
   // 地物には `_layer` (MVT の層の名前) と元の属性 (`vt_code`・`vt_text`) が付いている。
   // 3D Tiles (PLATEAU) の建物は属性の形が違うので、まだ出さない (TOBE)。
   const pickVector = (position: Cartesian2): CesiumVectorHit | undefined => {
-    const picked: unknown = viewer.scene.pick(position);
-    if (!(picked instanceof Cesium3DTileFeature)) return undefined;
+    // 線は1画素ほどの細さなので、マウスの周りを少し広く (7×7画素) 拾う。
+    const picked = asTileFeature(viewer.scene.pick(position, PICK_SIZE, PICK_SIZE));
+    if (!picked) return undefined;
     for (const row of vectorRows) {
       if (vectors.get(row.collection.id)?.provider.tileset !== picked.tileset) continue;
       const props: Record<string, unknown> = {};

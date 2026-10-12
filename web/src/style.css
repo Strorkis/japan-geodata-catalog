@@ -2195,8 +2195,13 @@ a.lang-option {
 .layer-row.unsupported .layer-name {
   color: #999;
 }
+/* 2段目は1行なので、長ければ末尾を切る (全文は吹き出し `title` で読める)。 */
 .layer-unsupported-note {
-  flex: none;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   margin-right: 0.3rem;
   color: #888;
 }

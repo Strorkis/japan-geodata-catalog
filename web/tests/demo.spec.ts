@@ -1221,7 +1221,14 @@ test('3D Tiles は足せるが MapLibre では灰色で理由を出し、ⓘ か
   await closeCatalog(page);
   const listRow = page.locator('.layer-row[data-layer="reearth-buildings"]');
   await expect(listRow).toHaveClass(/unsupported/);
-  await expect(listRow).toContainText('Cesium に切り替えると描けます');
+  await expect(listRow).toContainText('Cesium で描けます');
+  // **注記は行の枠に収まる** (2段目は1行。以前は長い注記が枠をはみ出した)。
+  const note = listRow.locator('.layer-unsupported-note');
+  const [noteRight, rowRight] = await Promise.all([
+    note.evaluate((el) => el.getBoundingClientRect().right),
+    listRow.evaluate((el) => el.getBoundingClientRect().right),
+  ]);
+  expect(noteRight).toBeLessThanOrEqual(rowRight);
   await openCatalogFor(page, 'reearth-buildings');
   await row.locator('.layer-detail-button').click();
   await expect(page.locator('#layer-detail-dialog')).toBeVisible();
@@ -1412,17 +1419,16 @@ test.describe('地図のエンジン (Cesium)', () => {
   });
 
   /**
-   * 以前の 3D のページ (3d.html) へのリンクは、同じ場所で Cesium を選んだ地図のページへ転送する。
+   * **URL の `engine=cesium` で、その場所の Cesium から始まる** (バーで替えると URL に載るので、読み直しても同じエンジンで開く)。
    *
    * **背景地図のタイルは止めない** (止めるのは重い 3D Tiles と地形だけ)。同じタブで2回目に開いたときに背景地図の
    * タイルが全部失敗すると、地図の準備 (`load`) が終わらないことがある (前からある不具合。roadmap の「見つけた不具合」)。
    */
-  test('以前の 3D のページのリンクは、同じ場所の Cesium へ転送する', { tag: '@map' }, async ({ page }) => {
+  test('URL で Cesium を指すと、その場所の Cesium から始まる', { tag: '@map' }, async ({ page }) => {
     await page.route(/api\.plateauview\.mlit\.go\.jp|buildings\.reearth\.land|terrain\.reearth\.land/, (route) => route.abort());
     // **引いたズームで開く。** 地図の準備 (`load`) は最初の画面のタイルが揃うまで待つので、寄った場所から始めると
-    // 地形と建物のタイルを多く読む。確かめたいのは転送と場所の受け渡しだけ。
-    await page.goto('3d.html?lon=139.7671&lat=35.6812&zoom=11&pitch=0&bearing=0');
-    await expect(page).toHaveURL(/[?&]engine=cesium/);
+    // 地形と建物のタイルを多く読む。確かめたいのは場所とエンジンの受け渡しだけ。
+    await page.goto('./?lon=139.7671&lat=35.6812&zoom=11&pitch=0&bearing=0&engine=cesium');
     await waitForMap(page);
     await expect(page.locator('#engine-bar button[data-engine="cesium"]')).toHaveAttribute('aria-pressed', 'true');
     await expect.poll(() => cesiumCenter(page)).not.toBeNull();

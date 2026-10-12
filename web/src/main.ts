@@ -1166,7 +1166,7 @@ async function main() {
   const bar = createEngineBar(document.querySelector<HTMLDivElement>('#engine-bar')!, engine, (id) => {
     void switchEngine(id);
   });
-  // URL で Cesium を指していれば、そこから始める (古い 3D のページ 3d.html からの転送もここへ来る)。
+  // URL で Cesium を指していれば、そこから始める (バーで替えると URL に載るので、読み直しても同じエンジンで開く)。
   const requested = engineFromUrl(location.search);
   if (requested !== 'maplibre') void switchEngine(requested);
 }

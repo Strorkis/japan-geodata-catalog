@@ -22,7 +22,8 @@ const ja = {
   engineComingSoon: (name: string) => `${name} は準備中です`,
   /** 一覧の行の注記。そのエンジンでは描けない行 (灰色)。 */
   notDrawnIn: (engine: string) => `${engine} ではまだ描けません`,
-  notDrawn3dTilesInMapLibre: 'MapLibre では描けません。上のバーで Cesium に切り替えると描けます',
+  // 一覧の2段目は1行なので短く (長いと末尾が切れる)。
+  notDrawn3dTilesInMapLibre: 'MapLibre では描けません (Cesium で描けます)',
   notUsableIn: (engine: string) => `${engine} ではまだ使えません`,
   cesiumTerrainInstead: (name: string) => `Cesium では、建物が地面に乗るよう楕円体高の ${name} を使います`,
   // 検索できるもの
@@ -341,7 +342,7 @@ const en: Messages = {
   engineBarLabel: 'Map engine',
   engineComingSoon: (name) => `${name} is coming soon`,
   notDrawnIn: (engine) => `Not drawn in ${engine} yet`,
-  notDrawn3dTilesInMapLibre: 'Not drawn in MapLibre. Switch to Cesium in the bar above to draw it',
+  notDrawn3dTilesInMapLibre: 'Not drawn in MapLibre (drawn in Cesium)',
   notUsableIn: (engine) => `Not available in ${engine} yet`,
   cesiumTerrainInstead: (name) => `In Cesium, ${name} (ellipsoidal heights) is used so buildings sit on the ground`,
   searchMunicipality: 'Municipalities',

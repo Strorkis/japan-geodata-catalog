@@ -5,7 +5,6 @@ import { readFileSync } from 'node:fs';
 import { detectLang, urlWithLang } from '../src/i18n/index.ts';
 import { HTML_EN, MESSAGES } from '../src/i18n/messages.ts';
 
-// 3d.html は地図のページへの転送だけなので、文言は index.html にしか無い。
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const htmlKeys = new Set(
   [...html.matchAll(/data-i18n(?:-html|-title|-placeholder|-aria-label)?="([^"]+)"/g)].map((match) => match[1]),
