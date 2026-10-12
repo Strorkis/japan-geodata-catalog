@@ -427,42 +427,42 @@ HTTP Range で末尾を読み、目次から欲しいファイルの位置だけ
 日本語版と英語版を結ぶ。</p>
 
 <figure class="code">
-<figcaption><a href="../pipeline/src/stac_i18n.rs">pipeline/src/stac_i18n.rs</a> <span class="lines">432〜466 行</span></figcaption>
-<pre><code><span class="ln">432</span>/// 題名・説明・名前を英語にする。**訳の無い日本語が残ったらエラー**。
-<span class="ln">433</span>fn translate(value: &amp;mut Value, table: &amp;BTreeMap&lt;&amp;str, &amp;str&gt;, at: &amp;str) -&gt; Result&lt;()&gt; {
-<span class="ln">434</span>    match value {
-<span class="ln">435</span>        Value::Object(map) =&gt; {
-<span class="ln">436</span>            for (key, child) in map.iter_mut() {
-<span class="ln">437</span>                // 出典の文言は規約が書き方を指定しているので訳さない。語彙はデータの中身。
-<span class="ln">438</span>                if key == "duck:attribution" || key == "summaries" {
-<span class="ln">439</span>                    continue;
-<span class="ln">440</span>                }
-<span class="ln">441</span>                let translatable = matches!(
-<span class="ln">442</span>                    key.as_str(),
-<span class="ln">443</span>                    "title" | "description" | "name" | "duck:vintage"
-<span class="ln">444</span>                );
-<span class="ln">445</span>                match child {
-<span class="ln">446</span>                    Value::String(text) if translatable &amp;&amp; has_japanese(text) =&gt; {
-<span class="ln">447</span>                        let Some(english) = table.get(text.as_str()) else {
-<span class="ln">448</span>                            bail!(
-<span class="ln">449</span>                                "{at}: 英語の訳がありません (stac_i18n.rs の EN に足すこと): {text}"
-<span class="ln">450</span>                            );
-<span class="ln">451</span>                        };
-<span class="ln">452</span>                        *text = (*english).to_string();
-<span class="ln">453</span>                    }
-<span class="ln">454</span>                    _ =&gt; translate(child, table, at)?,
-<span class="ln">455</span>                }
-<span class="ln">456</span>            }
-<span class="ln">457</span>        }
-<span class="ln">458</span>        Value::Array(items) =&gt; {
-<span class="ln">459</span>            for child in items {
-<span class="ln">460</span>                translate(child, table, at)?;
-<span class="ln">461</span>            }
-<span class="ln">462</span>        }
-<span class="ln">463</span>        _ =&gt; {}
-<span class="ln">464</span>    }
-<span class="ln">465</span>    Ok(())
-<span class="ln">466</span>}</code></pre>
+<figcaption><a href="../pipeline/src/stac_i18n.rs">pipeline/src/stac_i18n.rs</a> <span class="lines">448〜482 行</span></figcaption>
+<pre><code><span class="ln">448</span>/// 題名・説明・名前を英語にする。**訳の無い日本語が残ったらエラー**。
+<span class="ln">449</span>fn translate(value: &amp;mut Value, table: &amp;BTreeMap&lt;&amp;str, &amp;str&gt;, at: &amp;str) -&gt; Result&lt;()&gt; {
+<span class="ln">450</span>    match value {
+<span class="ln">451</span>        Value::Object(map) =&gt; {
+<span class="ln">452</span>            for (key, child) in map.iter_mut() {
+<span class="ln">453</span>                // 出典の文言は規約が書き方を指定しているので訳さない。語彙はデータの中身。
+<span class="ln">454</span>                if key == "duck:attribution" || key == "summaries" {
+<span class="ln">455</span>                    continue;
+<span class="ln">456</span>                }
+<span class="ln">457</span>                let translatable = matches!(
+<span class="ln">458</span>                    key.as_str(),
+<span class="ln">459</span>                    "title" | "description" | "name" | "duck:vintage"
+<span class="ln">460</span>                );
+<span class="ln">461</span>                match child {
+<span class="ln">462</span>                    Value::String(text) if translatable &amp;&amp; has_japanese(text) =&gt; {
+<span class="ln">463</span>                        let Some(english) = table.get(text.as_str()) else {
+<span class="ln">464</span>                            bail!(
+<span class="ln">465</span>                                "{at}: 英語の訳がありません (stac_i18n.rs の EN に足すこと): {text}"
+<span class="ln">466</span>                            );
+<span class="ln">467</span>                        };
+<span class="ln">468</span>                        *text = (*english).to_string();
+<span class="ln">469</span>                    }
+<span class="ln">470</span>                    _ =&gt; translate(child, table, at)?,
+<span class="ln">471</span>                }
+<span class="ln">472</span>            }
+<span class="ln">473</span>        }
+<span class="ln">474</span>        Value::Array(items) =&gt; {
+<span class="ln">475</span>            for child in items {
+<span class="ln">476</span>                translate(child, table, at)?;
+<span class="ln">477</span>            }
+<span class="ln">478</span>        }
+<span class="ln">479</span>        _ =&gt; {}
+<span class="ln">480</span>    }
+<span class="ln">481</span>    Ok(())
+<span class="ln">482</span>}</code></pre>
 </figure>
 </section>
 <section class="card" id="building-tiles">

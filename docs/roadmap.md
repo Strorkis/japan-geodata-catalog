@@ -7,6 +7,72 @@
 決まったことの索引。** 根拠は [data-sources.md](data-sources.md) と
 [pipeline.md](pipeline.md) にある。
 
+## 全体方針: 取って・変換して・自己配信すれば表示できるライブラリ (2026-10-12)
+
+**利用者のアイデアを精査して決めた。** 下の「このリポジトリは何か」(2026-09-26) の「未解決: 表示部分をライブラリにするか」への答え。
+
+> **WebGIS を作りたい人が、データを取ってきて変換して自己配信すれば表示できる、というライブラリにする。**
+> 使う人はどれか1つの地図ライブラリを使うので、**地図ライブラリごとに分け、共通部分を切り出す。**
+> いまの Web サイトは**日本のカタログビジュアライザー** (ライブラリの使い方の見本も兼ねる)。
+
+**分ける形 (案)。今回は方針を書くだけで、分ける作業はしない** (利用者の判断):
+
+| 部品 | 中身 | いまの在りか |
+| --- | --- | --- |
+| `core` | 地図に依らない: カタログを読む・DuckDB で引く・ジオコーディング・ライセンスを持ち回る | `web/src/lib/` (約3,600行。もう地図に依らない) |
+| `maplibre` | MapLibre で描く | `web/src/lib/tiles.ts`・`web/src/ui/` |
+| `cesium` | Cesium で描く | `web/src/lib/engines/cesium.ts`・`cesium-pmtiles.ts` |
+| (TOBE) `deckgl`・`three`・`navara` | 下の「エンジン」 | — |
+| `pipeline` | 取る・変換する・STAC を書く (CLI) | `pipeline/`・`crates/remote-zip` |
+| Web サイト | 日本のカタログビジュアライザー | `web/` の残り |
+
+**気を付けること:**
+
+1. **変換は Rust の CLI。** JS の人に Rust を入れさせるのは重い → 配る形 (ビルド済みの CLI か WASM) を決める。
+   棚上げした「配らずに手元で変換 (WASM)」(下の節) はここで生き返る
+2. **自己配信すると、配る責任が使う人に移る。** 基盤地図情報は測量法の複製の承認、PLATEAU は国交省の出典の書き方、
+   Overture・OSM 由来は ODbL の継承。**ライセンスを持ち回る仕組み (STAC の `duck:attribution`・`duck:terms`、切り出した
+   GeoParquet の KV) が、このライブラリのいちばんの売り**になる。README と出力で必ず伝える
+3. **公開する API は約束になる。** npm に出すのは使い方が固まってから。まずは同じリポジトリの中でワークスペースに分ける
+4. **リポジトリの名前** (duck-geocoder) が合わなくなる。この方針が「名前を決める前に要る文」になった (下の「名前について」)
+
+形式は自前で作らず、Portolan・stac-geoparquet に寄せる (下の「Portolan について」)。
+
+### エンジン (2026-10-12)
+
+いまは MapLibre・Cesium (Navara は準備中)。**MapLibre + deck.gl・MapLibre + Three.js を TOBE** に足す。
+
+- Cesium・Navara は地図そのものを**入れ替える**。deck.gl (`MapboxOverlay`) と Three.js (3DTilesRendererJS など) は
+  **MapLibre の上に重ねる** — 一覧・周辺検索・吹き出しは MapLibre のまま使える。バーでは別の項目に並べ、中身は「MapLibre ＋ 描き手」
+- **deck.gl を先に。** DuckDB が返す Arrow をそのまま描ける (deck.gl-geoarrow。手元にクローンあり)。いまは WKB を自前で読んで
+  GeoJSON にしているので、建物が多いときに効く見込み (**測っていない**)
+- Three.js は MapLibre の上に 3D Tiles を重ねる道 (下の「Navara は立ち位置が違う」に既出)
+- 「MapLibre 単体」はいまの MapLibre (バーの名前はそのまま)
+
+### ジオコーディング (2026-10-12)
+
+`core` に「ジオコーダー」の口を作り、**独自 (DuckDB で自前の GeoParquet を引く)・住所の正規化 (Geolonia)・Nominatim** を並べる。
+結果には必ず出典を添える。
+
+- **Geolonia の community-geocoder は、このリポジトリと同じ「位置参照情報」が元。** 違いは住所の文字列の正規化
+  (`@geolonia/normalize-japanese-addresses`、MIT。表記の揺れ・郡の省略・漢数字を吸収する)。CDN の `community-geocoder.js`
+  (グローバル関数) より**正規化の部品を直接使う**。住所データの配信先は `config.japaneseAddressesApi` で差し替えられる
+  (既定は Geolonia の配信) ので、**自己配信の方針と合う** (手元の `.reference/github.com/geolonia/`)
+- **Nominatim の公開 API は利用方針が厳しい** ([利用方針](https://operations.osmfoundation.org/policies/nominatim/)、2026-10-12 に読んだ):
+  毎秒1回まで (サイト全体で)・**入力しながらの候補表示は禁止**・結果はキャッシュ・ODbL の出典・大量や定期の問い合わせは不可。
+  いまの検索欄は**入力のたびに (200ms 置いて) 引く**ので、Nominatim は**押したとき (Enter かボタン) だけ**の別の操作にする。
+  ライブラリとしては**自前の Nominatim の URL を設定する形**にし、公開 API を既定にしない
+- Nominatim の結果を GeoParquet に切り出すと ODbL がかかる (下の「気をつけること: ODbLの感染範囲」)
+
+### OpenStreetMap の標準タイル (2026-10-12)
+
+**カタログに載せるだけで、描かない** (利用者の判断)。[利用方針](https://operations.osmfoundation.org/policies/tiles/) は
+条件付きで使える (出典を地図の上の目立つ所に・Referer・キャッシュを守る) が、**先読み・一括取得・オフラインを禁じ、保証が無く
+予告なく止められる**。規約の厳しさを伝えるために載せた (`osm/osm-standard-tiles`、`duck:kind: reference`)。
+タイルへのリンクは書かない (カタログの閲覧 (STAC Browser) が見本の地図として読みに行くため)。OSM のデータで背景地図を描くなら OpenFreeMap
+
+---
+
 ## このリポジトリは何か (2026-09-26)
 
 **名前を決めようとして、方針が言葉になっていないことに気づいた。** 先にここを書く。
@@ -38,6 +104,8 @@
 このアプリでGCS (地上局) を作る想定は無いので、名前や説明に入れない。
 
 ### 未解決: 表示部分をライブラリにするか
+
+**(2026-10-12) 決まった: ライブラリにする** (上の「全体方針」)。以下は決める前の記録。
 
 **データをDLできたところで使えないと意味がない。** 表示までできているなら、
 **そこを部品として切り出した方がよいのではないか**という問いが残っている。
@@ -125,6 +193,8 @@ base pathを作るので直さなくてよく、R2のCORSもホスト単位な�
 7. **川 / DID / N03** — **承認待ち。** こちらから動かせない
 8. 空港の制限表面 — **面のGISは配られていないが、C28から計算で作れる**
    ([data-sources.md](data-sources.md))。ただし空港ごとに諸元が違う
+9. Overture の出典を実際の出所に絞る — **建物は済み (2026-10-10。`count_overture_sources` で数えて Esri・Google を外した)。
+   行政区域と道路はまだ数えていない** (ボードから移した、2026-10-12)
 
 **並べ替えの根拠は「手間の総量」ではなく「手動ダウンロードの回数」。** 変換コードを
 足すのは安く、47回のクリックは高い。ここを取り違えて昼間人口メッシュを先頭に

@@ -3,7 +3,7 @@
 // ダッシュボードの「見てほしい箇所」から、ファイルを開かずに読めるようにするための読み物。
 // **コードの抜き出しはソースから作る** (extract.mjs)。コードを変えたら作り直す。
 // 文章はここに書く。何のためか → どう解いたか → 要のコード、の順。
-import { readFileSync, writeFileSync } from 'node:fs';
+import { writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { extract } from './extract.mjs';
@@ -339,34 +339,6 @@ R2 には何も置かない (カタログから公開元を直接読む)。</p>
   },
 ];
 
-/** ダッシュボードの表に出す1行の要約。読み物の節へのリンクに添える。 */
-const SUMMARY = {
-  'remote-zip': 'HTTP Range を <code>Read + Seek</code> に見せ、zip の中身を落とさず取る。<b>単体のクレートに切り出した</b> (CLI 付き)',
-  'spatial-pack': 'STR で並べ、<b>場所ごとに区切って段の境で行グループを切る</b>。読み飛ばしが効くかはここで決まる',
-  'coarse-lod': '線の粗い段: 名前で束ねて簡略化した行を<b>同じファイルに足す</b> (原寸は消さない)',
-  quadkey: '件数の多いタイルだけを割る QuadKey。Rust と SQL の2通りで書き、テストで一致を見る',
-  tiers: '重要度の段と使う条件を<b>規則・データ</b>として持ち、SQL とカタログの両方へ出す',
-  'stac-layout': '実データの隣に Collection を置き、Item はまとめる。<code>duck:*</code> の独自項目',
-  'stac-geoparquet': 'Item を Collection ごとの行グループに。<b>件数の少ないものをフッターの隣に</b> (16KB 単位で読まれるため)',
-  i18n: '英語版とまとめ。<b>訳の無い日本語はエラー</b>',
-  'building-tiles': '引いた表示のための建物の <b>PMTiles</b>。段の上限はタイル自身から読む',
-  pmtiles: 'PMTiles を<b>ヘッダとメタデータだけ</b>読んでカタログへ (16.9GB のうち 7KB)',
-  'catalog-load': 'まとめ1つから Collection を作り、Item は<b>行番号の範囲</b>で読む',
-  'files-in-view': '<b>表示範囲に重なるファイルだけ</b>を DuckDB に渡し、ズームから粗い段か原寸かを決める',
-  buildings: '1ズーム引くごとに1段減らす間引き。<b>引いた表示はタイルで描く</b> (件数は寄った表示でだけ)',
-  nearby: '周辺検索: 起点付近を<b>メートルに直してから</b>距離で判定。鉄道は押した地点の前後1.5km',
-  'gsi-vector': '地理院のタイルを<b>データだけ</b>読み、形の種類から描く',
-  'gsi-dem': '地理院の標高 (独自形式) を読み込むときに Terrarium へ詰め直す',
-  'cog-dem': 'COG (AW3D30) を<b>要る窓だけ読んで</b>地形のタイルにする。R2 を通さずカタログから描く',
-  wkb: 'DuckDB が返す GeoArrow (WKB) を<b>自前で読む</b> (GeoJSON の文字列を作らない)',
-  'draw-shape': 'データの描き方の共通の形 (<b>世代を最初に進める</b>・空なら setData しない)',
-  export: 'ブラウザの中で GeoParquet を書き、<b>出典と規約を KV に入れる</b>',
-  'layer-order': '一覧の順番を地図の層へ写す (区分ごとの目印の層の直下に積む)',
-  hover: '吹き出しを<b>層ごとの表</b>で1つの仕掛けに (周辺検索の結果やタイルの建物にも)',
-  'dev-server': '手元の配信をオブジェクトストレージと同じ流儀に。<b>R2 の遅さを再現</b>できる',
-  'stac-browser': 'STAC Browser 5.1.0 に<b>パッチを1つ</b>当ててビルドする。上流で直ったら外す',
-};
-
 // ---- HTML ------------------------------------------------------------------------------
 
 const escape = (text) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -463,25 +435,5 @@ ${PARTS.map((part) => `<h2>${part.title}</h2>\n<p class="intro">${part.intro}</p
 
 writeFileSync(OUTPUT, html);
 console.log(`${OUTPUT} を書きました (${PARTS.reduce((n, p) => n + p.sections.length, 0)} 項目)`);
-
-// ---- ダッシュボードの表 ------------------------------------------------------------------
-//
-// board.html の「見てほしい箇所」のうち、目印 (`tour:begin` / `tour:end`) で挟んだ行を作り直す。
-// 項目を足したり名前を変えたりしたときに、表と読み物が食い違わないようにするため。
-const BOARD = `${ROOT}/docs/board.html`;
-const BEGIN = '<!-- tour:begin (docs/tour/build.mjs が書く。手で直さない) -->';
-const END = '<!-- tour:end -->';
-const board = readFileSync(BOARD, 'utf8');
-const from = board.indexOf(BEGIN);
-const to = board.indexOf(END);
-if (from < 0 || to < from) throw new Error(`${BOARD} に目印がありません (${BEGIN} … ${END})`);
-const rows = PARTS.map((part) => {
-  const head = `            <tr class="group"><th colspan="2">${part.title}</th></tr>`;
-  const body = part.sections.map((s) => {
-    if (!SUMMARY[s.id]) throw new Error(`ダッシュボードの要約がありません: ${s.id}`);
-    return `            <tr>\n              <td><a href="tour.html#${s.id}">${s.title}</a></td>\n              <td>${SUMMARY[s.id]}</td>\n            </tr>`;
-  });
-  return [head, ...body].join('\n');
-}).join('\n');
-writeFileSync(BOARD, `${board.slice(0, from + BEGIN.length)}\n${rows}\n            ${board.slice(to)}`);
-console.log(`${BOARD} の「見てほしい箇所」を書き直しました`);
+// ダッシュボードには載せない (2026-10-12)。ボードは全体が一目で分かるよう、判断と行動に要るものだけにした。
+// 以前はボードの「見てほしい箇所」の表をここで書き直していた。

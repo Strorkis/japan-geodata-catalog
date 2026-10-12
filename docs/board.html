@@ -1,19 +1,20 @@
 <!doctype html>
 <!--
   利用者が見るべきことを1枚にまとめたダッシュボード。**作業の区切りごとに更新する** (AGENTS.md)。
-  細かい経緯や根拠はここに書かず、各ドキュメントへのリンクにする。
+  **全体が一目で分かるよう、判断と行動に要るものだけを載せる** (2026-10-12 に絞った):
+  あなたの番 (確かめてほしいこと・公開までの残り)・次にやること (5つまで。ほかは roadmap)・待ち・未決の問い、
+  数字は行動に結び付くものだけ (公開待ちのコミット・R2 の無料枠)。
+  細かい経緯や根拠はここに書かず、各ドキュメントへのリンクにする (コードの読みどころは tour.html)。
   **済んだものは消す** (移さない。決めたことと経緯は roadmap.md に、何をしたかは git の履歴にある)。
   **利用者に確かめてほしいことは「確かめてほしいこと」に具体的な手順で書く** (開く URL・押すもの・見るべき点)。
-  確かめてもらったら消す。
+  確かめてもらったら消す。いま確かめてほしいことが無ければ、その節ごと置かない。
   ブラウザで直接開く (file://)。ビルドもサーバーも要らない。
 
   数字は手で写している (file:// からは data/ を読めない)。出どころ:
   - 配信データの量: du -sb data/output/<出所>
-  - 建物の数: items.parquet の "table:row_count" を collection ごとに合計 (duckdb)
   - 公開待ちのコミット: git rev-list --count origin/main..main
   - 更新の日時: 日付だけでなく時刻まで (日本時間)。同じ日に何度も更新するので
-  色はカテゴリの3色 (青・橙・緑) を検証済み (明・暗とも。緑は明るい面で3:1未満なので、
-  バーには必ず数字のラベルと表を添える)。状態の色はアイコンと文字と一緒にだけ使う。
+  状態の色はアイコンと文字と一緒にだけ使う。
 -->
 <html lang="ja">
   <head>
@@ -31,14 +32,8 @@
         --ring: rgba(11, 11, 11, 0.1);
         --accent: #2a78d6;
         --accent-track: #cde2fb;
-        --s1: #2a78d6;
-        --s2: #eb6834;
-        --s3: #1baf7a;
         --good: #0ca30c;
-        --good-text: #006300;
         --warning: #fab219;
-        --serious: #ec835a;
-        --critical: #d03b3b;
       }
       @media (prefers-color-scheme: dark) {
         :root {
@@ -51,10 +46,6 @@
           --ring: rgba(255, 255, 255, 0.1);
           --accent: #3987e5;
           --accent-track: #184f95;
-          --s1: #3987e5;
-          --s2: #d95926;
-          --s3: #199e70;
-          --good-text: #0ca30c;
         }
       }
       * {
@@ -107,7 +98,7 @@
         font-size: 0.82rem;
       }
 
-      /* ---- KPI ---- */
+      /* ---- 数字 ---- */
       .kpis {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(13.5rem, 1fr));
@@ -162,10 +153,6 @@
         font-size: 0.7rem;
         line-height: 1;
       }
-      .status.done::before {
-        content: '✓';
-        background: var(--good);
-      }
       .status.you::before {
         content: '!';
         background: var(--warning);
@@ -177,7 +164,7 @@
         background: transparent;
       }
 
-      /* ---- 公開までの段階 ---- */
+      /* ---- 公開までの残り ---- */
       .steps {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
@@ -210,93 +197,15 @@
         gap: 0.8rem;
         margin-bottom: 0.8rem;
       }
-      .row.two {
-        grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+      .row.three {
+        grid-template-columns: minmax(0, 1.4fr) minmax(0, 0.8fr) minmax(0, 1fr);
         align-items: start;
       }
-      .row.four {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-      }
       @media (max-width: 64rem) {
-        .row.two,
-        .row.four,
+        .row.three,
         .steps {
           grid-template-columns: 1fr;
         }
-      }
-
-      /* ---- 容量の内訳 (積み上げ横棒 + 上限の線) ---- */
-      .stack {
-        position: relative;
-        display: flex;
-        gap: 2px;
-        height: 1.6rem;
-        margin: 1.4rem 0 0.4rem;
-      }
-      .stack > span {
-        height: 100%;
-        border-radius: 4px;
-      }
-      .stack .limit {
-        position: absolute;
-        top: -1.25rem;
-        bottom: -0.3rem;
-        border-left: 2px dashed var(--ink-2);
-      }
-      .stack .limit::after {
-        content: attr(data-label);
-        position: absolute;
-        top: 0;
-        right: 0.3rem;
-        font-size: 0.72rem;
-        color: var(--ink-2);
-        white-space: nowrap;
-      }
-      .legend {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.2rem 0.9rem;
-        margin: 0.3rem 0 0.6rem;
-        font-size: 0.8rem;
-        color: var(--ink-2);
-      }
-      .legend i {
-        display: inline-block;
-        width: 0.7rem;
-        height: 0.7rem;
-        margin-right: 0.3rem;
-        border-radius: 2px;
-        vertical-align: -0.05rem;
-      }
-
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 0.84rem;
-      }
-      th,
-      td {
-        padding: 0.35rem 0.45rem;
-        border-top: 1px solid var(--hairline);
-        text-align: left;
-        vertical-align: top;
-      }
-      thead th {
-        border-top: none;
-        color: var(--muted);
-        font-weight: 500;
-        font-size: 0.78rem;
-      }
-      td.num,
-      th.num {
-        text-align: right;
-        font-variant-numeric: tabular-nums;
-        white-space: nowrap;
-      }
-      tr.group th {
-        padding-top: 0.7rem;
-        color: var(--accent);
-        font-size: 0.8rem;
       }
 
       ol.tasks,
@@ -316,62 +225,32 @@
   <body>
     <header>
       <h1>duck-geocoder ダッシュボード</h1>
-      <span class="meta">更新 2026-10-12 20:11 (日本時間)</span>
+      <span class="meta">更新 2026-10-12 21:05 (日本時間)</span>
       <span class="meta">
         <a href="https://strorkis.github.io/duck-geocoder/">公開サイト</a> ·
-        <a href="roadmap.md">方針 (roadmap.md)</a> · STAC 配布形式の実験
+        <a href="roadmap.md">方針 (roadmap)</a> ·
+        <a href="tour.html">コードの読みどころ</a> ·
+        <a href="deploy.md">上げる手順 (deploy)</a> ·
+        <a href="data-sources.md">データの出所と規約</a> ·
+        <a href="../AGENTS.md">作業の約束</a>
       </span>
     </header>
 
-    <!-- ===== KPI ===== -->
-    <section class="kpis" aria-label="主な数字">
+    <!-- ===== 数字 (行動に結び付くものだけ) ===== -->
+    <section class="kpis" aria-label="数字">
       <div class="card kpi">
-        <div class="label">配信データ (手元の data/output)</div>
+        <div class="label">公開待ちのコミット</div>
+        <div class="value">26 <small>件</small></div>
+        <span class="status you">カタログを上げて push 待ち</span>
+      </div>
+      <div class="card kpi">
+        <div class="label">R2 の配信データ (手元の data/output)</div>
         <div class="value">9.86 <small>GB / 無料枠 10 GB</small></div>
         <div class="meter" role="img" aria-label="無料枠の99%">
           <span style="width: 99%; background: var(--warning)"></span>
         </div>
-        <span class="status you">無料枠の99%</span>
+        <span class="status you">無料枠の99% (超えた分は払う方針)</span>
       </div>
-      <div class="card kpi">
-        <div class="label">公開待ちのコミット</div>
-        <div class="value">24 <small>件</small></div>
-        <span class="status you">カタログを上げて push 待ち</span>
-      </div>
-      <div class="card kpi">
-        <div class="label">建物</div>
-        <div class="value">8,348 <small>万棟</small></div>
-        <div class="sub">PLATEAU 2,929万 (306都市) · Overture 5,419万 (全国)</div>
-      </div>
-      <div class="card kpi">
-        <div class="label">カタログ</div>
-        <div class="value">10 <small>出所 · 32 Collection</small></div>
-        <div class="sub">
-          GeoParquet 761 ファイル + 外部 17 (地図タイル6・ベクトルタイル1・標高3・3D Tiles 2・元データ5 (基盤地図情報・N03・AW3D30・NASA 2)。複製しない)。
-          JSON 88 (日英) + Item の stac-geoparquet 1つ
-        </div>
-      </div>
-    </section>
-
-    <!-- ===== 確かめてほしいこと (確かめてもらったら消す) ===== -->
-    <section class="card row" aria-label="確かめてほしいこと">
-      <h2>確かめてほしいこと — Cesium の吹き出しと、一覧の注記 (直したところ) <span class="status you">あなたの番</span></h2>
-      <p class="sub" style="margin: -0.3rem 0 0.5rem">
-        前回の確かめで出なかった・はみ出した所を直しました。<b>おかしかったら、その番号を教えてください。</b>
-      </p>
-      <ol class="tasks">
-        <li>
-          <code>cd web &amp;&amp; pnpm dev</code> → <code>http://localhost:5173/?lon=139.7671&amp;lat=35.6812&amp;zoom=16&amp;pitch=50&amp;engine=cesium</code> を開く (Cesium で始まる)
-        </li>
-        <li>
-          地図タイルの「＋ 追加」→ 国土地理院「最適化ベクトルタイル」の「道路」を足す → <b>道路の線にマウスを乗せると吹き出し</b>
-          (「道路 › 道路中心線」・層・種別コード・出所・時点) が出る。線から外すと消える
-        </li>
-        <li>
-          バーで <b>MapLibre</b> に戻り、地図タイルの「＋ 追加」→ PLATEAU の「建物 (3D Tiles・公式配信)」を足す →
-          行の2段目の「MapLibre では描けません (Cesium で描けます)」が<b>行の枠に収まっている</b>
-        </li>
-      </ol>
     </section>
 
     <!-- ===== 公開までの残り ===== -->
@@ -381,8 +260,9 @@
         <li class="current">
           <b>カタログを上げて push</b><span class="status you">あなたの番</span>
           <span class="sub">
-            <a href="deploy.md">deploy.md</a>「2026-10-10 の分 その2」。items.parquet と JSON (89個) → push。データのファイルは変えていない。
-            載るもの: Item の名前と年度・Overture の出典・AW3D30 を地形に・世界の背景地図・地図を DuckDB で待たせない・地図エンジンの切り替え
+            <a href="deploy.md">deploy.md</a>「2026-10-10 の分 その2」。items.parquet と JSON 全部 → push。データのファイルは変えていない。
+            載るもの: Item の名前と年度・Overture の出典・AW3D30 を地形に・世界の背景地図・OSM の標準タイル (カタログだけ)・
+            地図を DuckDB で待たせない・地図エンジンの切り替え
           </span>
         </li>
         <li>
@@ -392,211 +272,38 @@
       </ol>
     </section>
 
-    <div class="row two">
-      <!-- ===== 容量の内訳 ===== -->
-      <section class="card" aria-label="R2の容量の内訳">
-        <h2>R2 の容量 — 何が占めているか</h2>
-        <div class="stack" role="img" aria-label="Overture 5.82GB、PLATEAU 3.93GB、その他 0.11GB。無料枠10GB">
-          <span style="flex: 5.82; background: var(--s1)" title="Overture Maps 5.82 GB (GeoParquet 400・タイル 1)"></span>
-          <span style="flex: 3.93; background: var(--s2)" title="PLATEAU 3.93 GB (GeoParquet 307・タイル 1)"></span>
-          <span style="flex: 0.11; background: var(--s3)" title="国土数値情報・国勢調査・位置参照情報 0.11 GB"></span>
-          <span style="flex: 0.14"></span>
-          <span class="limit" style="left: 98.6%" data-label="無料枠 10 GB"></span>
-        </div>
-        <div class="legend">
-          <span><i style="background: var(--s1)"></i>Overture 5.82 GB</span>
-          <span><i style="background: var(--s2)"></i>PLATEAU 3.93 GB</span>
-          <span><i style="background: var(--s3)"></i>その他 0.11 GB</span>
-        </div>
-        <table>
-          <thead>
-            <tr><th>出所</th><th class="num">ファイル</th><th class="num">大きさ</th><th>次のアップロード</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>Overture Maps</td><td class="num">401</td><td class="num">5.82 GB</td><td>なし</td></tr>
-            <tr><td>PLATEAU</td><td class="num">308</td><td class="num">3.93 GB</td><td>なし</td></tr>
-            <tr><td>カタログ (起点)</td><td class="num">1</td><td class="num">0.08 MB</td><td>items.parquet と JSON 全部 (89個)</td></tr>
-            <tr><td>そのほか</td><td class="num">—</td><td class="num">0.11 GB</td><td>なし</td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <!-- ===== 見てほしい箇所 ===== -->
-      <section class="card" aria-label="見てほしいコードとドキュメント">
-        <h2>見てほしい箇所 — ありふれていない部分</h2>
-        <p class="sub" style="margin: -0.3rem 0 0.5rem">
-          どこかで見たことのある書き方ではなく、<b>このリポジトリ独自の判断が入っている所</b>。
-          壊れたときに直せる人が要る順。<b>項目を押すと、読み物 (<a href="tour.html">コードの読みどころ</a>) の該当の節が開く</b>。
-          何のための仕組みか → どう解いたか → 要のコード、の順に、ファイルを開かずに読める。
-        </p>
-        <table>
-          <thead><tr><th>箇所</th><th>何が特別か</th></tr></thead>
-          <tbody>
-            <!-- tour:begin (docs/tour/build.mjs が書く。手で直さない) -->
-            <tr class="group"><th colspan="2">配り方 (パイプライン)</th></tr>
-            <tr>
-              <td><a href="tour.html#remote-zip">zip を落とさずに中身を取る (remote-zip)</a></td>
-              <td>HTTP Range を <code>Read + Seek</code> に見せ、zip の中身を落とさず取る。<b>単体のクレートに切り出した</b> (CLI 付き)</td>
-            </tr>
-            <tr>
-              <td><a href="tour.html#spatial-pack">行を場所で並べ、行グループで切る (STR・場所ごと・段ごと)</a></td>
-              <td>STR で並べ、<b>場所ごとに区切って段の境で行グループを切る</b>。読み飛ばしが効くかはここで決まる</td>
-            </tr>
-            <tr>
-              <td><a href="tour.html#coarse-lod">線の粗い段 — 統合して簡略化した行を「足す」</a></td>
-              <td>線の粗い段: 名前で束ねて簡略化した行を<b>同じファイルに足す</b> (原寸は消さない)</td>
-            </tr>
-            <tr>
-              <td><a href="tour.html#quadkey">件数でファイルを割る (適応的な QuadKey)</a></td>
-              <td>件数の多いタイルだけを割る QuadKey。Rust と SQL の2通りで書き、テストで一致を見る</td>
-            </tr>
-            <tr>
-              <td><a href="tour.html#tiers">重要度の段と使う条件を「規則・データ」として持つ</a></td>
-              <td>重要度の段と使う条件を<b>規則・データ</b>として持ち、SQL とカタログの両方へ出す</td>
-            </tr>
-            <tr>
-              <td><a href="tour.html#stac-layout">STAC の置き方 — 実データの隣に、Item はまとめて</a></td>
-              <td>実データの隣に Collection を置き、Item はまとめる。<code>duck:*</code> の独自項目</td>
-            </tr>
-            <tr>
-              <td><a href="tour.html#stac-geoparquet">Item の一覧も GeoParquet に (stac-geoparquet)</a></td>
-              <td>Item を Collection ごとの行グループに。<b>件数の少ないものをフッターの隣に</b> (16KB 単位で読まれるため)</td>
-            </tr>
-            <tr>
-              <td><a href="tour.html#i18n">英語版のカタログ — 訳の無い日本語はエラー</a></td>
-              <td>英語版とまとめ。<b>訳の無い日本語はエラー</b></td>
-            </tr>
-            <tr>
-              <td><a href="tour.html#building-tiles">引いた表示のための建物のタイル (PMTiles)</a></td>
-              <td>引いた表示のための建物の <b>PMTiles</b>。段の上限はタイル自身から読む</td>
-            </tr>
-            <tr>
-              <td><a href="tour.html#pmtiles">PMTiles をヘッダだけ読んでカタログに載せる</a></td>
-              <td>PMTiles を<b>ヘッダとメタデータだけ</b>読んでカタログへ (16.9GB のうち 7KB)</td>
-            </tr>
-            <tr class="group"><th colspan="2">使い方 (アプリ)</th></tr>
-            <tr>
-              <td><a href="tour.html#catalog-load">カタログを読む — まとめ1つと、Item を行番号の範囲で</a></td>
-              <td>まとめ1つから Collection を作り、Item は<b>行番号の範囲</b>で読む</td>
-            </tr>
-            <tr>
-              <td><a href="tour.html#files-in-view">表示範囲からファイルを選び、ズームから段を決める</a></td>
-              <td><b>表示範囲に重なるファイルだけ</b>を DuckDB に渡し、ズームから粗い段か原寸かを決める</td>
-            </tr>
-            <tr>
-              <td><a href="tour.html#buildings">建物の出し方 — 全部 / 重要な段だけ (タイル) / 整備範囲</a></td>
-              <td>1ズーム引くごとに1段減らす間引き。<b>引いた表示はタイルで描く</b> (件数は寄った表示でだけ)</td>
-            </tr>
-            <tr>
-              <td><a href="tour.html#nearby">周辺検索 — メートルに直してから距離で判定</a></td>
-              <td>周辺検索: 起点付近を<b>メートルに直してから</b>距離で判定。鉄道は押した地点の前後1.5km</td>
-            </tr>
-            <tr>
-              <td><a href="tour.html#gsi-vector">地理院のベクトルタイルを、データだけで描く</a></td>
-              <td>地理院のタイルを<b>データだけ</b>読み、形の種類から描く</td>
-            </tr>
-            <tr>
-              <td><a href="tour.html#gsi-dem">地理院の標高 (独自形式) を読み込むときに直す</a></td>
-              <td>地理院の標高 (独自形式) を読み込むときに Terrarium へ詰め直す</td>
-            </tr>
-            <tr>
-              <td><a href="tour.html#cog-dem">COG (AW3D30) を地形のタイルにする</a></td>
-              <td>COG (AW3D30) を<b>要る窓だけ読んで</b>地形のタイルにする。R2 を通さずカタログから描く</td>
-            </tr>
-            <tr>
-              <td><a href="tour.html#wkb">DuckDB の返すジオメトリ (WKB) を自前で読む</a></td>
-              <td>DuckDB が返す GeoArrow (WKB) を<b>自前で読む</b> (GeoJSON の文字列を作らない)</td>
-            </tr>
-            <tr>
-              <td><a href="tour.html#draw-shape">データの描き方の共通の形</a></td>
-              <td>データの描き方の共通の形 (<b>世代を最初に進める</b>・空なら setData しない)</td>
-            </tr>
-            <tr>
-              <td><a href="tour.html#export">ブラウザの中で GeoParquet を書き、出典と規約を入れる</a></td>
-              <td>ブラウザの中で GeoParquet を書き、<b>出典と規約を KV に入れる</b></td>
-            </tr>
-            <tr>
-              <td><a href="tour.html#layer-order">一覧の順番を地図の層へ写す</a></td>
-              <td>一覧の順番を地図の層へ写す (区分ごとの目印の層の直下に積む)</td>
-            </tr>
-            <tr>
-              <td><a href="tour.html#hover">吹き出しを層ごとの表で1つの仕掛けに</a></td>
-              <td>吹き出しを<b>層ごとの表</b>で1つの仕掛けに (周辺検索の結果やタイルの建物にも)</td>
-            </tr>
-            <tr>
-              <td><a href="tour.html#dev-server">手元の配信をオブジェクトストレージと同じ流儀に (と、R2 の遅さの再現)</a></td>
-              <td>手元の配信をオブジェクトストレージと同じ流儀に。<b>R2 の遅さを再現</b>できる</td>
-            </tr>
-            <tr>
-              <td><a href="tour.html#stac-browser">STAC Browser にパッチを1つ当ててビルドする</a></td>
-              <td>STAC Browser 5.1.0 に<b>パッチを1つ</b>当ててビルドする。上流で直ったら外す</td>
-            </tr>
-            <!-- tour:end -->
-            <tr class="group"><th colspan="2">判断の記録 (docs)</th></tr>
-            <tr>
-              <td><a href="geoparquet-layout.md">geoparquet-layout.md</a></td>
-              <td>GeoParquet の並べ方と読み方を1か所に。問い合わせの形ごとの相性、テストで見えていない部分、COGP に返せそうなこと</td>
-            </tr>
-            <tr>
-              <td><a href="duckdb-wasm-range-requests.md">duckdb-wasm-range-requests.md</a></td>
-              <td>部分取得が黙って全件取得に落ちる罠と、CORS の要件</td>
-            </tr>
-            <tr>
-              <td><a href="data-sources.md">data-sources.md</a> の承認の節</td>
-              <td>測量法の承認が要るもの・要らないもの、描画用データを根拠にしない理由</td>
-            </tr>
-            <tr>
-              <td><a href="pipeline.md">pipeline.md</a> の「粗い段」「段で間引く」</td>
-              <td>実測した転送量と、COGP を採らなかった数字</td>
-            </tr>
-          </tbody>
-        </table>
-      </section>
-    </div>
-
-    <!-- ===== やること ===== -->
-    <div class="row four">
+    <div class="row three">
+      <!-- ===== 次にやること (5つまで。ほかは roadmap) ===== -->
       <section class="card" aria-label="次にやること">
         <h2>次にやること</h2>
         <ol class="tasks">
           <li>
-            <b>配らずに手元で変換する仕組み (構想)</b> <span class="status todo">優先度を下げた (10-10)</span>
+            <b>ライブラリに分ける (core から)</b>
             <span class="sub">
-              PLATEAU GIS Converter のように、利用者が取ったデータをブラウザの中 (WASM) で変換する。
-              測量法のあるデータ (基盤地図情報) の扱いを地理院に確かめてから。3D Tiles のテクスチャもこの形で (roadmap)
+              方針は決めた: 取って・変換して・自己配信すれば表示できるライブラリ。地図に依らない core と、地図ライブラリごとの部品に分ける。
+              Web サイトは日本のカタログビジュアライザーに (roadmap「全体方針」)
             </span>
           </li>
           <li>
-            <b>地図エンジン: Cesium でデータの行を描く</b> <span class="status todo">上の確かめのあと</span>
-            <span class="sub">
-              いま Cesium で灰色のデータの行 (建物・鉄道…) を描けるようにする。描く側の MapLibre の呼び出し (約100か所) をエンジンに依らない形に。
-              3D Tiles の建物の吹き出しも。そのあと Navara をバーに足す (roadmap「バーで切り替える」)
-            </span>
+            <b>MapLibre に deck.gl を重ねる</b>
+            <span class="sub">DuckDB が返す Arrow をそのまま描ける。建物が多いときに効く見込み (未計測)。Three.js はそのあと</span>
           </li>
           <li>
-            <b>Overture の出典 (行政区域と道路)</b>
-            <span class="sub">建物は実際の出所に絞った。行政区域と道路はまだ数えていない</span>
+            <b>ジオコーダーを並べる</b>
+            <span class="sub">住所の正規化 (Geolonia の normalize-japanese-addresses) と Nominatim (押したときだけ・毎秒1回まで)</span>
           </li>
           <li>
-            <b>背景地図が全部失敗すると「準備中」のまま</b> <span class="status todo">見つけた (10-12)</span>
-            <span class="sub">
-              同じタブで2回目に開いたときだけ。前からある不具合 (エンジンの切り替えとは関係ない)。地理院の配信が落ちると起きうる (roadmap「見つけた不具合」)
-            </span>
+            <b>Cesium でデータの行を描く</b>
+            <span class="sub">いま Cesium で灰色の建物・鉄道…。描く側をエンジンに依らない形に (ライブラリの分割と一緒に)</span>
           </li>
           <li>
-            <b>描き方 (スタイル) の置き場所</b>
-            <span class="sub">データと分けて、カタログの外か別の Collection として持つ案 (roadmap)</span>
-          </li>
-          <li>
-            <b>観点 (汎用の問い合わせのひな形)</b>
-            <span class="sub">条件をデータで持ち、用途ごとに組み替える。周辺検索が土台</span>
-          </li>
-          <li>
-            <b>国土数値情報を足す</b>
-            <span class="sub">学校 P29・医療 P04・福祉 P14・公共施設 P02・都市公園 P13。W05 (河川) は使えない</span>
+            <b>背景地図が全部失敗すると「準備中」のまま</b> <span class="status todo">不具合</span>
+            <span class="sub">同じタブで2回目に開いたときだけ。前からある (roadmap「見つけた不具合」)</span>
           </li>
         </ol>
       </section>
+
+      <!-- ===== 待ち ===== -->
       <section class="card" aria-label="待ち">
         <h2>待ち (こちらから動かせない)</h2>
         <ul class="tasks">
@@ -606,55 +313,29 @@
           </li>
         </ul>
       </section>
+
+      <!-- ===== 未決の問い ===== -->
       <section class="card" aria-label="未決の問い">
         <h2>未決の問い</h2>
         <ul class="tasks">
           <li>
+            <b>リポジトリの名前</b>
+            <span class="sub">duck-geocoder は実態から外れた。方針が文になったので、候補を出す時期</span>
+          </li>
+          <li>
+            <b>変換の部品をどう配るか</b>
+            <span class="sub">Rust の CLI をビルドして配るか、WASM でブラウザの中で変換するか</span>
+          </li>
+          <li>
             <b>R2 に独自ドメインを付けるか</b>
-            <span class="sub">
-              r2.dev は読み込み1回ごとに約0.45秒待たされる。引いた表示はタイルで東京駅 z13 39秒 → 10秒 に縮めた (R2 相当の回線)。
-              CI が通るなら急がない。独自ドメインならキャッシュが効く (未計測・ドメインの費用がかかる) (roadmap)
-            </span>
+            <span class="sub">r2.dev は読み込み1回ごとに約0.45秒。独自ドメインならキャッシュが効く (未計測・費用あり)</span>
           </li>
           <li>
             <b>建物の段の中の間引き</b>
             <span class="sub">住宅・その他 (全体の9割) をズーム15より手前で出すなら、段の中をどう減らすか</span>
           </li>
-          <li>
-            <b>リポジトリの名前</b>
-            <span class="sub">duck-geocoder は実態から外れた。方針が文になってから選ぶ</span>
-          </li>
-          <li>
-            <b>表示部分を別のパッケージにするか</b>
-            <span class="sub">lib/ と ui/ に分けた。別リポジトリ (npm) に出すかは、使う人が出てから</span>
-          </li>
-        </ul>
-      </section>
-      <section class="card" aria-label="構想とやらないこと">
-        <h2>構想 / やらないこと</h2>
-        <ul class="tasks">
-          <li>
-            <b>remote-zip を別リポジトリへ出す</b>
-            <span class="sub">crates/remote-zip に切り出し済み (CLI 付き)。API が無くても Range に応える配信元なら使える</span>
-          </li>
-          <li><span class="sub">やらない: 動的データ・点群の生データ・航路の設計そのもの・認証が要る取得経路</span></li>
         </ul>
       </section>
     </div>
-
-    <!-- ===== ドキュメントの地図 ===== -->
-    <section class="card" aria-label="ドキュメントの地図">
-      <h2>ドキュメントの地図</h2>
-      <table>
-        <tbody>
-          <tr><td><a href="roadmap.md">roadmap.md</a></td><td>方針と、決めたことの記録 (何を・なぜ)</td></tr>
-          <tr><td><a href="pipeline.md">pipeline.md</a></td><td>データの作り方と実測 (粗い段・整備範囲・段の間引き・外部の配信物)</td></tr>
-          <tr><td><a href="data-sources.md">data-sources.md</a></td><td>出所ごとのライセンス・使える/使えない理由</td></tr>
-          <tr><td><a href="deploy.md">deploy.md</a></td><td>R2へ上げる手順・戻し方</td></tr>
-          <tr><td><a href="survey-application.md">survey-application.md</a></td><td>測量法の申請の下準備</td></tr>
-          <tr><td><a href="../AGENTS.md">AGENTS.md</a></td><td>作業の約束事 (道具・テスト・コミット)</td></tr>
-        </tbody>
-      </table>
-    </section>
   </body>
 </html>
