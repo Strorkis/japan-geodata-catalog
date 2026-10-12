@@ -4,7 +4,7 @@
  * 地名・行政区域・駅・鉄道路線・道路の路線を1つの欄で引く (問い合わせは lib/search.ts)。
  * 📍 で地図から選んだ地点 (逆ジオコーディング) も、結果の見せ方は同じなのでここで持つ。
  */
-import type * as duckdb from '@duckdb/duckdb-wasm';
+import type { Conn } from '../lib/duckdb';
 import { Popup, type LngLat, type Map as MapLibreMap } from 'maplibre-gl';
 import {
   MAX_RESULTS,
@@ -26,7 +26,7 @@ import { m } from '../i18n';
 
 export interface SearchBoxOptions {
   map: MapLibreMap;
-  conn: duckdb.AsyncDuckDBConnection;
+  conn: Conn;
   busy: <T>(label: string, run: () => Promise<T>) => Promise<T>;
   showFailure: (message: string) => void;
   setSourceData: (sourceId: string, geometry: GeoJSON.Geometry | null) => Promise<void>;

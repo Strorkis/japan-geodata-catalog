@@ -8,7 +8,7 @@
  *    建物の描画と取り合うため)
  * 3. 表示範囲で引き (lib/queries.ts)、世代が変わっていなければ描いて、一覧の行に状態を書く
  */
-import type * as duckdb from '@duckdb/duckdb-wasm';
+import type { Conn } from '../../lib/duckdb';
 import type { Map as MapLibreMap } from 'maplibre-gl';
 import type { DetailSettings } from '../../lib/detail';
 import type { ViewBounds } from '../../lib/sources';
@@ -16,7 +16,7 @@ import { m } from '../../i18n';
 
 export interface DrawContext {
   map: MapLibreMap;
-  conn: duckdb.AsyncDuckDBConnection;
+  conn: Conn;
   /** 時間のかかる処理を「処理中」の表示で包む。 */
   busy: <T>(label: string, run: () => Promise<T>) => Promise<T>;
   /** 失敗を画面にも出す (コンソールだけだと「何も起きない」としか見えない)。 */

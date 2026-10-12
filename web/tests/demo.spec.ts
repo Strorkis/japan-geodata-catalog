@@ -290,6 +290,15 @@ async function useOvertureBuildings(page: Page) {
 }
 
 /** 初期化 (DuckDB + 地図) の完了を待つ。 */
+/**
+ * 地図ができるまで待つ。**DuckDB の準備は待たない** (地図はそれを待たずに使える)。
+ * DuckDB を使わないテスト (地図タイル・地形・ベクトルタイル・3D) は `@map` の印を付けて、これだけを待つ。
+ */
+async function waitForMap(page: Page) {
+  await expect(page.locator('#loading')).toBeHidden({ timeout: DATA_TIMEOUT });
+}
+
+/** 地図と DuckDB の準備の両方 (検索が押せる) まで待つ。 */
 async function waitForReady(page: Page) {
   // 単独なら5秒前後だが、並列で流して CPU を取り合うと15秒を超えることがあった。
   await expect(page.locator('#loading')).toBeHidden({ timeout: DATA_TIMEOUT });
@@ -328,13 +337,15 @@ async function pickOnMap(page: Page, position?: { x: number; y: number }) {
 /** 地形の標高タイル (Mapterhorn)。取れないときの挙動を見るテストで遮断する。 */
 const TERRAIN_TILES = 'https://tiles.mapterhorn.com/*/*/*.webp';
 
-test.beforeEach(async ({ page }) => {
+test.beforeEach(async ({ page }, testInfo) => {
   // './' であって '/' ではない。baseURL は new URL(url, baseURL) で解決されるので、
   // '/' だとサブパス配信 (GitHub Pagesなど) のときにサイトのルートへ飛んでしまう。
   // URLの解決をアプリに任せるので、先にページを開く。
   await page.goto('./');
   await skipIfDataMissing(page);
-  await waitForReady(page);
+  // DuckDB を使わないテストは、その準備 (数秒) を待たない。
+  if (testInfo.tags.includes('@map')) await waitForMap(page);
+  else await waitForReady(page);
 });
 
 test('初期化が完了し、地図と検索欄が使える状態になる', async ({ page }) => {
@@ -1034,7 +1045,7 @@ function visibleBasemaps(page: Page): Promise<string[]> {
  * **隠しても一覧からは消えず、重ね順も変わらない** (以前は隠すと一覧から外れ、出し直すと
  * いちばん上へ動いた)。順番は並べ替え (ドラッグ) だけが変える。
  */
-test('背景地図はカタログから足すと上に重なり、隠しても一覧と順番に残る', async ({ page }) => {
+test('背景地図はカタログから足すと上に重なり、隠しても一覧と順番に残る', { tag: '@map' }, async ({ page }) => {
   expect(await visibleBasemaps(page)).toEqual([BASEMAP.pale]);
   const requested: string[] = [];
   page.on('request', (request) => {
@@ -1120,7 +1131,7 @@ test('白地図を入れると、無いズームのタイルを取りに行か�
 
 // 地図と地形は別々に選べる。片方の操作で、自分で選んだもう片方が勝手に変わらないこと。
 // 地図右上のボタンで切ると、一覧の地形の行も追随する (同じものを2か所で切れる)。
-test('地形を切っても地図は変わらず、一覧の行も追随する', async ({ page }) => {
+test('地形を切っても地図は変わらず、一覧の行も追随する', { tag: '@map' }, async ({ page }) => {
   await showLayer(page, BASEMAP.photo);
 
   await page.locator('button[class*="maplibregl-ctrl-terrain"]').click();
@@ -1143,7 +1154,7 @@ test('地形を切っても地図は変わらず、一覧の行も追随する',
  * そのタイルを取りに行く。地理院の標高は独自形式なので、読み込むときに直す:
  * 値なし (海) を 0 m に、負の値を負のまま。そのまま読むと 8万m台の針が立つ。
  */
-test('地形の標高を選び直せ、地理院の標高は値なしと負の値を直して使う', async ({ page }) => {
+test('地形の標高を選び直せ、地理院の標高は値なしと負の値を直して使う', { tag: '@map' }, async ({ page }) => {
   const options = await page
     .locator('#terrain-source option')
     .evaluateAll((els) => els.map((el) => (el as HTMLOptionElement).value));
@@ -1280,7 +1291,7 @@ test('AW3D30 は地形に選べ、ⓘ から公開元の STAC と使う条件が
  * **世界の背景地図 (OpenFreeMap) はスタイルで描く。** 足すまでスタイルを読まず、足したら層を
  * まとめて差し込む (層の ID は `basemap/<Collection ID>/<元の層 ID>`)。外の配信は叩かず、小さなスタイルに差し替える。
  */
-test('世界の背景地図はスタイルを読んで層を差し込み、まとめて出し入れできる', async ({ page }) => {
+test('世界の背景地図はスタイルを読んで層を差し込み、まとめて出し入れできる', { tag: '@map' }, async ({ page }) => {
   let styleRequests = 0;
   await page.route(/tiles\.openfreemap\.org\/styles\//, (route) => {
     styleRequests++;
@@ -1320,7 +1331,7 @@ test('世界の背景地図はスタイルを読んで層を差し込み、ま�
  * **同じ場所を 3D のページ (Cesium) で開き、同じ場所へ戻る。** 位置・ズーム・傾き・向きを URL で渡す。
  * 外の配信 (地理院タイル・3D Tiles) は叩かない (描けるかは目で確かめる。ここでは渡し方を見る)。
  */
-test('3D のボタンで同じ場所を Cesium で開き、地図に戻ると同じ場所になる', async ({ page }) => {
+test('3D のボタンで同じ場所を Cesium で開き、地図に戻ると同じ場所になる', { tag: '@map' }, async ({ page }) => {
   const external = /cyberjapandata\.gsi\.go\.jp|api\.plateauview\.mlit\.go\.jp|buildings\.reearth\.land|terrain\.reearth\.land/;
   await page.route(external, (route) => route.abort());
   await page.evaluate(() => {
@@ -1380,7 +1391,7 @@ test('3D のボタンで同じ場所を Cesium で開き、地図に戻ると同
  * 地理院の PMTiles (16.9GB) は叩かず、手元の別の PMTiles (z12〜14) をその URL の代わりに Range で返す。
  * 「中継が効いている」ことは、PMTiles がヘッダのあとにも Range で読まれる (タイルが取りに行かれる) ことで見る。
  */
-test('3D のページでベクトルタイルを選ぶと、PMTiles がタイルごとに読まれて Cesium のベクタになる', async ({ page }) => {
+test('3D のページでベクトルタイルを選ぶと、PMTiles がタイルごとに読まれて Cesium のベクタになる', { tag: '@map' }, async ({ page }) => {
   const file = path.resolve('..', 'data', 'output', 'overture', 'overture_buildings_tiles.pmtiles');
   const ranges: number[] = [];
   await page.route(/cyberjapandata\.gsi\.go\.jp\/xyz\/optimal_bvmap-v1\/.*\.pmtiles/, async (route) => {
@@ -1409,26 +1420,28 @@ test('3D のページでベクトルタイルを選ぶと、PMTiles がタイル
   const roads = page.locator('#vector-options input[data-collection="gsi-optimal-bvmap"][data-theme="road"]');
   await expect(roads).toHaveCount(1);
   await expect(page.locator('#vector-options input[data-theme="anno"]')).toHaveCount(0);
+  // 描いているベクタの URL テンプレート (中継の形)。**クラスの名前では見ない** (本番ビルドでは縮められる)。
   const providers = () =>
     page.evaluate(() => {
       const viewer = (window as unknown as { __viewer?: import('cesium').Viewer }).__viewer!;
       const primitives = viewer.scene.primitives;
-      return Array.from({ length: primitives.length }, (_, i) => primitives.get(i).constructor.name);
+      return Array.from({ length: primitives.length }, (_, i) => String(primitives.get(i).urlTemplate ?? ''));
     });
   expect(ranges).toHaveLength(0); // 選ぶまでは読まない
 
+  const relay = 'https://pmtiles.invalid/gsi-optimal-bvmap/{z}/{x}/{y}.pbf';
   await roads.check();
-  await expect.poll(providers).toContain('MVTDataProvider');
+  await expect.poll(providers).toContain(relay);
   // 測れていること: ヘッダ (0) のあとに、ディレクトリやタイルが Range で読まれている。
   await expect.poll(() => ranges.filter((start) => start > 0).length).toBeGreaterThan(0);
   await expect(page.locator('#viewer3d-status')).not.toContainText('最適化ベクトルタイル');
 
   // 外すと取り除かれる。
   await roads.uncheck();
-  await expect.poll(providers).not.toContain('MVTDataProvider');
+  await expect.poll(providers).not.toContain(relay);
 });
 
-test('地形が有効になっていて、コンパスの下のボタンで切れる', async ({ page }) => {
+test('地形が有効になっていて、コンパスの下のボタンで切れる', { tag: '@map' }, async ({ page }) => {
   const hasTerrain = () =>
     page.evaluate(() => (window as unknown as TestWindow).__map!.getTerrain() !== null);
 
@@ -2703,8 +2716,10 @@ test('一覧の行は2段に収まり、切った状態は吹き出しで全文�
   });
   const status = page.locator(`[data-layer-status="${LAYER.plateauBuildings}"]`);
   await expect(status).toContainText('整備範囲');
-  // 吹き出しは状態の全文。
-  expect(await status.getAttribute('title')).toBe(await status.textContent());
+  // 吹き出しは状態の全文。**1回で読む** — 地図を動かしたあとの引き直しで状態は書き換わり続けるので、
+  // 別々に読むと間に書き換わって食い違う (アプリは文字と吹き出しを同時に書く)。
+  const [title, text] = await status.evaluate((el) => [el.getAttribute('title'), el.textContent]);
+  expect(title).toBe(text);
   // 名前の吹き出しに出所と版。
   await expect(page.locator(`.layer-row[data-layer="${LAYER.plateauBuildings}"] .layer-name`)).toHaveAttribute(
     'title',
@@ -3901,7 +3916,7 @@ function gsiVisibility(page: Page, sourceLayer: string): Promise<string[]> {
  * 9行 (注記・道路…)。入れるまでは**何も読まない**。入れると配布元のPMTiles (データ) だけを
  * 直接読み、カタログの形の種類から自前で描いて、うちのデータの下に敷く。
  */
-test('地理院のベクトルタイルをテーマごとに重ねられる', async ({ page }) => {
+test('地理院のベクトルタイルをテーマごとに重ねられる', { tag: '@map' }, async ({ page }) => {
   test.skip(!(await hasGsiVector(page)), '地理院のベクトルタイルがカタログに無い');
   const asked: string[] = [];
   page.on('request', (request) => {
@@ -3957,7 +3972,7 @@ test('地理院のベクトルタイルをテーマごとに重ねられる', as
  * 変わると絞り込みが戻ってしまい、使いにくかった。いまのズームで描かれない層も
  * 行は残し、「ズーム16から」と添える。
  */
-test('地理院のベクトルタイルは、ズームを変えても層ごとの入り切りが戻らない', async ({ page }) => {
+test('地理院のベクトルタイルは、ズームを変えても層ごとの入り切りが戻らない', { tag: '@map' }, async ({ page }) => {
   test.skip(!(await hasGsiVector(page)), '地理院のベクトルタイルがカタログに無い');
   const jump = (zoom: number) =>
     page.evaluate((z) => {

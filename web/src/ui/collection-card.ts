@@ -4,7 +4,7 @@
  * **カタログに書いてあることだけを出す。** 絞り込みだけでは、行の裏にあるのがどの
  * Collection で、何ファイルあって、元の JSON はどこか、が画面から辿れない。
  */
-import type * as duckdb from '@duckdb/duckdb-wasm';
+import type { Conn } from '../lib/duckdb';
 import { dataUrl, itemFile, type Bbox, type Collection, type DatasetKind } from '../lib/stac';
 import { EXACT_LOD, bboxOverlaps, type ViewBounds } from '../lib/sources';
 import { meshCodesInView } from '../lib/mesh';
@@ -16,7 +16,7 @@ import { m } from '../i18n';
 
 export interface CollectionCardOptions {
   collections: Collection[];
-  conn: duckdb.AsyncDuckDBConnection;
+  conn: Conn;
   ensureSpatial: () => Promise<void>;
   /** 配信パスを DuckDB に登録する (表示で使っていないファイルも書き出すため)。 */
   registerFiles: (files: string[]) => Promise<void>;

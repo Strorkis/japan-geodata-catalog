@@ -11,7 +11,7 @@
  * **ジオメトリは列をそのまま返す** (GeoArrow の WKB)。SQL で GeoJSON の文字列にしてから
  * `JSON.parse` するより速い (lib/wkb.ts)。
  */
-import type * as duckdb from '@duckdb/duckdb-wasm';
+import type { Conn } from './duckdb';
 import { tierExpression } from './stac';
 import { geometryOf } from './wkb';
 import { meshBounds, meshCellCapacity } from './mesh';
@@ -57,7 +57,7 @@ export interface LineFeature {
 
 /** 表示範囲の線を引く。道路 ([`fetchRoadsInView`]) と同じく、中心に近い順に上限まで。 */
 export async function fetchLinesInView(
-  conn: duckdb.AsyncDuckDBConnection,
+  conn: Conn,
   source: LineSource,
   bounds: ViewBounds,
   limit: number,
@@ -101,7 +101,7 @@ export interface RoadFeature {
  * そもそも読みに行かない** (これが class で分けている理由)。
  */
 export async function fetchRoadsInView(
-  conn: duckdb.AsyncDuckDBConnection,
+  conn: Conn,
   source: RoadSource,
   bounds: ViewBounds,
   classes: string[],
@@ -162,7 +162,7 @@ export interface RailwayFeature {
  * 路線側で `station_name` を書くとスキーマに無い列で落ちる。
  */
 export async function fetchRailwayInView(
-  conn: duckdb.AsyncDuckDBConnection,
+  conn: Conn,
   source: RailwaySource,
   bounds: ViewBounds,
   institutionTypes: string[] | null,
@@ -230,7 +230,7 @@ export interface MeshCell {
  * 子のbboxの和で描くと、メッシュではない形になってしまう。
  */
 export async function fetchMeshInView(
-  conn: duckdb.AsyncDuckDBConnection,
+  conn: Conn,
   source: MeshSource,
   bounds: ViewBounds,
   digits: number,
@@ -285,7 +285,7 @@ export interface CoverageCell {
  * 1kmで配ったものから10kmも80kmも作れる。
  */
 export async function fetchCoverageInView(
-  conn: duckdb.AsyncDuckDBConnection,
+  conn: Conn,
   coverage: BuildingCoverage,
   bounds: ViewBounds,
   digits: number,
@@ -334,7 +334,7 @@ export async function fetchCoverageInView(
  * 描くための問い合わせ (`fetchCoverageInView`) より軽い。
  */
 export async function coverageInView(
-  conn: duckdb.AsyncDuckDBConnection,
+  conn: Conn,
   coverage: BuildingCoverage,
   bounds: ViewBounds,
 ): Promise<boolean> {
@@ -423,7 +423,7 @@ export interface BuildingFilter {
  * 見た目として自然な劣化になる。範囲そのものを切り詰めるより調整値が要らない。
  */
 export async function fetchBuildingsInView(
-  conn: duckdb.AsyncDuckDBConnection,
+  conn: Conn,
   source: BuildingSource,
   bounds: ViewBounds,
   filter: BuildingFilter,

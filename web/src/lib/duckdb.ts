@@ -65,8 +65,20 @@ export function once(run: () => Promise<void>): () => Promise<void> {
   return () => (started ??= run());
 }
 
+/**
+ * アプリが使う DuckDB の接続。**使うのは `query` だけ**なので、それだけを約束する。
+ * `initDuckDb` が返すものは、準備 (起動・行政区域のビュー) が済むまで待ってから問い合わせる。
+ */
+export type Conn = Pick<duckdb.AsyncDuckDBConnection, 'query'>;
+
 export interface Database {
-  conn: duckdb.AsyncDuckDBConnection;
+  /** 準備が済むまで待ってから問い合わせる接続。準備の前に呼んでもよい。 */
+  conn: Conn;
+  /**
+   * **準備の完了** (DuckDB の起動・行政区域と名称のビュー)。地図はこれを待たずに使える。
+   * 失敗したら reject する (呼ぶ側が画面に出す)。
+   */
+  ready: Promise<void>;
   /** 問い合わせの結果を Parquet にして返す (ダウンロード用)。 */
   exportParquet: (select: string, kv: Record<string, string>) => Promise<Uint8Array>;
   /** 配信パスを DuckDB に登録する (Rangeで読めるようにする)。二度目は何もしない。 */
@@ -101,14 +113,8 @@ export interface Database {
   ensureSections: (() => Promise<void>) | undefined;
 }
 
-/**
- * DuckDB-WASM を起こし、カタログから出所を組み立てる。
- *
- * 出所は**表示範囲と重なるファイルだけを選ぶ**ために使う (カタログを空間索引として使う)。
- * 建物は都市ごとに1ファイルで、PLATEAUを全国に広げると300を超える。全部を
- * `read_parquet([...])` に渡すと、**ファイルの数だけフッターを読みに行く** (1ファイル1往復)。
- */
-export async function initDuckDb(collections: Collection[]): Promise<Database> {
+/** DuckDB-WASM を起こして開く。35MB の取得とコンパイルがあるので数秒かかる。 */
+async function openDuckDb(): Promise<{ db: duckdb.AsyncDuckDB; conn: duckdb.AsyncDuckDBConnection }> {
   const bundle = await duckdb.selectBundle({
     mvp: {
       mainModule: duckdbUrl('duckdb-mvp.wasm'),
@@ -148,6 +154,24 @@ export async function initDuckDb(collections: Collection[]): Promise<Database> {
   // parquet拡張は明示LOADしていないが、read_parquet()の時点でDuckDBが自動取得する
   // (autoload) ので、取得元さえ切り替えておけば以降は暗黙に自前配信から読まれる。
   await conn.query(`SET custom_extension_repository = '${DUCKDB_EXTENSIONS_URL}';`);
+  return { db, conn };
+}
+
+/**
+ * カタログから出所を組み立て、DuckDB-WASM を**裏で**起こす。**待たずに返す** — 地図・背景地図・地形・
+ * ベクトルタイルは DuckDB を使わないので、起動 (取得とコンパイルで約2.7秒、行政区域などで約1.3秒) を待たせない。
+ * DuckDB を使う所は `conn` (準備を待ってから問い合わせる) か `ready` を待つ。
+ *
+ * 出所は**表示範囲と重なるファイルだけを選ぶ**ために使う (カタログを空間索引として使う)。
+ * 建物は都市ごとに1ファイルで、PLATEAUを全国に広げると300を超える。全部を
+ * `read_parquet([...])` に渡すと、**ファイルの数だけフッターを読みに行く** (1ファイル1往復)。
+ */
+export function initDuckDb(collections: Collection[]): Database {
+  const opened = openDuckDb();
+  // 準備の中で使う接続。**準備の完了を待たない** (待つと、準備が自分の終わりを待って止まる)。
+  const conn: Conn = {
+    query: (async (text: string) => (await opened).conn.query(text)) as Conn['query'],
+  };
 
   // 空間関数は逆ジオコーディングと建物表示にしか要らない。拡張の取得に
   // 数秒かかるので、起動時ではなく最初に必要になったときに読む。
@@ -172,7 +196,9 @@ export async function initDuckDb(collections: Collection[]): Promise<Database> {
       files.map((file) => {
         let done = registered.get(file);
         if (!done) {
-          done = db.registerFileURL(file, dataUrl(file), duckdb.DuckDBDataProtocol.HTTP, false);
+          done = opened.then(({ db }) =>
+            db.registerFileURL(file, dataUrl(file), duckdb.DuckDBDataProtocol.HTTP, false),
+          );
           registered.set(file, done);
         }
         return done;
@@ -279,43 +305,79 @@ export async function initDuckDb(collections: Collection[]): Promise<Database> {
     throw new Error('カタログに必要なCollection (oaza / admin) がありません。');
   }
 
-  // 行政区域は全国版と都道府県版が同居しうる。範囲の広いもの (=件数が最多) を採用する。
-  // ここだけは起動時にItemが要る (どのファイルを読むか決まらないため)。
-  const adminItems = (await Promise.all(adminCollections.map((c) => c.items()))).flat();
-  const adminItem = adminItems.sort(
-    (a, b) =>
-      (b.feature.properties['table:row_count'] ?? 0) -
-      (a.feature.properties['table:row_count'] ?? 0),
-  )[0];
-  if (!adminItem) throw new Error('行政区域のItemがありません。');
-  const adminFile = resolveHref(adminItem.feature.assets.data.href, adminItem.base);
+  /** 起動時の準備 (行政区域と名称のビュー)。`ready` になる。地図はこれを待たない。 */
+  const prepare = async () => {
+    // 行政区域は全国版と都道府県版が同居しうる。範囲の広いもの (=件数が最多) を採用する。
+    // ここだけは起動時にItemが要る (どのファイルを読むか決まらないため)。
+    const adminItems = (await Promise.all(adminCollections.map((c) => c.items()))).flat();
+    const adminItem = adminItems.sort(
+      (a, b) =>
+        (b.feature.properties['table:row_count'] ?? 0) -
+        (a.feature.properties['table:row_count'] ?? 0),
+    )[0];
+    if (!adminItem) throw new Error('行政区域のItemがありません。');
+    const adminFile = resolveHref(adminItem.feature.assets.data.href, adminItem.base);
 
-  // 検索用の名称を抜き出したものがあれば使う。無い場合は行政区域から作るが、
-  // そちらは名称の列がファイル全体に散らばっているため、HTTP越しだと
-  // 往復が積み上がって初期化が数十秒かかる。
-  const adminNamesCollection = byKind('admin_names')[0];
-  const adminNamesItem = adminNamesCollection ? (await adminNamesCollection.items())[0] : undefined;
-  const adminNamesFile = adminNamesItem
-    ? resolveHref(adminNamesItem.feature.assets.data.href, adminNamesItem.base)
-    : undefined;
+    // 検索用の名称を抜き出したものがあれば使う。無い場合は行政区域から作るが、
+    // そちらは名称の列がファイル全体に散らばっているため、HTTP越しだと
+    // 往復が積み上がって初期化が数十秒かかる。
+    const adminNamesCollection = byKind('admin_names')[0];
+    const adminNamesItem = adminNamesCollection ? (await adminNamesCollection.items())[0] : undefined;
+    const adminNamesFile = adminNamesItem
+      ? resolveHref(adminNamesItem.feature.assets.data.href, adminNamesItem.base)
+      : undefined;
 
-  await register(adminNamesFile ? [adminFile, adminNamesFile] : [adminFile]);
+    await register(adminNamesFile ? [adminFile, adminNamesFile] : [adminFile]);
 
-  console.info(
-    '[catalog] 行政区域:',
-    adminItem.feature.id,
-    '/ 名称:',
-    adminNamesFile ?? '(行政区域から都度作成)',
-    '/ 地名:',
-    oazaCollections.map((c) => c.id).join(', '),
-  );
+    console.info(
+      '[catalog] 行政区域:',
+      adminItem.feature.id,
+      '/ 名称:',
+      adminNamesFile ?? '(行政区域から都度作成)',
+      '/ 地名:',
+      oazaCollections.map((c) => c.id).join(', '),
+    );
 
-  // ビューを作るだけでもDuckDBはスキーマ検証のためにフッターを読むので、
-  // 1ファイルあたり数回の往復が発生する。起動時に要るのは行政区域と名称だけで、
-  // 地名は検索時、建物はズームしたときにしか使わないので、そのときまで作らない。
-  await conn.query(`CREATE VIEW admin AS SELECT * FROM read_parquet('${adminFile}');`);
+    // ビューを作るだけでもDuckDBはスキーマ検証のためにフッターを読むので、
+    // 1ファイルあたり数回の往復が発生する。起動時に要るのは行政区域と名称だけで、
+    // 地名は検索時、建物はズームしたときにしか使わないので、そのときまで作らない。
+    await conn.query(`CREATE VIEW admin AS SELECT * FROM read_parquet('${adminFile}');`);
+
+    // 行政区域は1つの自治体が複数のポリゴン行に分かれることがある (飛び地や島など) ので、
+    // 検索には名称を重複排除したものを使う。
+    //
+    // 専用のファイルがあればそれを読む。無い場合は行政区域から作るが、名称の列は
+    // 合計65KB程度しかないのに row group の数だけ散らばっているため、HTTP越しでは
+    // 往復回数が効いて極端に遅くなる (実測で42リクエスト・約24秒)。
+    // 転送量ではなく往復の問題なので、pipeline の build_admin_names で
+    // まとまった小さなファイルを作っておくこと。
+    await conn.query(
+      adminNamesFile
+        ? `CREATE VIEW admin_names AS SELECT * FROM read_parquet('${adminNamesFile}');`
+        : `CREATE TABLE admin_names AS
+             SELECT DISTINCT
+               admin_id,
+               pref_name,
+               coalesce(county_name, '') AS county_name,
+               coalesce(city_name, '') AS city_name,
+               coalesce(ward_name, '') AS ward_name
+             FROM admin;`,
+    );
+  };
+  const ready = prepare();
+  // 待つ側 (main.ts) が付くのは地図ができてから。それまでに失敗しても「未処理」と出さない (失敗は待つ側に届く)。
+  ready.catch(() => {});
+  // 外に渡す接続。**準備が済んでから**問い合わせる (行政区域のビューを前提にする問い合わせがある)。
+  const readyConn: Conn = {
+    query: (async (text: string) => {
+      await ready;
+      return conn.query(text);
+    }) as Conn['query'],
+  };
 
   const ensureOaza = once(async () => {
+    // 名称のビュー (admin_names) にも触れるので、準備を待つ。
+    await ready;
     // 地名のItemもここで初めて読む。検索するまで要らない。
     const files = (await Promise.all(oazaCollections.map((c) => c.items()))).flat().map(itemFile);
     await register(files);
@@ -499,27 +561,6 @@ export async function initDuckDb(collections: Collection[]): Promise<Database> {
   // 建物の用途と同じ理由で、語彙を出すかどうかをパイプライン側の一箇所で決めるため。
   const railwayCollection = railwaySources[0] ? byKind(railwaySources[0].kind)[0] : undefined;
 
-  // 行政区域は1つの自治体が複数のポリゴン行に分かれることがある (飛び地や島など) ので、
-  // 検索には名称を重複排除したものを使う。
-  //
-  // 専用のファイルがあればそれを読む。無い場合は行政区域から作るが、名称の列は
-  // 合計65KB程度しかないのに row group の数だけ散らばっているため、HTTP越しでは
-  // 往復回数が効いて極端に遅くなる (実測で42リクエスト・約24秒)。
-  // 転送量ではなく往復の問題なので、pipeline の build_admin_names で
-  // まとまった小さなファイルを作っておくこと。
-  await conn.query(
-    adminNamesFile
-      ? `CREATE VIEW admin_names AS SELECT * FROM read_parquet('${adminNamesFile}');`
-      : `CREATE TABLE admin_names AS
-           SELECT DISTINCT
-             admin_id,
-             pref_name,
-             coalesce(county_name, '') AS county_name,
-             coalesce(city_name, '') AS city_name,
-             coalesce(ward_name, '') AS ward_name
-           FROM admin;`,
-  );
-
   /**
    * 問い合わせの結果を Parquet にして返す (ダウンロード用)。
    *
@@ -529,6 +570,8 @@ export async function initDuckDb(collections: Collection[]): Promise<Database> {
    */
   const exportParquet = async (select: string, kv: Record<string, string>): Promise<Uint8Array> => {
     const name = `export_${Date.now()}.parquet`;
+    await ready;
+    const { db } = await opened;
     await db.registerEmptyFileBuffer(name);
     const escape = (text: string) => text.replace(/'/g, "''");
     const kvSql = Object.entries(kv)
@@ -545,7 +588,8 @@ export async function initDuckDb(collections: Collection[]): Promise<Database> {
   };
 
   return {
-    conn,
+    conn: readyConn,
+    ready,
     exportParquet,
     registerFiles: register,
     buildingSources,

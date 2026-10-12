@@ -8,7 +8,9 @@
 
 const ja = {
   // ---- 起動・全体 (main.ts) ----
-  preparing: '地図とデータベースを準備中…',
+  preparing: '地図を準備中…',
+  preparingDatabase: 'データベースを準備中…',
+  databaseFailed: 'データベースを準備できませんでした。地図は使えますが、検索とデータの表示は使えません。',
   initFailed: '初期化に失敗しました。コンソールを確認してください。',
   couldNotRead: '読めませんでした',
   terrain: '地形',
@@ -322,7 +324,9 @@ export type Messages = {
 const count = (n: number, one: string, many: string) => `${n.toLocaleString()} ${n === 1 ? one : many}`;
 
 const en: Messages = {
-  preparing: 'Preparing the map and database…',
+  preparing: 'Preparing the map…',
+  preparingDatabase: 'Preparing the database…',
+  databaseFailed: 'The database could not be prepared. The map works, but search and data layers do not.',
   initFailed: 'Failed to start. Check the browser console.',
   couldNotRead: 'Could not be read',
   terrain: 'Terrain',

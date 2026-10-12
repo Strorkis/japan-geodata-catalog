@@ -5,7 +5,7 @@
  * `station` `section` `road_route` `road`。地名・駅・路線は検索するまでビューを作らない
  * (`ensureOaza` などを先に呼ぶ)。
  */
-import type * as duckdb from '@duckdb/duckdb-wasm';
+import type { Conn } from './duckdb';
 import type { Bbox } from './stac';
 import { geometryOf } from './wkb';
 import { m } from '../i18n';
@@ -53,7 +53,7 @@ export function buildMatchConditions(keyword: string, concatExpr: string): strin
 }
 
 export async function searchAddress(
-  conn: duckdb.AsyncDuckDBConnection,
+  conn: Conn,
   keyword: string,
 ): Promise<SearchResult[]> {
   // 行政区域と地名は別のテーブルにあるので個別に引き、行政区域を優先して
@@ -106,7 +106,7 @@ export async function searchAddress(
  * `bbox.xmin` をそのまま使うと端に寄る。
  */
 export async function searchStations(
-  conn: duckdb.AsyncDuckDBConnection,
+  conn: Conn,
   keyword: string,
 ): Promise<SearchResult[]> {
   // **「駅」を挟む。** 原典の `station_name` は「品川」で「駅」が付かないので、
@@ -155,7 +155,7 @@ export async function searchStations(
  * 駅が1つしかないのは2つだけで、範囲の中央値は14km。
  */
 export async function searchLines(
-  conn: duckdb.AsyncDuckDBConnection,
+  conn: Conn,
   keyword: string,
 ): Promise<SearchResult[]> {
   const result = await conn.query(`
@@ -200,7 +200,7 @@ export async function searchLines(
  * `classLabel` は等級の呼び名 (「国道」など)。見せ方は画面の側が持つ。
  */
 export async function searchRoutes(
-  conn: duckdb.AsyncDuckDBConnection,
+  conn: Conn,
   keyword: string,
   classLabel: (roadClass: string) => string,
 ): Promise<SearchResult[]> {
@@ -256,7 +256,7 @@ const geometries = (result: { toArray(): { toJSON(): unknown }[] }) =>
  * **`list_contains` で当てる。** 1区間が複数の路線に属するのでリストになっている。
  */
 export async function fetchRouteGeometry(
-  conn: duckdb.AsyncDuckDBConnection,
+  conn: Conn,
   routeName: string,
   [west, south, east, north]: Bbox,
 ): Promise<GeoJSON.Geometry[]> {
@@ -279,7 +279,7 @@ export async function fetchRouteGeometry(
  * 実測では山手線が65区間で8KB、東海道線でも493区間で140KB。
  */
 export async function fetchLineGeometry(
-  conn: duckdb.AsyncDuckDBConnection,
+  conn: Conn,
   lineName: string,
   operator: string,
   [west, south, east, north]: Bbox,
@@ -303,7 +303,7 @@ export async function fetchLineGeometry(
  * これがあるおかげで全国データ (12万件) でも実用的な速度で返る。
  */
 export async function reverseGeocode(
-  conn: duckdb.AsyncDuckDBConnection,
+  conn: Conn,
   lon: number,
   lat: number,
 ): Promise<{ label: string; adminId: string } | null> {
@@ -325,7 +325,7 @@ export async function reverseGeocode(
 
 /** 行政区域の形 (飛び地や島は1つにまとめる) と範囲。 */
 export async function fetchAdminPolygon(
-  conn: duckdb.AsyncDuckDBConnection,
+  conn: Conn,
   adminId: string,
 ): Promise<{ geojson: GeoJSON.Geometry; bbox: Bbox } | null> {
   const result = await conn.query(`

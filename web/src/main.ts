@@ -1,5 +1,4 @@
 import './style.css';
-import type * as duckdb from '@duckdb/duckdb-wasm';
 import { MapLibreMap, GeoJSONSource, setWorkerUrl } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 // 地図タイル (背景地図・地形・外部のベクタータイル) を載せる部品は lib/tiles.ts。
@@ -23,7 +22,7 @@ import {
 } from './lib/sources';
 // DuckDB-WASM の初期化とデータの出所の組み立ては lib/duckdb.ts、
 // 表示範囲の問い合わせは lib/queries.ts、検索は lib/search.ts (検索欄は ui/search-box.ts)。
-import { initDuckDb } from './lib/duckdb';
+import { initDuckDb, type Conn } from './lib/duckdb';
 import { coverageInView } from './lib/queries';
 import { DETAIL_LEVELS, loadDetailLevel, saveDetailLevel, type DetailLevel, type DetailSettings } from './lib/detail';
 // 画面の部品は ui/。地図の初期化と描き方は map.ts、左下の一覧とカタログのダイアログは layer-list.ts。
@@ -167,10 +166,12 @@ async function main() {
     });
   }
 
-  // DuckDB-WASMの初期化とParquetの読み込みには数秒かかるので、
-  // 準備が終わるまでは操作できないことが分かるようにしておく。
+  // **地図ができたら操作できるようにする。** DuckDB-WASM の起動 (数秒) は待たない —
+  // 地図・背景地図・地形・ベクトルタイルは DuckDB を使わない。DuckDB を使うもの (データの行・検索・
+  // 周辺検索) は、`conn` が準備を待ってから問い合わせる。検索欄だけは準備が済むまで押せなくしておく。
   loadingMessageEl.textContent = m.preparing;
-  let conn: duckdb.AsyncDuckDBConnection;
+  let conn: Conn;
+  let dbReady: Promise<void>;
   let exportParquet: (select: string, kv: Record<string, string>) => Promise<Uint8Array>;
   let registerFiles: (files: string[]) => Promise<void>;
   let map: MapLibreMap;
@@ -191,11 +192,11 @@ async function main() {
   let collections: Collection[] = [];
   try {
     collections = await fetchCollections(lang);
-    const [db, createdMap] = await Promise.all([
-      initDuckDb(collections),
-      initMap(collections),
-    ]);
+    // 起動は裏で進む (待たずに返る)。地図を作るのと並んで走る。
+    const db = initDuckDb(collections);
+    const createdMap = await initMap(collections);
     conn = db.conn;
+    dbReady = db.ready;
     exportParquet = db.exportParquet;
     registerFiles = db.registerFiles;
     buildingSources = db.buildingSources;
@@ -232,16 +233,7 @@ async function main() {
   };
 
   loadingEl.hidden = true;
-
-  // 操作できるようになった後、使われそうなものを裏で用意しておく。
-  // 待たないので操作は妨げないが、実際に使うころには済んでいることが多い。
-  // (用意していないと、最初の検索やクリックでその場の待ち時間になる)
-  void ensureOaza().catch((e: unknown) => console.error('[warmup] oaza', e));
-  void ensureSpatial().catch((e: unknown) => console.error('[warmup] spatial', e));
-  input.disabled = false;
-  pickButton.disabled = false;
-  nearbyButton.disabled = false;
-  input.focus();
+  performance.mark('map-ready');
 
   // 初期化のオーバーレイ (#loading) は上で消えるが、その後も数秒かかる操作がある。
   // 操作を先に触れる作りにしている以上、「触れる」と「終わっている」を
@@ -282,6 +274,28 @@ async function main() {
       busyEl.classList.remove('failed');
     }, 5000);
   };
+
+  // **DuckDB の準備を待つ。** その間は処理中の合図に出し、済んだら検索を押せるようにする。
+  busy(m.preparingDatabase, () => dbReady)
+    .then(() => {
+      performance.mark('db-ready');
+      // 使われそうなものを裏で用意しておく。待たないので操作は妨げないが、
+      // 実際に使うころには済んでいることが多い (用意していないと、最初の検索やクリックでその場の待ち時間になる)。
+      void ensureOaza().catch((e: unknown) => console.error('[warmup] oaza', e));
+      void ensureSpatial().catch((e: unknown) => console.error('[warmup] spatial', e));
+      input.disabled = false;
+      pickButton.disabled = false;
+      nearbyButton.disabled = false;
+      // 準備の間に別の所を触っていたら、フォーカスを奪わない。
+      if (document.activeElement === document.body) input.focus();
+    })
+    .catch((e: unknown) => {
+      // 地図は使えるので、**出したままにする** (検索が押せない理由が分かるように)。
+      console.error('[init] database failed', e);
+      busyLabelEl.textContent = m.databaseFailed;
+      busyEl.classList.add('failed');
+      busyEl.hidden = false;
+    });
 
   // MapLibre v6 の setData は Promise を返す (v5までは同期)。await しないと
   // データ適用の完了を待てず、エラーも握り潰されるので必ず待つ。

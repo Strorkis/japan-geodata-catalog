@@ -5,7 +5,7 @@
  * 地図上のものは ◎ を押してからクリックする。何も無いところなら点、
  * 線や建物の上ならそれを起点にする。
  */
-import type * as duckdb from '@duckdb/duckdb-wasm';
+import type { Conn } from '../lib/duckdb';
 import type { ExpressionSpecification, GeoJSONSource, Map as MapLibreMap } from 'maplibre-gl';
 import type { Collection } from '../lib/stac';
 import { MESH_SIZE_LABELS } from '../lib/mesh';
@@ -41,7 +41,7 @@ const kindLabel = (kind: string): string => m.nearbyKinds[kind] ?? kind;
 
 export interface NearbyPanelOptions {
   map: MapLibreMap;
-  conn: duckdb.AsyncDuckDBConnection;
+  conn: Conn;
   collections: Collection[];
   sources: {
     buildings: BuildingSource[];

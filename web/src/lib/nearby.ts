@@ -6,7 +6,7 @@
  * 用途を決め打ちしない汎用の部品で、「川沿い・送電線沿いに何があるか」も
  * 「この建物の周りに学校はあるか」も同じ問い合わせになる。
  */
-import type * as duckdb from '@duckdb/duckdb-wasm';
+import type { Conn } from './duckdb';
 import { tierExpression, type ItemFile } from './stac';
 import { geometryOf } from './wkb';
 import { m } from '../i18n';
@@ -121,7 +121,7 @@ export interface NearbyBuildings {
 export const NEARBY_DRAW_LIMIT = 3000;
 
 export async function fetchNearbyBuildings(
-  conn: duckdb.AsyncDuckDBConnection,
+  conn: Conn,
   source: BuildingSource,
   frame: NearbyFrame,
 ): Promise<NearbyBuildings | null> {
@@ -191,7 +191,7 @@ export async function fetchNearbyBuildings(
  * `nameExpression` は名前を作る式 (駅なら駅名と路線名など)。
  */
 export async function fetchNearbyNames(
-  conn: duckdb.AsyncDuckDBConnection,
+  conn: Conn,
   source: { files: ItemFile[]; coarseLodToleranceM?: number },
   frame: NearbyFrame,
   nameExpression: string,
@@ -236,7 +236,7 @@ export async function fetchNearbyNames(
  * (メッシュの一部だけ掛かっても、そのメッシュ全体の人口を数える)。概算として出す。
  */
 export async function fetchNearbyPopulation(
-  conn: duckdb.AsyncDuckDBConnection,
+  conn: Conn,
   source: MeshSource,
   frame: NearbyFrame,
 ): Promise<{ population: number; cells: number } | null> {
