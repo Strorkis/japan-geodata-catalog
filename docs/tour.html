@@ -573,34 +573,34 @@ DuckDB は文字列の統計を頭の数文字でしか比べないため、<cod
 <code>file_row_number</code> で絞る。</p>
 
 <figure class="code">
-<figcaption><a href="../web/src/lib/duckdb.ts">web/src/lib/duckdb.ts</a> <span class="lines">194〜220 行</span></figcaption>
-<pre><code><span class="ln">194</span>const collectionRows = (file: string) =&gt; {
-<span class="ln">195</span>  let ranges = rowRanges.get(file);
-<span class="ln">196</span>  if (!ranges) {
-<span class="ln">197</span>    ranges = conn
-<span class="ln">198</span>      .query(
-<span class="ln">199</span>        `SELECT row_group_id, row_group_num_rows AS n, stats_min_value AS lo, stats_max_value AS hi
-<span class="ln">200</span>         FROM parquet_metadata('${file}') WHERE path_in_schema = 'collection' ORDER BY row_group_id;`,
-<span class="ln">201</span>      )
-<span class="ln">202</span>      .then((result) =&gt; {
-<span class="ln">203</span>        const found = new Map&lt;string, [number, number]&gt;();
-<span class="ln">204</span>        let start = 0;
-<span class="ln">205</span>        for (const row of result.toArray()) {
-<span class="ln">206</span>          const end = start + Number(row.n);
-<span class="ln">207</span>          // 1つの行グループに1つの Collection だけのときに使う (混ざっていれば使わない)。
-<span class="ln">208</span>          if (row.lo !== null &amp;&amp; row.lo === row.hi) {
-<span class="ln">209</span>            const known = found.get(row.lo);
-<span class="ln">210</span>            // 行グループの上限を超えて2つに分かれた Collection は、続きとしてつなぐ。
-<span class="ln">211</span>            found.set(row.lo, known &amp;&amp; known[1] === start ? [known[0], end] : [start, end]);
-<span class="ln">212</span>          }
-<span class="ln">213</span>          start = end;
-<span class="ln">214</span>        }
-<span class="ln">215</span>        return found;
-<span class="ln">216</span>      });
-<span class="ln">217</span>    rowRanges.set(file, ranges);
-<span class="ln">218</span>  }
-<span class="ln">219</span>  return ranges;
-<span class="ln">220</span>};</code></pre>
+<figcaption><a href="../web/src/lib/duckdb.ts">web/src/lib/duckdb.ts</a> <span class="lines">220〜246 行</span></figcaption>
+<pre><code><span class="ln">220</span>const collectionRows = (file: string) =&gt; {
+<span class="ln">221</span>  let ranges = rowRanges.get(file);
+<span class="ln">222</span>  if (!ranges) {
+<span class="ln">223</span>    ranges = conn
+<span class="ln">224</span>      .query(
+<span class="ln">225</span>        `SELECT row_group_id, row_group_num_rows AS n, stats_min_value AS lo, stats_max_value AS hi
+<span class="ln">226</span>         FROM parquet_metadata('${file}') WHERE path_in_schema = 'collection' ORDER BY row_group_id;`,
+<span class="ln">227</span>      )
+<span class="ln">228</span>      .then((result) =&gt; {
+<span class="ln">229</span>        const found = new Map&lt;string, [number, number]&gt;();
+<span class="ln">230</span>        let start = 0;
+<span class="ln">231</span>        for (const row of result.toArray()) {
+<span class="ln">232</span>          const end = start + Number(row.n);
+<span class="ln">233</span>          // 1つの行グループに1つの Collection だけのときに使う (混ざっていれば使わない)。
+<span class="ln">234</span>          if (row.lo !== null &amp;&amp; row.lo === row.hi) {
+<span class="ln">235</span>            const known = found.get(row.lo);
+<span class="ln">236</span>            // 行グループの上限を超えて2つに分かれた Collection は、続きとしてつなぐ。
+<span class="ln">237</span>            found.set(row.lo, known &amp;&amp; known[1] === start ? [known[0], end] : [start, end]);
+<span class="ln">238</span>          }
+<span class="ln">239</span>          start = end;
+<span class="ln">240</span>        }
+<span class="ln">241</span>        return found;
+<span class="ln">242</span>      });
+<span class="ln">243</span>    rowRanges.set(file, ranges);
+<span class="ln">244</span>  }
+<span class="ln">245</span>  return ranges;
+<span class="ln">246</span>};</code></pre>
 </figure>
 </section>
 <section class="card" id="files-in-view">
@@ -700,21 +700,21 @@ DuckDB は文字列の統計を頭の数文字でしか比べないため、<cod
 <span class="ln">121</span>};</code></pre>
 </figure>
 <figure class="code">
-<figcaption><a href="../web/src/ui/map.ts">web/src/ui/map.ts</a> <span class="lines">120〜133 行</span></figcaption>
-<pre><code><span class="ln">120</span>/**
-<span class="ln">121</span> * 建物の塗りの式を、タイルの層で使える形にする。**塗りの規則は1つに保つ** (`BUILDING_COLOR_BY_*`)。
-<span class="ln">122</span> * GeoJSON の地物は出所の番号 (`palette`) と段の順位 (`tierRank`) を持つが、タイルの地物は持たない。
-<span class="ln">123</span> * 出所の番号は層ごとに決まった値に、段の順位はタイルの `lod` (段の順位そのもの) に置き換える。
-<span class="ln">124</span> */
-<span class="ln">125</span>export function tileColor(expression: ExpressionSpecification, palette: number): ExpressionSpecification {
-<span class="ln">126</span>  const replace = (value: unknown): unknown =&gt; {
-<span class="ln">127</span>    if (!Array.isArray(value)) return value;
-<span class="ln">128</span>    if (value.length === 2 &amp;&amp; value[0] === 'get' &amp;&amp; value[1] === 'palette') return palette;
-<span class="ln">129</span>    if (value.length === 2 &amp;&amp; value[0] === 'get' &amp;&amp; value[1] === 'tierRank') return ['get', 'lod'];
-<span class="ln">130</span>    return value.map(replace);
-<span class="ln">131</span>  };
-<span class="ln">132</span>  return replace(expression) as ExpressionSpecification;
-<span class="ln">133</span>}</code></pre>
+<figcaption><a href="../web/src/ui/map.ts">web/src/ui/map.ts</a> <span class="lines">119〜132 行</span></figcaption>
+<pre><code><span class="ln">119</span>/**
+<span class="ln">120</span> * 建物の塗りの式を、タイルの層で使える形にする。**塗りの規則は1つに保つ** (`BUILDING_COLOR_BY_*`)。
+<span class="ln">121</span> * GeoJSON の地物は出所の番号 (`palette`) と段の順位 (`tierRank`) を持つが、タイルの地物は持たない。
+<span class="ln">122</span> * 出所の番号は層ごとに決まった値に、段の順位はタイルの `lod` (段の順位そのもの) に置き換える。
+<span class="ln">123</span> */
+<span class="ln">124</span>export function tileColor(expression: ExpressionSpecification, palette: number): ExpressionSpecification {
+<span class="ln">125</span>  const replace = (value: unknown): unknown =&gt; {
+<span class="ln">126</span>    if (!Array.isArray(value)) return value;
+<span class="ln">127</span>    if (value.length === 2 &amp;&amp; value[0] === 'get' &amp;&amp; value[1] === 'palette') return palette;
+<span class="ln">128</span>    if (value.length === 2 &amp;&amp; value[0] === 'get' &amp;&amp; value[1] === 'tierRank') return ['get', 'lod'];
+<span class="ln">129</span>    return value.map(replace);
+<span class="ln">130</span>  };
+<span class="ln">131</span>  return replace(expression) as ExpressionSpecification;
+<span class="ln">132</span>}</code></pre>
 </figure>
 </section>
 <section class="card" id="nearby">
@@ -820,47 +820,47 @@ DuckDB は文字列の統計を頭の数文字でしか比べないため、<cod
 出し入れでき、出るズームはタイル側の minzoom・maxzoom に従う。</p>
 
 <figure class="code">
-<figcaption><a href="../web/src/lib/tiles.ts">web/src/lib/tiles.ts</a> <span class="lines">88〜127 行</span></figcaption>
-<pre><code><span class="ln"> 88</span>/**
-<span class="ln"> 89</span> * タイルの層1つを描く地図の層。**カタログに書いた形の種類だけから決める**
-<span class="ln"> 90</span> * (面は塗りと輪郭、線は線、文字を持つ点は文字、それ以外の点は丸)。
-<span class="ln"> 91</span> *
-<span class="ln"> 92</span> * 配布元の描き方 (地理院の `std.json`) は使わない。規約が明示しているのはタイル
-<span class="ln"> 93</span> * (データ) で、スタイル・記号・フォントの扱いは書かれていないため。
-<span class="ln"> 94</span> * 文字はブラウザのフォントで描く (`glyphs` を指定しなければ MapLibre がそうする)。
-<span class="ln"> 95</span> */
-<span class="ln"> 96</span>function vectorLayerSpecs(
-<span class="ln"> 97</span>  source: string,
-<span class="ln"> 98</span>  layer: VectorLayerInfo,
-<span class="ln"> 99</span>  look: VectorLook,
-<span class="ln">100</span>): LayerSpecification[] {
-<span class="ln">101</span>  const base = {
-<span class="ln">102</span>    source,
-<span class="ln">103</span>    'source-layer': layer.id,
-<span class="ln">104</span>    // 入れるまでは出さない。入り切りは `VectorOverlay.apply` が写す。
-<span class="ln">105</span>    layout: { visibility: 'none' as const },
-<span class="ln">106</span>  };
-<span class="ln">107</span>  const id = (suffix: string) =&gt; `${source}/${layer.id}/${suffix}`;
-<span class="ln">108</span>  const width: ExpressionSpecification = ['interpolate', ['linear'], ['zoom'], 8, 0.4, 16, 1.6];
-<span class="ln">109</span>  switch (layer.geometry) {
-<span class="ln">110</span>    case 'Polygon':
-<span class="ln">111</span>      return [
-<span class="ln">112</span>        { ...base, id: id('fill'), type: 'fill', paint: { 'fill-color': look.color, 'fill-opacity': 0.2 } },
-<span class="ln">113</span>        {
-<span class="ln">114</span>          ...base,
-<span class="ln">115</span>          id: id('outline'),
-<span class="ln">116</span>          type: 'line',
-<span class="ln">117</span>          paint: { 'line-color': look.color, 'line-width': 0.6, 'line-opacity': 0.6 },
-<span class="ln">118</span>        },
-<span class="ln">119</span>      ];
-<span class="ln">120</span>    case 'LineString':
-<span class="ln">121</span>      return [
-<span class="ln">122</span>        {
-<span class="ln">123</span>          ...base,
-<span class="ln">124</span>          id: id('line'),
-<span class="ln">125</span>          type: 'line',
-<span class="ln">126</span>          paint: {
-<span class="ln">127</span>            'line-color': look.color,</code></pre><div class="more">… 続きは <a href="../web/src/lib/tiles.ts">web/src/lib/tiles.ts</a> で</div>
+<figcaption><a href="../web/src/lib/tiles.ts">web/src/lib/tiles.ts</a> <span class="lines">65〜104 行</span></figcaption>
+<pre><code><span class="ln"> 65</span>/**
+<span class="ln"> 66</span> * タイルの層1つを描く地図の層。**カタログに書いた形の種類だけから決める**
+<span class="ln"> 67</span> * (面は塗りと輪郭、線は線、文字を持つ点は文字、それ以外の点は丸)。
+<span class="ln"> 68</span> *
+<span class="ln"> 69</span> * 配布元の描き方 (地理院の `std.json`) は使わない。規約が明示しているのはタイル
+<span class="ln"> 70</span> * (データ) で、スタイル・記号・フォントの扱いは書かれていないため。
+<span class="ln"> 71</span> * 文字はブラウザのフォントで描く (`glyphs` を指定しなければ MapLibre がそうする)。
+<span class="ln"> 72</span> */
+<span class="ln"> 73</span>function vectorLayerSpecs(
+<span class="ln"> 74</span>  source: string,
+<span class="ln"> 75</span>  layer: VectorLayerInfo,
+<span class="ln"> 76</span>  look: VectorLook,
+<span class="ln"> 77</span>): LayerSpecification[] {
+<span class="ln"> 78</span>  const base = {
+<span class="ln"> 79</span>    source,
+<span class="ln"> 80</span>    'source-layer': layer.id,
+<span class="ln"> 81</span>    // 入れるまでは出さない。入り切りは `VectorOverlay.apply` が写す。
+<span class="ln"> 82</span>    layout: { visibility: 'none' as const },
+<span class="ln"> 83</span>  };
+<span class="ln"> 84</span>  const id = (suffix: string) =&gt; `${source}/${layer.id}/${suffix}`;
+<span class="ln"> 85</span>  const width: ExpressionSpecification = ['interpolate', ['linear'], ['zoom'], 8, 0.4, 16, 1.6];
+<span class="ln"> 86</span>  switch (layer.geometry) {
+<span class="ln"> 87</span>    case 'Polygon':
+<span class="ln"> 88</span>      return [
+<span class="ln"> 89</span>        { ...base, id: id('fill'), type: 'fill', paint: { 'fill-color': look.color, 'fill-opacity': 0.2 } },
+<span class="ln"> 90</span>        {
+<span class="ln"> 91</span>          ...base,
+<span class="ln"> 92</span>          id: id('outline'),
+<span class="ln"> 93</span>          type: 'line',
+<span class="ln"> 94</span>          paint: { 'line-color': look.color, 'line-width': 0.6, 'line-opacity': 0.6 },
+<span class="ln"> 95</span>        },
+<span class="ln"> 96</span>      ];
+<span class="ln"> 97</span>    case 'LineString':
+<span class="ln"> 98</span>      return [
+<span class="ln"> 99</span>        {
+<span class="ln">100</span>          ...base,
+<span class="ln">101</span>          id: id('line'),
+<span class="ln">102</span>          type: 'line',
+<span class="ln">103</span>          paint: {
+<span class="ln">104</span>            'line-color': look.color,</code></pre><div class="more">… 続きは <a href="../web/src/lib/tiles.ts">web/src/lib/tiles.ts</a> で</div>
 </figure>
 </section>
 <section class="card" id="gsi-dem">
@@ -870,19 +870,19 @@ DuckDB は文字列の統計を頭の数文字でしか比べないため、<cod
 負の値 (2の補数) は正しく負にする。背景地図と地形はカタログから組み立てる。</p>
 
 <figure class="code">
-<figcaption><a href="../web/src/lib/tiles.ts">web/src/lib/tiles.ts</a> <span class="lines">390〜401 行</span></figcaption>
-<pre><code><span class="ln">390</span>/**
-<span class="ln">391</span> * 地理院の標高を1画素ずつ高さ (m) に直す。**独自の形式**で、線形の部分は Terrain-RGB と
-<span class="ln">392</span> * 同じ形 (x = R×2¹⁶ + G×2⁸ + B、高さ = x × 0.01 m) だが、そのままでは読めない値が2つある:
-<span class="ln">393</span> *
-<span class="ln">394</span> * - **値なし** (x = 2²³ = (128,0,0)。海など): そのまま読むと 83,886 m の針が立つ → 0 m にする
-<span class="ln">395</span> * - **負の値** (x &gt; 2²³、2の補数): そのまま読むと 8万m台に化ける → (x − 2²⁴) × 0.01 m
-<span class="ln">396</span> */
-<span class="ln">397</span>export function gsiDemHeight(r: number, g: number, b: number): number {
-<span class="ln">398</span>  const x = r * 65536 + g * 256 + b;
-<span class="ln">399</span>  if (x === 8388608) return 0;
-<span class="ln">400</span>  return (x &lt; 8388608 ? x : x - 16777216) * 0.01;
-<span class="ln">401</span>}</code></pre>
+<figcaption><a href="../web/src/lib/tiles.ts">web/src/lib/tiles.ts</a> <span class="lines">367〜378 行</span></figcaption>
+<pre><code><span class="ln">367</span>/**
+<span class="ln">368</span> * 地理院の標高を1画素ずつ高さ (m) に直す。**独自の形式**で、線形の部分は Terrain-RGB と
+<span class="ln">369</span> * 同じ形 (x = R×2¹⁶ + G×2⁸ + B、高さ = x × 0.01 m) だが、そのままでは読めない値が2つある:
+<span class="ln">370</span> *
+<span class="ln">371</span> * - **値なし** (x = 2²³ = (128,0,0)。海など): そのまま読むと 83,886 m の針が立つ → 0 m にする
+<span class="ln">372</span> * - **負の値** (x &gt; 2²³、2の補数): そのまま読むと 8万m台に化ける → (x − 2²⁴) × 0.01 m
+<span class="ln">373</span> */
+<span class="ln">374</span>export function gsiDemHeight(r: number, g: number, b: number): number {
+<span class="ln">375</span>  const x = r * 65536 + g * 256 + b;
+<span class="ln">376</span>  if (x === 8388608) return 0;
+<span class="ln">377</span>  return (x &lt; 8388608 ? x : x - 16777216) * 0.01;
+<span class="ln">378</span>}</code></pre>
 </figure>
 </section>
 <section class="card" id="cog-dem">
@@ -1016,30 +1016,32 @@ R2 には何も置かない (カタログから公開元を直接読む)。</p>
 ライセンスを持ち回れるようにするのが、このリポジトリの軸の1つ。</p>
 
 <figure class="code">
-<figcaption><a href="../web/src/lib/duckdb.ts">web/src/lib/duckdb.ts</a> <span class="lines">523〜545 行</span></figcaption>
-<pre><code><span class="ln">523</span>/**
-<span class="ln">524</span> * 問い合わせの結果を Parquet にして返す (ダウンロード用)。
-<span class="ln">525</span> *
-<span class="ln">526</span> * DuckDB-WASM の中の空のファイルに書いてから取り出す。ジオメトリの列が
-<span class="ln">527</span> * GEOMETRY 型なら DuckDB が `geo` メタデータを書くので、GeoParquet として読める。
-<span class="ln">528</span> * `kv` に出典や規約を入れて、**切り出したファイルにも条件が付いて回る**ようにする。
-<span class="ln">529</span> */
-<span class="ln">530</span>const exportParquet = async (select: string, kv: Record&lt;string, string&gt;): Promise&lt;Uint8Array&gt; =&gt; {
-<span class="ln">531</span>  const name = `export_${Date.now()}.parquet`;
-<span class="ln">532</span>  await db.registerEmptyFileBuffer(name);
-<span class="ln">533</span>  const escape = (text: string) =&gt; text.replace(/'/g, "''");
-<span class="ln">534</span>  const kvSql = Object.entries(kv)
-<span class="ln">535</span>    .map(([key, value]) =&gt; `'${escape(key)}': '${escape(value)}'`)
-<span class="ln">536</span>    .join(', ');
-<span class="ln">537</span>  try {
-<span class="ln">538</span>    await conn.query(
-<span class="ln">539</span>      `COPY (${select}) TO '${name}' (FORMAT PARQUET${kvSql ? `, KV_METADATA {${kvSql}}` : ''});`,
-<span class="ln">540</span>    );
-<span class="ln">541</span>    return await db.copyFileToBuffer(name);
-<span class="ln">542</span>  } finally {
-<span class="ln">543</span>    await db.dropFile(name);
-<span class="ln">544</span>  }
-<span class="ln">545</span>};</code></pre>
+<figcaption><a href="../web/src/lib/duckdb.ts">web/src/lib/duckdb.ts</a> <span class="lines">564〜588 行</span></figcaption>
+<pre><code><span class="ln">564</span>/**
+<span class="ln">565</span> * 問い合わせの結果を Parquet にして返す (ダウンロード用)。
+<span class="ln">566</span> *
+<span class="ln">567</span> * DuckDB-WASM の中の空のファイルに書いてから取り出す。ジオメトリの列が
+<span class="ln">568</span> * GEOMETRY 型なら DuckDB が `geo` メタデータを書くので、GeoParquet として読める。
+<span class="ln">569</span> * `kv` に出典や規約を入れて、**切り出したファイルにも条件が付いて回る**ようにする。
+<span class="ln">570</span> */
+<span class="ln">571</span>const exportParquet = async (select: string, kv: Record&lt;string, string&gt;): Promise&lt;Uint8Array&gt; =&gt; {
+<span class="ln">572</span>  const name = `export_${Date.now()}.parquet`;
+<span class="ln">573</span>  await ready;
+<span class="ln">574</span>  const { db } = await opened;
+<span class="ln">575</span>  await db.registerEmptyFileBuffer(name);
+<span class="ln">576</span>  const escape = (text: string) =&gt; text.replace(/'/g, "''");
+<span class="ln">577</span>  const kvSql = Object.entries(kv)
+<span class="ln">578</span>    .map(([key, value]) =&gt; `'${escape(key)}': '${escape(value)}'`)
+<span class="ln">579</span>    .join(', ');
+<span class="ln">580</span>  try {
+<span class="ln">581</span>    await conn.query(
+<span class="ln">582</span>      `COPY (${select}) TO '${name}' (FORMAT PARQUET${kvSql ? `, KV_METADATA {${kvSql}}` : ''});`,
+<span class="ln">583</span>    );
+<span class="ln">584</span>    return await db.copyFileToBuffer(name);
+<span class="ln">585</span>  } finally {
+<span class="ln">586</span>    await db.dropFile(name);
+<span class="ln">587</span>  }
+<span class="ln">588</span>};</code></pre>
 </figure>
 </section>
 <section class="card" id="layer-order">
@@ -1049,22 +1051,22 @@ R2 には何も置かない (カタログから公開元を直接読む)。</p>
 持たせてあり、建物は引いた表示のタイルの層も一緒に動く。地図に無い層は飛ばす。</p>
 
 <figure class="code">
-<figcaption><a href="../web/src/ui/layer-list.ts">web/src/ui/layer-list.ts</a> <span class="lines">187〜201 行</span></figcaption>
-<pre><code><span class="ln">187</span>/**
-<span class="ln">188</span> * 重ね順を地図に写す。**下から順に、区分の目印の直下へ動かす** (動かすたびにその直下へ
-<span class="ln">189</span> * 入るので、最後に動かしたものがいちばん上になる)。
-<span class="ln">190</span> */
-<span class="ln">191</span>const applyOrder = () =&gt; {
-<span class="ln">192</span>  for (const section of ['tile', 'data'] as const) {
-<span class="ln">193</span>    const anchor = LAYER_ANCHORS[section];
-<span class="ln">194</span>    if (!map.getLayer(anchor)) continue;
-<span class="ln">195</span>    for (const id of [...order[section]].reverse()) {
-<span class="ln">196</span>      for (const mapLayer of byId.get(id)?.mapLayerIds() ?? []) {
-<span class="ln">197</span>        if (map.getLayer(mapLayer)) map.moveLayer(mapLayer, anchor);
-<span class="ln">198</span>      }
-<span class="ln">199</span>    }
-<span class="ln">200</span>  }
-<span class="ln">201</span>};</code></pre>
+<figcaption><a href="../web/src/ui/layer-list.ts">web/src/ui/layer-list.ts</a> <span class="lines">203〜217 行</span></figcaption>
+<pre><code><span class="ln">203</span>/**
+<span class="ln">204</span> * 重ね順を地図に写す。**下から順に、区分の目印の直下へ動かす** (動かすたびにその直下へ
+<span class="ln">205</span> * 入るので、最後に動かしたものがいちばん上になる)。
+<span class="ln">206</span> */
+<span class="ln">207</span>const applyOrder = () =&gt; {
+<span class="ln">208</span>  for (const section of ['tile', 'data'] as const) {
+<span class="ln">209</span>    const anchor = LAYER_ANCHORS[section];
+<span class="ln">210</span>    if (!map.getLayer(anchor)) continue;
+<span class="ln">211</span>    for (const id of [...order[section]].reverse()) {
+<span class="ln">212</span>      for (const mapLayer of byId.get(id)?.mapLayerIds() ?? []) {
+<span class="ln">213</span>        if (map.getLayer(mapLayer)) map.moveLayer(mapLayer, anchor);
+<span class="ln">214</span>      }
+<span class="ln">215</span>    }
+<span class="ln">216</span>  }
+<span class="ln">217</span>};</code></pre>
 </figure>
 </section>
 <section class="card" id="hover">
