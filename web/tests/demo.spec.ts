@@ -1253,6 +1253,24 @@ test('参照だけの元データは足せず、ⓘ から中身が分かる', a
 });
 
 /**
+ * **OpenStreetMap の標準タイルは、載せるだけで描かない。** 利用方針が厳しい (先読み・一括取得・オフラインの禁止、
+ * 保証なし) ことを知らせるため。足せず、ⓘ から利用方針のページへ辿れる。データは ODbL。
+ */
+test('OSM の標準タイルはカタログにあるが足せず、ⓘ から利用方針へ辿れる', { tag: '@map' }, async ({ page }) => {
+  await openCatalogFor(page, 'osm-standard-tiles');
+  const row = page.locator('[data-catalog-layer="osm-standard-tiles"]');
+  await expect(row.locator('.catalog-add')).toBeDisabled();
+  await expect(row).toContainText('描きません');
+  await row.locator('.layer-detail-button').click();
+  const card = page.locator('.collection-card[data-collection="osm-standard-tiles"]');
+  await expect(card).toContainText('先読みや一括取得をしない');
+  await expect(card.locator('a', { hasText: 'OSMF Tile Usage Policy' })).toHaveAttribute(
+    'href',
+    'https://operations.osmfoundation.org/policies/tiles/',
+  );
+});
+
+/**
  * **AW3D30 (JAXA) は地形に選べる。** COG を直接読んで地形のタイルにする (R2 には置かない)。
  * ⓘ から公開元の STAC (COG) と使う条件 (商用は事前に連絡) が分かる。
  */
@@ -4100,7 +4118,7 @@ test('足せないものは別のタブに分け、目次から出所へ飛べ�
   // 見るだけのタブは、どれも足せない (配っていない元データ)。
   await tab('view').click();
   await expect(dialog.locator('[data-catalog-layer="reearth-buildings"]')).toHaveCount(0);
-  for (const id of ['nasa-nasadem', 'gsi-dem-source']) {
+  for (const id of ['nasa-nasadem', 'gsi-dem-source', 'osm-standard-tiles']) {
     await expect(dialog.locator(`[data-catalog-layer="${id}"] .catalog-add`)).toBeDisabled();
   }
   expect(await adds.count()).toBe(await adds.filter({ hasText: '描けません' }).count());

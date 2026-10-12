@@ -54,6 +54,22 @@ const EN: &[(&str, &str)] = &[
     ),
     ("世界の地図 (明るい色)", "World map (light)"),
     (
+        "OpenStreetMap 財団が配っている地図です。利用方針が厳しいため、このカタログでは描かず、規約を知らせるために載せています。",
+        "Maps served by the OpenStreetMap Foundation. Their usage policy is strict, so this catalogue does not draw them; they are listed to make the terms known.",
+    ),
+    (
+        "OpenStreetMap の標準タイル (描きません)",
+        "OpenStreetMap standard tiles (not drawn)",
+    ),
+    (
+        "OpenStreetMap 財団が配っている標準の地図タイル (tile.openstreetmap.org) です。利用方針により、出典を地図の上の目立つ所に出すこと・先読みや一括取得をしないこと・オフラインで使わないことが求められ、保証は無く、予告なく使えなくなることがあります。このカタログでは描かず、規約を知らせるために載せています。OpenStreetMap のデータで世界の背景地図を描くなら、OpenFreeMap を使ってください。",
+        "The standard map tiles served by the OpenStreetMap Foundation (tile.openstreetmap.org). Their usage policy requires showing the attribution prominently on the map, no prefetching or bulk downloading, and no offline use; there is no guarantee and access may end without notice. This catalogue does not draw them; they are listed to make the terms known. To draw a world background map from OpenStreetMap data, use OpenFreeMap.",
+    ),
+    (
+        "OSMF Tile Usage Policy (データは ODbL)",
+        "OSMF Tile Usage Policy (data under ODbL)",
+    ),
+    (
         "OpenStreetMap のデータから作られた、世界全体の背景地図です。色が抑えてあり、重ねたデータが読みやすくなります。OpenFreeMap が、無料・登録不要でベクトルタイルとスタイル (Positron) を配っています。このカタログからは配っていません。",
         "A background map of the whole world made from OpenStreetMap data. Its muted colours keep overlaid data easy to read. OpenFreeMap serves the vector tiles and the style (Positron) free of charge without registration. This catalogue does not distribute it.",
     ),

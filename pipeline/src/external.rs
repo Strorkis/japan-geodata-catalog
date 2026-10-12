@@ -759,6 +759,32 @@ pub const EXTERNAL_RASTERS: &[ExternalRaster] = &[
         quantized_mesh: None,
         default: false,
     },
+    // **OpenStreetMap の標準タイル。カタログに載せるだけで、描かない** (利用者の判断、2026-10-12)。
+    // 利用方針 (2026-10-12 に読んだ) は条件付きで使えるが、先読み・一括取得・オフラインを禁じ、保証が無く予告なく止められる。
+    // 規約の厳しさを伝えるために載せる。タイルの URL はリンクにしない (`xyz` を書くとカタログの閲覧 (STAC Browser) が
+    // 見本の地図として読みに行く)。
+    ExternalRaster {
+        id: "osm-standard-tiles",
+        dir: "osm",
+        title: "OpenStreetMap の標準タイル (描きません)",
+        description: "OpenStreetMap 財団が配っている標準の地図タイル (tile.openstreetmap.org) です。利用方針により、\
+                      出典を地図の上の目立つ所に出すこと・先読みや一括取得をしないこと・オフラインで使わないことが求められ、\
+                      保証は無く、予告なく使えなくなることがあります。このカタログでは描かず、規約を知らせるために載せています。\
+                      OpenStreetMap のデータで世界の背景地図を描くなら、OpenFreeMap を使ってください。",
+        attribution: OSM_TILES,
+        via: "https://operations.osmfoundation.org/policies/tiles/",
+        role: RasterRole::Reference,
+        link: TileLink::None,
+        minzoom: 0,
+        maxzoom: 0,
+        tile_size: 0,
+        bounds: [-180.0, -85.05113, 180.0, 85.05113],
+        dem: None,
+        derived_from: &[],
+        viewer: None,
+        quantized_mesh: None,
+        default: false,
+    },
     // ---- 衛星の標高 ----
     // AW3D30 は地形として描ける (2026-10-10)。JAXA の COG を UI が直接読み、Terrarium のタイルにする
     // (web/src/lib/cog-dem.ts)。R2 には置かない。
@@ -940,9 +966,24 @@ const MLIT_KSJ_N03: Attribution = Attribution {
     },
 };
 
-/// AW3D30。JAXA 第一宇宙技術部門の「研究データ等の利用条件」(2026-10-05 に読んだ)。
-/// 改変・第三者への配布を含めて無償で使えるが、**出所表示 (JAXA とデータの名前) が要り**、
-/// **商用は事前に JAXA へ連絡が要る**。出所表示は利用条件の例「提供：＊＊＊(JAXA)」に合わせる。
+/// OpenStreetMap の標準タイル。データは ODbL (継承あり)、出典は「© OpenStreetMap contributors」。
+/// タイルの利用方針は商用を禁じていない (商用には「いつでも止めうる」と注意しているだけ) ので、
+/// 「可」と言い切らずに「制限の記載なし」とする。条件の中身は Collection の説明に書く。
+const OSM_TILES: Attribution = Attribution {
+    text: "© OpenStreetMap contributors",
+    url: "https://www.openstreetmap.org/copyright",
+    license: "ODbL-1.0",
+    provider: "OpenStreetMap Foundation",
+    terms: Terms {
+        name: "OSMF Tile Usage Policy (データは ODbL)",
+        url: "https://operations.osmfoundation.org/policies/tiles/",
+        commercial: Commercial::NotRestricted,
+        attribution_required: true,
+        note_modification: false,
+        share_alike: true,
+    },
+};
+
 /// OpenFreeMap。OpenStreetMap のデータから作ったベクトルタイル (OpenMapTiles の形) とスタイル。
 /// **無料・登録不要・回数の制限なし・商用可** (利用規約、2026-10-10 に読んだ)。出典の表示が要る
 /// (MapLibre ならタイルの情報から自動で出る)。保証 (SLA) は無く、寄付で運営されている。
@@ -962,6 +1003,9 @@ const OPENFREEMAP: Attribution = Attribution {
     },
 };
 
+/// AW3D30。JAXA 第一宇宙技術部門の「研究データ等の利用条件」(2026-10-05 に読んだ)。
+/// 改変・第三者への配布を含めて無償で使えるが、**出所表示 (JAXA とデータの名前) が要り**、
+/// **商用は事前に JAXA へ連絡が要る**。出所表示は利用条件の例「提供：＊＊＊(JAXA)」に合わせる。
 const JAXA_AW3D30: Attribution = Attribution {
     text: "提供：AW3D30 (JAXA)",
     url: "https://www.eorc.jaxa.jp/ALOS/jp/dataset/aw3d30/aw3d30_j.htm",

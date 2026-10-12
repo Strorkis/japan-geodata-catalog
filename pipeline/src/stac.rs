@@ -227,6 +227,12 @@ const SUB_CATALOGS: &[SubCatalog] = &[
         description: "OpenStreetMap のデータから作られた世界の背景地図です。このカタログでは複製せず、公開元の配信をそのまま使っています。",
     },
     SubCatalog {
+        dir: "osm",
+        title: "OpenStreetMap",
+        description: "OpenStreetMap 財団が配っている地図です。利用方針が厳しいため、このカタログでは描かず、\
+                      規約を知らせるために載せています。",
+    },
+    SubCatalog {
         dir: "mapterhorn",
         title: "Mapterhorn",
         description: "世界の標高タイルです。このカタログでは複製せず、公開元の配信をそのまま使っています。",
@@ -1152,6 +1158,20 @@ mod tests {
                 .contains("openfreemap.org/styles/")
         );
         assert_eq!(ofm["duck:terms"]["commercial"], "allowed");
+        // OSM の標準タイルは**載せるだけで描かない** (規約を知らせるため)。タイルへのリンクを書かない
+        // (書くとカタログの閲覧 (STAC Browser) が見本の地図として読みに行く)。データは ODbL で継承あり。
+        let osm = find(&documents, "osm/osm-standard-tiles.json");
+        assert_eq!(osm["duck:kind"], "reference");
+        assert_eq!(osm["license"], "ODbL-1.0");
+        assert_eq!(osm["duck:terms"]["share_alike"], true);
+        assert!(
+            osm["links"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .all(|l| l["rel"] != "xyz" && l["rel"] != "tilejson")
+        );
+        assert!(osm.get("duck:zoom").is_none());
         // NASA の2つも参照だけ。サブカタログは出所ごと。
         assert_eq!(
             find(&documents, "nasa/nasa-aster-gdem.json")["license"],
