@@ -14,13 +14,10 @@ import { LINE_KINDS } from '../lib/sources';
 import { MESH_SIZE_LABELS } from '../lib/mesh';
 import type { VectorOverlay } from '../lib/tiles';
 import { BUILDING_TILES_PREFIX, buildingTilesLayerId } from './map';
+import { hoverContent, text, vectorHover, type Hover, type HoverRows } from './hover-rows';
 import { m } from '../i18n';
 
 type Props = Record<string, unknown>;
-/** [項目名, 値]。**項目名が空なら見出し**。値が null の行は出さない。 */
-type HoverRows = [string, string | null][];
-/** 吹き出しの中身と、**同じものか**の鍵 (同じなら作り直さない — 区間の境でちらつくため)。 */
-type Hover = { key: string; rows: HoverRows };
 
 export interface HoverOptions {
   map: MapLibreMap;
@@ -43,36 +40,6 @@ export interface HoverHandle {
   /** 吹き出しを閉じる (判定の吹き出しと並ばないように)。 */
   hide: () => void;
 }
-
-/**
- * 吹き出しの中身を組み立てる。
- *
- * **`setText` に改行を渡しても効かない。** テキストノードになるので `\n` は
- * 空白に潰れ、項目が横一列に並んで読めなくなる。かといって `setHTML` は
- * データ由来の文字列 (駅名や事業者名) をそのままHTMLとして解釈するので使わない。
- * 要素を組んで `setDOMContent` に渡す。
- */
-function hoverContent(rows: HoverRows): HTMLElement {
-  const box = document.createElement('div');
-  box.className = 'hover-info';
-  for (const [label, value] of rows) {
-    if (value === null) continue;
-    const line = document.createElement('div');
-    if (label) {
-      const name = document.createElement('span');
-      name.className = 'label';
-      name.textContent = label;
-      line.append(name, document.createTextNode(value));
-    } else {
-      line.className = 'title';
-      line.textContent = value;
-    }
-    box.append(line);
-  }
-  return box;
-}
-
-const text = (value: unknown) => (value === null || value === undefined || value === '' ? null : String(value));
 
 export function createHover(options: HoverOptions): HoverHandle {
   const { map, collections, vectorOverlays, railwayVintage, roadVintage } = options;
@@ -236,21 +203,8 @@ export function createHover(options: HoverOptions): HoverHandle {
     for (const feature of map.queryRenderedFeatures([point.x, point.y])) {
       const overlay = vectorOverlays.find((o) => o.styleLayers.has(feature.layer.id));
       if (!overlay) continue;
-      const sourceLayer = overlay.styleLayers.get(feature.layer.id)!;
-      const props = feature.properties;
-      const theme = overlay.collection.themes?.find((t) => t.layers.some((l) => l.id === sourceLayer));
-      const layer = theme?.layers.find((l) => l.id === sourceLayer);
-      return {
-        key: `vector|${sourceLayer}|${props.vt_code ?? ''}|${props.vt_text ?? ''}`,
-        rows: [
-          ['', text(props.vt_text) ?? `${theme?.title ?? ''} › ${layer?.title ?? sourceLayer}`],
-          [m.hoverLayer, `${layer?.title ?? sourceLayer} (${sourceLayer})`],
-          // 地物の種別のコード。意味は配布元の「地物種別コード一覧」にある。
-          [m.hoverTypeCode, text(props.vt_code)],
-          [m.hoverSource, `${overlay.collection.group?.title ?? ''} ${overlay.collection.title}`.trim()],
-          [m.hoverVintage, overlay.collection.vintage ?? null],
-        ],
-      };
+      // 中身は Cesium と共用 (ui/hover-rows.ts)。
+      return vectorHover(overlay.collection, overlay.styleLayers.get(feature.layer.id)!, feature.properties);
     }
     return null;
   };

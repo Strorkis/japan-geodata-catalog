@@ -700,6 +700,9 @@ Cesium は**同じページに載せる** (`web/src/lib/engines/cesium.ts`。上
 - 地形の欄は共用。Cesium は**楕円体高の quantized-mesh** しか地形にしないので、選んでいる標高が海面からの高さ (Mapterhorn など) なら
   Re:Earth Terrain に替え、地形の欄に「楕円体高の Re:Earth Terrain を使います」と出す
 - 検索・📍・◎ は Cesium の間は押せない (結果の描き方と地図を押す操作が MapLibre のもの。TOBE)
+- **吹き出し: 地理院のベクタは Cesium でも出す** (2026-10-12。最初は作り忘れていて、利用者に指摘された)。中身は MapLibre と共用
+  (`web/src/ui/hover-rows.ts`)。Cesium は1コマに1回だけ `scene.pick` で拾い、地物の `_layer` と属性 (`vt_code`・`vt_text`) から作る。
+  指で押したときも出す。**3D Tiles (PLATEAU) の建物とデータの行の吹き出しは TOBE** (3D Tiles は属性の形が違う)
 - Cesium の出典の表示は、既定の左下だと一覧に隠れるので右下 (スマホ幅は下端の帯) に移した。出典の表示は義務
 - 戻ったときの場所が約300mずれたことがあった。画面の真ん中の地面を地表のメッシュ (`globe.pick`) から取っていて、
   切り替えた直後は粗い弦 (楕円体より低い) と交わるため。**平らなときは楕円体と直接交わらせて直した。** 地形があるときは

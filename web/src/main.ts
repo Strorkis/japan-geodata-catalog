@@ -45,7 +45,8 @@ import { createSearchBox } from './ui/search-box';
 import { createTerrainRow } from './ui/terrain-row';
 import { createEngineBar, engineFromUrl, type EngineId } from './ui/engine-bar';
 // Cesium は**型だけ**。本体はバーで選んだときに読む (地図の起動を重くしない)。
-import type { CesiumEngine, CesiumRow } from './lib/engines/cesium';
+import type { CesiumEngine, CesiumRow, CesiumVectorHit } from './lib/engines/cesium';
+import { hoverContent, vectorHover } from './ui/hover-rows';
 import { vectorThemeLook } from './lib/vector-looks';
 import type { View } from './lib/view-params';
 import { applyHtmlText, lang, m, urlWithLang } from './i18n';
@@ -1077,6 +1078,29 @@ async function main() {
   // **1ページのまま入れ替える** (DuckDB を起こし直さない)。Cesium は初めて選んだときに読み込み、
   // 一度作ったら壊さずに隠す (2026-10-12 に、同じページで5往復しても壊れないことを確かめた。roadmap)。
   const cesiumEl = document.querySelector<HTMLDivElement>('#cesium')!;
+  // **Cesium の吹き出し** (地理院のベクタの地物)。中身は MapLibre と共用 (ui/hover-rows.ts)、置き方だけ違う
+  // (MapLibre の Popup は地図に結び付いているので使えない)。マウスの右下に出す。
+  const cesiumHover = document.createElement('div');
+  cesiumHover.id = 'cesium-hover';
+  cesiumHover.hidden = true;
+  cesiumEl.append(cesiumHover);
+  let cesiumHoverKey = '';
+  const showCesiumHover = (hit: CesiumVectorHit | undefined) => {
+    if (!hit) {
+      cesiumHover.hidden = true;
+      cesiumHoverKey = '';
+      return;
+    }
+    const hover = vectorHover(hit.collection, hit.sourceLayer, hit.props);
+    // 同じ地物なら作り直さない (動かすたびに作るとちらつく)。
+    if (hover.key !== cesiumHoverKey) {
+      cesiumHoverKey = hover.key;
+      cesiumHover.replaceChildren(hoverContent(hover.rows));
+    }
+    cesiumHover.style.left = `${hit.x + 12}px`;
+    cesiumHover.style.top = `${hit.y + 12}px`;
+    cesiumHover.hidden = false;
+  };
   /** いまの MapLibre の見え方 (見え方の正本)。 */
   const mapView = (): View => {
     const c = map.getCenter();
@@ -1105,6 +1129,7 @@ async function main() {
           onMoveEnd: (view) =>
             map.jumpTo({ center: [view.lon, view.lat], zoom: view.zoom, pitch: view.pitch, bearing: view.bearing }),
           onFailure: (collection) => showFailure(m.loadFailed(collection.title)),
+          onHover: showCesiumHover,
         });
         (window as unknown as { __viewer?: unknown }).__viewer = cesium.viewer;
         engine = 'cesium';

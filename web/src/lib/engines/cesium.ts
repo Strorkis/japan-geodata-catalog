@@ -15,6 +15,7 @@ import {
   Cartesian2,
   Cartesian3,
   Cartographic,
+  Cesium3DTileFeature,
   Cesium3DTileset,
   Cesium3DTileStyle,
   CesiumTerrainProvider,
@@ -29,6 +30,8 @@ import {
   PerspectiveFrustum,
   Rectangle,
   sampleTerrainMostDetailed,
+  ScreenSpaceEventHandler,
+  ScreenSpaceEventType,
   type TerrainProvider,
   TileMapServiceImageryProvider,
   UrlTemplateImageryProvider,
@@ -99,10 +102,25 @@ export interface CesiumEngineOptions {
   onMoveEnd: (view: View) => void;
   /** 読めなかったもの。 */
   onFailure: (collection: Collection) => void;
+  /**
+   * ベクトルタイルの地物の上にいるとき (外れたら undefined)。吹き出しを出すため。
+   * `x`・`y` は入れ物の中の画素。指で押したときも同じものを知らせる (スマホにはホバーが無い)。
+   */
+  onHover: (hit: CesiumVectorHit | undefined) => void;
+}
+
+/** ベクトルタイルの地物1つ (吹き出しの元)。 */
+export interface CesiumVectorHit {
+  collection: Collection;
+  /** タイルの中の層の名前 (`RdCL` など)。 */
+  sourceLayer: string;
+  props: Record<string, unknown>;
+  x: number;
+  y: number;
 }
 
 export function createCesiumEngine(options: CesiumEngineOptions): CesiumEngine {
-  const { container, quantizedMeshTerrains, onMoveEnd, onFailure } = options;
+  const { container, quantizedMeshTerrains, onMoveEnd, onFailure, onHover } = options;
   const viewer = new Viewer(container, {
     // **ion を使う部品は出さない** (背景地図の選択・地名検索は ion の Bing などを読む)。
     baseLayer: false,
@@ -389,6 +407,49 @@ export function createCesiumEngine(options: CesiumEngineOptions): CesiumEngine {
     return terrainCollection;
   };
 
+  // ---- 吹き出し (ベクトルタイルの地物) ----
+  // **1コマに1回だけ拾う** (`scene.pick` は拾うための描画をもう1回するので、マウスが動くたびに呼ぶと重い)。
+  // 地物には `_layer` (MVT の層の名前) と元の属性 (`vt_code`・`vt_text`) が付いている。
+  // 3D Tiles (PLATEAU) の建物は属性の形が違うので、まだ出さない (TOBE)。
+  const pickVector = (position: Cartesian2): CesiumVectorHit | undefined => {
+    const picked: unknown = viewer.scene.pick(position);
+    if (!(picked instanceof Cesium3DTileFeature)) return undefined;
+    for (const row of vectorRows) {
+      if (vectors.get(row.collection.id)?.provider.tileset !== picked.tileset) continue;
+      const props: Record<string, unknown> = {};
+      for (const id of picked.getPropertyIds()) props[id] = picked.getProperty(id);
+      const sourceLayer = props._layer;
+      if (typeof sourceLayer !== 'string') return undefined;
+      return { collection: row.collection, sourceLayer, props, x: position.x, y: position.y };
+    }
+    return undefined;
+  };
+  let hoverAt: Cartesian2 | undefined;
+  let hoverScheduled = false;
+  const hoverNow = () => {
+    hoverScheduled = false;
+    if (!hoverAt || !viewer.useDefaultRenderLoop) return;
+    const hit = pickVector(hoverAt);
+    viewer.canvas.style.cursor = hit ? 'pointer' : '';
+    onHover(hit);
+  };
+  const handler = new ScreenSpaceEventHandler(viewer.scene.canvas);
+  handler.setInputAction((movement: ScreenSpaceEventHandler.MotionEvent) => {
+    hoverAt = Cartesian2.clone(movement.endPosition);
+    if (hoverScheduled) return;
+    hoverScheduled = true;
+    requestAnimationFrame(hoverNow);
+  }, ScreenSpaceEventType.MOUSE_MOVE);
+  // 指で押したとき (スマホ) も同じものを出す。
+  handler.setInputAction((click: ScreenSpaceEventHandler.PositionedEvent) => {
+    hoverAt = Cartesian2.clone(click.position);
+    hoverNow();
+  }, ScreenSpaceEventType.LEFT_CLICK);
+  viewer.canvas.addEventListener('pointerleave', () => {
+    hoverAt = undefined;
+    onHover(undefined);
+  });
+
   viewer.camera.moveEnd.addEventListener(() => {
     if (!viewer.useDefaultRenderLoop) return;
     lastView = view();
@@ -421,6 +482,8 @@ export function createCesiumEngine(options: CesiumEngineOptions): CesiumEngine {
       }
     },
     hide: () => {
+      hoverAt = undefined;
+      onHover(undefined);
       viewer.useDefaultRenderLoop = false;
       container.hidden = true;
     },

@@ -2119,6 +2119,20 @@ a.lang-option {
     font-size: 10px;
   }
 }
+/* Cesium の吹き出し。MapLibre の吹き出し (Popup) と同じ見た目にする。中身は ui/hover-rows.ts。 */
+#cesium-hover {
+  position: absolute;
+  z-index: 1;
+  max-width: 20rem;
+  padding: 0.5rem 0.7rem;
+  border-radius: 0.3rem;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+#cesium-hover[hidden] {
+  display: none;
+}
 #terrain-engine-note {
   margin: 0.2rem 0 0;
   font-size: 0.78rem;
