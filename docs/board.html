@@ -316,7 +316,7 @@
   <body>
     <header>
       <h1>duck-geocoder ダッシュボード</h1>
-      <span class="meta">更新 2026-10-12 18:32 (日本時間)</span>
+      <span class="meta">更新 2026-10-12 20:11 (日本時間)</span>
       <span class="meta">
         <a href="https://strorkis.github.io/duck-geocoder/">公開サイト</a> ·
         <a href="roadmap.md">方針 (roadmap.md)</a> · STAC 配布形式の実験
@@ -335,7 +335,7 @@
       </div>
       <div class="card kpi">
         <div class="label">公開待ちのコミット</div>
-        <div class="value">22 <small>件</small></div>
+        <div class="value">24 <small>件</small></div>
         <span class="status you">カタログを上げて push 待ち</span>
       </div>
       <div class="card kpi">
@@ -355,36 +355,21 @@
 
     <!-- ===== 確かめてほしいこと (確かめてもらったら消す) ===== -->
     <section class="card row" aria-label="確かめてほしいこと">
-      <h2>確かめてほしいこと — 地図エンジンの切り替え (Cesium) <span class="status you">あなたの番</span></h2>
+      <h2>確かめてほしいこと — Cesium の吹き出しと、一覧の注記 (直したところ) <span class="status you">あなたの番</span></h2>
       <p class="sub" style="margin: -0.3rem 0 0.5rem">
-        ヘッドレスのブラウザ (GPU 無し) では 3D Tiles や地形を描かせられないので、見た目はここで確かめてください。
-        <b>おかしかったら、その番号を教えてください。</b>
+        前回の確かめで出なかった・はみ出した所を直しました。<b>おかしかったら、その番号を教えてください。</b>
       </p>
       <ol class="tasks">
         <li>
-          <code>cd web &amp;&amp; pnpm dev</code> → <code>http://localhost:5173/?lon=139.7671&amp;lat=35.6812&amp;zoom=16&amp;pitch=50</code> を開く
+          <code>cd web &amp;&amp; pnpm dev</code> → <code>http://localhost:5173/?lon=139.7671&amp;lat=35.6812&amp;zoom=16&amp;pitch=50&amp;engine=cesium</code> を開く (Cesium で始まる)
         </li>
         <li>
-          上のバーで <b>Cesium</b> を押す → 同じ場所が開き、淡色地図が出る。一覧の「建物」が灰色で「Cesium ではまだ描けません」。検索欄は押せない
+          地図タイルの「＋ 追加」→ 国土地理院「最適化ベクトルタイル」の「道路」を足す → <b>道路の線にマウスを乗せると吹き出し</b>
+          (「道路 › 道路中心線」・層・種別コード・出所・時点) が出る。線から外すと消える
         </li>
         <li>
-          地図タイルの「＋ 追加」→ PLATEAU の「建物 (3D Tiles・公式配信)」を足す → <b>建物が地面に乗っている</b> (浮いていない・沈んでいない)。
-          MapLibre ではこの行が灰色
-        </li>
-        <li>
-          地形の欄の下に「楕円体高の Re:Earth Terrain を使います」と出る。
-          富士山 <code>?lon=138.7274&amp;lat=35.3606&amp;zoom=12&amp;pitch=60&amp;engine=cesium</code> で<b>起伏が立体に出る</b>
-        </li>
-        <li>
-          東京駅に戻り、地図タイルの「＋ 追加」→ 国土地理院「最適化ベクトルタイル」の「道路」と「鉄道」を足す → <b>地面に貼られて描かれる</b>。
-          3km ほど動かすと、その周りが読み直される。<b>道路にマウスを乗せると吹き出し</b> (層・種別コード・出所) が出る
-        </li>
-        <li>淡色地図の ⚙ で不透明度を下げる・行を並べ替える → Cesium にも効く</li>
-        <li>
-          バーで <b>MapLibre</b> に戻る → 同じ場所 (向き・傾きも)。建物が描かれ、すぐ検索できる。灰色だった行が戻る
-        </li>
-        <li>
-          古いリンク <code>http://localhost:5173/3d.html?lon=139.7671&amp;lat=35.6812&amp;zoom=15</code> → Cesium で開く
+          バーで <b>MapLibre</b> に戻り、地図タイルの「＋ 追加」→ PLATEAU の「建物 (3D Tiles・公式配信)」を足す →
+          行の2段目の「MapLibre では描けません (Cesium で描けます)」が<b>行の枠に収まっている</b>
         </li>
       </ol>
     </section>
