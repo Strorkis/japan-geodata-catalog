@@ -627,8 +627,34 @@ Re:Earth Terrain (Terrarium) ＋ 地理院の写真 ＋ Re:Earth Buildings (3D T
   地形があるときは `depthTestAgainstTerrain` を立てる。読めなければ平らに戻して状況の欄に出す
 - URL の `?terrain=flat` / `?terrain=<Collection ID>` で選べる
 
-**次の段:** 3D Tiles 2.0 (glTF 2.1・ベクタ・Gaussian Splatting) の試験データを探して、Cesium の対応を確かめる。
-そのあと MapLibre ＋ Three.js・Navara を見る。
+**3段目: 3D Tiles 2.0 の対応を確かめ、ベクタから試した (2026-10-11)。**
+
+- **本物の 3D Tiles 2.0 は CesiumJS 1.146 では読めない。** 2.0 は tileset.json を持たず、glTF 2.1 の `root.tileset.glb` に
+  `3DTILES_tileset` を載せる。読み込みは `origin/3dtiles-tileset` (10-10、未マージ・マイルストーン無し) にだけある。
+  仕様 (`3d-tiles` の `draft-2.0`) は 9/30 から OGC の意見募集中。拡張はまだ Cesium の glTF のフォークにあり、変わりうる
+  (手元の `.reference/github.com/CesiumGS/`)
+- **1.146 で動く 2.0 の部品はベクタと Gaussian splat。** ベクタは `MVTDataProvider` (実験段階) が MVT を読み込み時に
+  glTF のベクタ (`3DTILES_content_gltf_vector`) へ変えて、地形や 3D Tiles に貼る。**2.0 の最終の名前は
+  `3DTILES_tileset_vectors` ＋ `EXT_mesh_polygon` ＋ `3DTILES_layers`** で、1.146 が読むのは前身の名前
+- **Gaussian splat は見送り。** 日本で、Cesium ion を通さずに使える公開の 3D Tiles が見つかっていない
+  (Cesium の `Specs/Data/Cesium3DTiles/GaussianSplats/` に試験用はある)。見つかったら外部の 3D Tiles としてカタログに足す
+
+ベクタ: **カタログのベクトルタイル (PMTiles) を、3D のページで選んで描く** (3d.html の「ベクトルタイル」。テーマごと。
+点だけの注記は文字を描けないので出さない)。**配る側の検証としては「PMTiles のままで別のエンジンに載るか」。**
+
+- `MVTDataProvider` は `{z}/{x}/{y}` の URL しか受けないので、`web/src/lib/cesium-pmtiles.ts` が PMTiles を中継する。
+  決まった形の URL だけを Cesium の取得の口 (`Resource._Implementations.loadWithXhr`、内部の口) で横取りし、`pmtiles` から返す。
+  **Cesium の版を上げたら E2E で確かめる**
+- **見ている場所の周り (±0.03°、約6km) だけを読む。** `MVTDataProvider` は最初に範囲の中のタイルの木を全部作るので、
+  国全体 × z16 は作れない。動いて足りなくなったら「この辺りを読み直す」で作り直す。
+  `origin/DanielZ/feat/MVT_implicit_tile` (9/30、未マージ) が「根だけ作り、下は要るときに作る」に変えるので、入ったら絞りは要らない
+- 層ごとの色は地物の `_layer` (MVT の層の名前) で `Cesium3DTileStyle` に分ける (層ごとのスタイルは `MVT_per-layer_styling` が未マージ)。
+  色は地図と共用 (`web/src/lib/vector-looks.ts`)
+- **確かめたこと:** E2E で、選ぶまで読まず、選ぶと PMTiles がヘッダのあとも Range で読まれ、外すと取り除かれる
+  (地理院の PMTiles は叩かず、手元の別の PMTiles を代わりに返した)。**見た目 (地形や PLATEAU の上に貼られるか) は目で確かめていない**
+- **TOBE:** Cesium に PMTiles を渡す口ができれば、中継は要らない。投稿はしない
+
+**次の段:** 見た目を目で確かめる (地理院の PMTiles は 16.9GB なので Range の転送量も見る)。そのあと MapLibre ＋ Three.js・Navara を見る。
 
 ### 世界の背景地図 (2026-10-10)
 

@@ -57,6 +57,12 @@
         <select id="terrain-select"></select>
       </label>
       <div id="tileset-options"></div>
+      <details id="vector-panel" open hidden>
+        <summary data-i18n="viewer3dVector">ベクトルタイル</summary>
+        <p class="note" data-i18n="viewer3dVectorNote">見ている場所の周りだけを読みます。</p>
+        <div id="vector-options"></div>
+        <button id="vector-reload" type="button" data-i18n="viewer3dVectorReload">この辺りを読み直す</button>
+      </details>
       <p id="viewer3d-status" class="note"></p>
     </div>
     <script type="module" src="/src/viewer3d.ts"></script>

@@ -15,13 +15,16 @@ import {
   Cartesian3,
   Cartographic,
   Cesium3DTileset,
+  Cesium3DTileStyle,
   CesiumTerrainProvider,
   Credit,
   EllipsoidTerrainProvider,
   HeadingPitchRange,
+  HeightReference,
   ImageryLayer,
   Math as CesiumMath,
   Matrix4,
+  MVTDataProvider,
   PerspectiveFrustum,
   Rectangle,
   sampleTerrainMostDetailed,
@@ -33,6 +36,8 @@ import {
 import 'cesium/Build/Cesium/Widgets/widgets.css';
 import { fetchCollections, type Collection } from './lib/stac';
 import { applyHtmlText, lang, m } from './i18n';
+import { pmtilesTemplate } from './lib/cesium-pmtiles';
+import { vectorThemeLook } from './lib/vector-looks';
 import { readView, viewParams } from './lib/view-params';
 
 // Cesium の資産 (Workers・Assets・Widgets) の置き場所。ビルドでは `cesium/` に写す (vite.config.ts)。
@@ -263,24 +268,128 @@ async function main() {
     if (checkbox.checked) void setTileset(collection, true);
   }
 
-  // ---- 地図に戻る (いま見ている場所を渡す) ----
-  document.querySelector<HTMLAnchorElement>('#back-to-map')!.addEventListener('click', (event) => {
-    event.preventDefault();
+  /** 画面の真ん中の地面 (地形があれば地形との交点、無ければ楕円体との交点)。見えていなければ最初の場所。 */
+  const lookingAt = () => {
     const canvas = viewer.canvas;
     const camera = viewer.camera;
-    // 真ん中の地面 (地形があれば地形との交点、無ければ楕円体との交点)。
     const middle = new Cartesian2(canvas.clientWidth / 2, canvas.clientHeight / 2);
     const ray = camera.getPickRay(middle);
     const center = (ray && viewer.scene.globe.pick(ray, viewer.scene)) ?? camera.pickEllipsoid(middle);
-    let lon = view.lon;
-    let lat = view.lat;
-    let distance = range;
-    if (center) {
-      const c = viewer.scene.globe.ellipsoid.cartesianToCartographic(center);
-      lon = CesiumMath.toDegrees(c.longitude);
-      lat = CesiumMath.toDegrees(c.latitude);
-      distance = Cartesian3.distance(camera.positionWC, center);
+    if (!center) return { lon: view.lon, lat: view.lat, distance: range };
+    const c = viewer.scene.globe.ellipsoid.cartesianToCartographic(center);
+    return {
+      lon: CesiumMath.toDegrees(c.longitude),
+      lat: CesiumMath.toDegrees(c.latitude),
+      distance: Cartesian3.distance(camera.positionWC, center),
+    };
+  };
+
+  // ---- ベクトルタイル (カタログの PMTiles を、Cesium のベクタ = 3D Tiles 2.0 の部品で描く) ----
+  // `MVTDataProvider` (実験段階) は最初に範囲の中のタイルの木を全部作るので、**見ている場所の周りだけ**を読む。
+  const vectorPanel = document.querySelector<HTMLDetailsElement>('#vector-panel')!;
+  const vectorOptions = document.querySelector<HTMLDivElement>('#vector-options')!;
+  const vectorCollections = collections.filter((c) => c.kind === 'vector_tiles' && c.assets.data?.href);
+  /** 周りの広さ (度。片側)。z14 のタイル (約0.022°) で 3×3 ほど。 */
+  const VECTOR_HALF_SPAN_DEG = 0.03;
+  /** Collection ID → 出している層 (テーマの ID ごとにオン/オフ)。 */
+  const vectorOn = new Map<string, Set<string>>();
+  const vectorProviders = new Map<string, MVTDataProvider>();
+  const vectorCredits = new Map(vectorCollections.map((c) => [c.id, new Credit(c.attribution, true)]));
+  const quote = (text: string) => `'${text.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
+
+  /** その Collection を、いま出すと決めた層で作り直す。何も出さないなら外す。 */
+  const showVector = async (collection: Collection) => {
+    const old = vectorProviders.get(collection.id);
+    if (old) {
+      viewer.scene.primitives.remove(old);
+      vectorProviders.delete(collection.id);
     }
+    const credit = vectorCredits.get(collection.id)!;
+    status.clear(collection.id);
+    const themes = (collection.themes ?? [])
+      .map((theme) => ({ theme, layers: theme.layers.filter((l) => vectorOn.get(collection.id)?.has(l.id)) }))
+      .filter((entry) => entry.layers.length > 0);
+    if (themes.length === 0) {
+      viewer.creditDisplay.removeStaticCredit(credit);
+      return;
+    }
+    viewer.creditDisplay.addStaticCredit(credit);
+    const layers = themes.flatMap((entry) => entry.layers);
+    const here = lookingAt();
+    try {
+      const provider = await MVTDataProvider.fromUrl(pmtilesTemplate(collection.id, collection.assets.data!.href), {
+        minZoom: Math.min(...layers.map((l) => l.minzoom)),
+        maxZoom: Math.max(...layers.map((l) => l.maxzoom)),
+        extent: Rectangle.fromDegrees(
+          here.lon - VECTOR_HALF_SPAN_DEG,
+          here.lat - VECTOR_HALF_SPAN_DEG,
+          here.lon + VECTOR_HALF_SPAN_DEG,
+          here.lat + VECTOR_HALF_SPAN_DEG,
+        ),
+        heightReference: HeightReference.CLAMP_TO_GROUND,
+        scene: viewer.scene,
+      });
+      // 層ごとの色は、地物に付く `_layer` (MVT の層の名前) で分ける。
+      provider.tileset!.style = new Cesium3DTileStyle({
+        show: layers.map((l) => `\${_layer} === ${quote(l.id)}`).join(' || '),
+        color: {
+          conditions: [
+            ...themes.flatMap(({ theme, layers: own }) =>
+              own.map((l): [string, string] => [
+                `\${_layer} === ${quote(l.id)}`,
+                `color(${quote(vectorThemeLook(theme.id).color)})`,
+              ]),
+            ),
+            ['true', "color('#666666')"],
+          ],
+        },
+      });
+      viewer.scene.primitives.add(provider);
+      vectorProviders.set(collection.id, provider);
+    } catch (e) {
+      console.error('[3d] vector tiles failed', collection.id, e);
+      status.fail(collection.id, m.loadFailed(collection.title));
+      viewer.creditDisplay.removeStaticCredit(credit);
+    }
+  };
+
+  for (const collection of vectorCollections) {
+    // 文字 (点の注記) は 3D では描けないので、点だけのテーマは出さない。
+    const themes = (collection.themes ?? []).filter((t) => t.layers.some((l) => l.geometry !== 'Point'));
+    if (themes.length === 0) continue;
+    vectorPanel.hidden = false;
+    const heading = document.createElement('div');
+    heading.textContent = collection.title;
+    vectorOptions.append(heading);
+    for (const theme of themes) {
+      const label = document.createElement('label');
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.dataset.collection = collection.id;
+      checkbox.dataset.theme = theme.id;
+      checkbox.addEventListener('change', () => {
+        const on = vectorOn.get(collection.id) ?? new Set<string>();
+        for (const l of theme.layers.filter((l) => l.geometry !== 'Point')) {
+          if (checkbox.checked) on.add(l.id);
+          else on.delete(l.id);
+        }
+        vectorOn.set(collection.id, on);
+        void showVector(collection);
+      });
+      label.append(checkbox, document.createTextNode(` ${theme.title}`));
+      vectorOptions.append(label);
+    }
+  }
+  document.querySelector<HTMLButtonElement>('#vector-reload')!.addEventListener('click', () => {
+    for (const collection of vectorCollections) if (vectorProviders.has(collection.id)) void showVector(collection);
+  });
+
+  // ---- 地図に戻る (いま見ている場所を渡す) ----
+  document.querySelector<HTMLAnchorElement>('#back-to-map')!.addEventListener('click', (event) => {
+    event.preventDefault();
+    const camera = viewer.camera;
+    const canvas = viewer.canvas;
+    const { lon, lat, distance } = lookingAt();
     const params = viewParams({
       lon,
       lat,

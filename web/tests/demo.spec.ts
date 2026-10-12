@@ -1,4 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import type { MapLibreMap, GeoJSONSource } from 'maplibre-gl';
 
 /** main.ts がテスト用に公開しているもの。 */
@@ -1370,6 +1372,60 @@ test('3D のボタンで同じ場所を Cesium で開き、地図に戻ると同
   expect(view.zoom).toBeCloseTo(16, 1);
   expect(view.pitch).toBeCloseTo(45, 0);
   expect(view.bearing).toBeCloseTo(30, 0);
+});
+
+/**
+ * **3D のページで、カタログのベクトルタイル (PMTiles) を Cesium のベクタ (`MVTDataProvider`) で描く。**
+ * `MVTDataProvider` は `{z}/{x}/{y}` しか受けないので、PMTiles を `cesium-pmtiles.ts` の中継で渡している。
+ * 地理院の PMTiles (16.9GB) は叩かず、手元の別の PMTiles (z12〜14) をその URL の代わりに Range で返す。
+ * 「中継が効いている」ことは、PMTiles がヘッダのあとにも Range で読まれる (タイルが取りに行かれる) ことで見る。
+ */
+test('3D のページでベクトルタイルを選ぶと、PMTiles がタイルごとに読まれて Cesium のベクタになる', async ({ page }) => {
+  const file = path.resolve('..', 'data', 'output', 'overture', 'overture_buildings_tiles.pmtiles');
+  const ranges: number[] = [];
+  await page.route(/cyberjapandata\.gsi\.go\.jp\/xyz\/optimal_bvmap-v1\/.*\.pmtiles/, async (route) => {
+    const match = /bytes=(\d+)-(\d+)/.exec(route.request().headers()['range'] ?? '');
+    if (!match) return route.fulfill({ status: 416 });
+    const [start, end] = [Number(match[1]), Number(match[2])];
+    ranges.push(start);
+    const handle = await fs.open(file, 'r');
+    try {
+      const body = Buffer.alloc(end - start + 1);
+      const { bytesRead } = await handle.read(body, 0, body.length, start);
+      const size = (await handle.stat()).size;
+      return route.fulfill({
+        status: 206,
+        headers: { 'content-range': `bytes ${start}-${start + bytesRead - 1}/${size}`, 'access-control-allow-origin': '*' },
+        body: body.subarray(0, bytesRead),
+      });
+    } finally {
+      await handle.close();
+    }
+  });
+  await page.route(/api\.plateauview\.mlit\.go\.jp|buildings\.reearth\.land|terrain\.reearth\.land|cyberjapandata\.gsi\.go\.jp\/.*\.png/, (route) => route.abort());
+
+  await page.goto('3d.html?lon=139.7671&lat=35.6812&zoom=16&pitch=45&terrain=flat');
+  // テーマはカタログから並ぶ。点だけの注記は 3D では描けないので出ない。
+  const roads = page.locator('#vector-options input[data-collection="gsi-optimal-bvmap"][data-theme="road"]');
+  await expect(roads).toHaveCount(1);
+  await expect(page.locator('#vector-options input[data-theme="anno"]')).toHaveCount(0);
+  const providers = () =>
+    page.evaluate(() => {
+      const viewer = (window as unknown as { __viewer?: import('cesium').Viewer }).__viewer!;
+      const primitives = viewer.scene.primitives;
+      return Array.from({ length: primitives.length }, (_, i) => primitives.get(i).constructor.name);
+    });
+  expect(ranges).toHaveLength(0); // 選ぶまでは読まない
+
+  await roads.check();
+  await expect.poll(providers).toContain('MVTDataProvider');
+  // 測れていること: ヘッダ (0) のあとに、ディレクトリやタイルが Range で読まれている。
+  await expect.poll(() => ranges.filter((start) => start > 0).length).toBeGreaterThan(0);
+  await expect(page.locator('#viewer3d-status')).not.toContainText('最適化ベクトルタイル');
+
+  // 外すと取り除かれる。
+  await roads.uncheck();
+  await expect.poll(providers).not.toContain('MVTDataProvider');
 });
 
 test('地形が有効になっていて、コンパスの下のボタンで切れる', async ({ page }) => {

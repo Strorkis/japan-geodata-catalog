@@ -25,6 +25,7 @@ import {
 import { Protocol as PmtilesProtocol } from 'pmtiles';
 import type { Collection, DatasetKind, VectorLayerInfo } from './stac';
 import { demTile, type CogGrid } from './cog-dem';
+import { vectorThemeLook, type VectorLook } from './vector-looks';
 import { m } from '../i18n';
 
 /** 背景地図の地図上の ID (ソースと層で同じ)。 */
@@ -39,30 +40,6 @@ export function registerPmtiles() {
   addProtocol('pmtiles', new PmtilesProtocol().tile);
   pmtilesRegistered = true;
 }
-
-/** テーマの見え方。色は1つで、形 (面・線・点) で描き分ける。 */
-interface VectorLook {
-  color: string;
-  /** 線を破線にするか (境界・送電線)。 */
-  dash?: number[];
-}
-
-/**
- * テーマごとの色。**見え方は UI の持ち物**なので、カタログには書かない。
- * 知らないテーマは既定の色で描く (テーマが増えても描けなくはならない)。
- */
-const VECTOR_THEME_LOOKS: Record<string, VectorLook> = {
-  anno: { color: '#333333' },
-  road: { color: '#b8733e' },
-  rail: { color: '#555555' },
-  building: { color: '#8c7b6b' },
-  water: { color: '#3b7dd8' },
-  terrain: { color: '#a0794f' },
-  boundary: { color: '#8b4fa8', dash: [3, 2] },
-  structure: { color: '#7a7a7a' },
-  power: { color: '#d19a00', dash: [4, 2] },
-};
-const DEFAULT_VECTOR_LOOK: VectorLook = { color: '#666666' };
 
 /** 標高のエンコードの呼び名。 */
 export const DEM_ENCODING_LABELS: Record<string, string> = {
@@ -209,7 +186,7 @@ export function createVectorOverlay(
     const sourceId = collection.id;
     map.addSource(sourceId, { type: 'vector', url: `pmtiles://${tiles}` });
     for (const theme of collection.themes ?? []) {
-      const look = VECTOR_THEME_LOOKS[theme.id] ?? DEFAULT_VECTOR_LOOK;
+      const look = vectorThemeLook(theme.id);
       for (const layer of theme.layers) {
         const ids = vectorLayerSpecs(sourceId, layer, look).map((spec) => {
           // **うちのデータより下に敷く。** 重ねて見るための背景寄りのもので、主役はGeoParquet側。

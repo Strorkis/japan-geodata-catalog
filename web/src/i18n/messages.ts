@@ -622,6 +622,9 @@ export const HTML_EN: Record<string, string> = {
   backToMap: '← Back to the map (same place)',
   viewer3dBasemap: 'Background map',
   viewer3dTerrain: 'Terrain',
+  viewer3dVector: 'Vector tiles',
+  viewer3dVectorNote: 'Only the area around the view is loaded.',
+  viewer3dVectorReload: 'Reload around here',
   // ---- index.html ----
   // 入力欄は狭い (日本語の「地名・駅・路線で検索」と同じくらいの長さに収める)。日本語で打つことは
   // 「検索できるもの」と使い方で言う。
