@@ -313,7 +313,7 @@
   <body>
     <header>
       <h1>duck-geocoder ダッシュボード</h1>
-      <span class="meta">更新 2026-10-11 21:40 (日本時間)</span>
+      <span class="meta">更新 2026-10-12 14:53 (日本時間)</span>
       <span class="meta">
         <a href="https://strorkis.github.io/duck-geocoder/">公開サイト</a> ·
         <a href="roadmap.md">方針 (roadmap.md)</a> · STAC 配布形式の実験
@@ -332,7 +332,7 @@
       </div>
       <div class="card kpi">
         <div class="label">公開待ちのコミット</div>
-        <div class="value">14 <small>件</small></div>
+        <div class="value">17 <small>件</small></div>
         <span class="status you">カタログを上げて push 待ち (Item の名前・Overture の出典・AW3D30・世界の背景地図・3D のページと地形)</span>
       </div>
       <div class="card kpi">
@@ -605,12 +605,12 @@
             </span>
           </li>
           <li>
-            <b>3D の別モード</b> <span class="status todo">3段目まで (10-11)</span>
+            <b>地図エンジンの切り替え</b> <span class="status you">SPA にするか決める (10-12)</span>
             <span class="sub">
-              Cesium の別ページ。地図の右上の「3D」で同じ場所を開き、戻ると同じ場所になる。背景地図と 3D Tiles はカタログから
-              (ion は使わない)。地形は Re:Earth Terrain (楕円体高)。<b>3D Tiles 2.0</b> は 1.146 では読めず (未マージ)、
-              部品のベクタをカタログのベクトルタイル (PMTiles) で試した (見ている場所の周りだけ。<b>見た目はまだ目で確かめていない</b>)。
-              Gaussian splat は公開データ待ち。次は見た目の確認、そのあと Navara・MapLibre ＋ Three.js
+              行き先: 上のバーで MapLibre・Cesium・Navara を切り替え、UI は同じ、描けないものは灰色。
+              先に<b>地図を DuckDB で待たせない</b>ようにした (操作できるまで約4.8秒 → 約0.8秒)。
+              同じページで MapLibre ⇄ Cesium を5往復しても壊れなかったので、SPA で進められる。
+              いまは Cesium の別ページ (3D Tiles 2.0 は 1.146 で読めず、部品のベクタを PMTiles で試した。見た目は未確認) (roadmap)
             </span>
           </li>
           <li>
