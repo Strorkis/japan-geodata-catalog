@@ -1077,37 +1077,37 @@ R2 には何も置かない (カタログから公開元を直接読む)。</p>
 引いた表示のタイルの建物は、層 (= 出所) から出所と段の名前を補って、GeoJSON の建物と同じ吹き出しにする。</p>
 
 <figure class="code">
-<figcaption><a href="../web/src/ui/hover.ts">web/src/ui/hover.ts</a> <span class="lines">116〜145 行</span></figcaption>
-<pre><code><span class="ln">116</span>const HOVER_LAYERS: Record&lt;string, (props: Props) =&gt; Hover&gt; = {
-<span class="ln">117</span>  'nearby-hits': (p) =&gt; ({
-<span class="ln">118</span>    key: `nearby|${p.origin}|${p.name}|${p.height}|${p.category}`,
-<span class="ln">119</span>    rows: [...buildingRows(p), nearbyRow()],
-<span class="ln">120</span>  }),
-<span class="ln">121</span>  'nearby-hit-lines': (p) =&gt; {
-<span class="ln">122</span>    const origin = originOf(p);
-<span class="ln">123</span>    return {
-<span class="ln">124</span>      key: `nearby-line|${p.kind}|${p.name}`,
-<span class="ln">125</span>      rows: [
-<span class="ln">126</span>        ['', text(p.name) ?? m.unnamed],
-<span class="ln">127</span>        [m.hoverKind, m.nearbyKinds[p.kind as string] ?? text(p.kind)],
-<span class="ln">128</span>        [m.hoverSource, origin?.group?.title ?? null],
-<span class="ln">129</span>        [m.hoverVintage, origin?.vintage ?? null],
-<span class="ln">130</span>        nearbyRow(),
-<span class="ln">131</span>      ],
-<span class="ln">132</span>    };
-<span class="ln">133</span>  },
-<span class="ln">134</span>  'buildings-3d': (p) =&gt; ({
-<span class="ln">135</span>    key: `building|${p.origin}|${p.name}|${p.height}|${p.category}`,
-<span class="ln">136</span>    rows: buildingRows(p),
-<span class="ln">137</span>  }),
-<span class="ln">138</span>  // 整備範囲のメッシュ。**どのメッシュか、どの自治体かが読めること。**
-<span class="ln">139</span>  // 塗りの濃さは埋まり具合しか表さないので、中身はここでしか分からない。
-<span class="ln">140</span>  'buildings-coverage-fill': (p) =&gt; {
-<span class="ln">141</span>    const code = p.code as string;
-<span class="ln">142</span>    const cities = (p.cities as string) || m.unknown;
-<span class="ln">143</span>    const filled = p.filled as number;
-<span class="ln">144</span>    const total = p.total as number;
-<span class="ln">145</span>    return {</code></pre><div class="more">… 続きは <a href="../web/src/ui/hover.ts">web/src/ui/hover.ts</a> で</div>
+<figcaption><a href="../web/src/ui/hover.ts">web/src/ui/hover.ts</a> <span class="lines">83〜112 行</span></figcaption>
+<pre><code><span class="ln"> 83</span>const HOVER_LAYERS: Record&lt;string, (props: Props) =&gt; Hover&gt; = {
+<span class="ln"> 84</span>  'nearby-hits': (p) =&gt; ({
+<span class="ln"> 85</span>    key: `nearby|${p.origin}|${p.name}|${p.height}|${p.category}`,
+<span class="ln"> 86</span>    rows: [...buildingRows(p), nearbyRow()],
+<span class="ln"> 87</span>  }),
+<span class="ln"> 88</span>  'nearby-hit-lines': (p) =&gt; {
+<span class="ln"> 89</span>    const origin = originOf(p);
+<span class="ln"> 90</span>    return {
+<span class="ln"> 91</span>      key: `nearby-line|${p.kind}|${p.name}`,
+<span class="ln"> 92</span>      rows: [
+<span class="ln"> 93</span>        ['', text(p.name) ?? m.unnamed],
+<span class="ln"> 94</span>        [m.hoverKind, m.nearbyKinds[p.kind as string] ?? text(p.kind)],
+<span class="ln"> 95</span>        [m.hoverSource, origin?.group?.title ?? null],
+<span class="ln"> 96</span>        [m.hoverVintage, origin?.vintage ?? null],
+<span class="ln"> 97</span>        nearbyRow(),
+<span class="ln"> 98</span>      ],
+<span class="ln"> 99</span>    };
+<span class="ln">100</span>  },
+<span class="ln">101</span>  'buildings-3d': (p) =&gt; ({
+<span class="ln">102</span>    key: `building|${p.origin}|${p.name}|${p.height}|${p.category}`,
+<span class="ln">103</span>    rows: buildingRows(p),
+<span class="ln">104</span>  }),
+<span class="ln">105</span>  // 整備範囲のメッシュ。**どのメッシュか、どの自治体かが読めること。**
+<span class="ln">106</span>  // 塗りの濃さは埋まり具合しか表さないので、中身はここでしか分からない。
+<span class="ln">107</span>  'buildings-coverage-fill': (p) =&gt; {
+<span class="ln">108</span>    const code = p.code as string;
+<span class="ln">109</span>    const cities = (p.cities as string) || m.unknown;
+<span class="ln">110</span>    const filled = p.filled as number;
+<span class="ln">111</span>    const total = p.total as number;
+<span class="ln">112</span>    return {</code></pre><div class="more">… 続きは <a href="../web/src/ui/hover.ts">web/src/ui/hover.ts</a> で</div>
 </figure>
 </section>
 <section class="card" id="dev-server">

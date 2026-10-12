@@ -2,6 +2,9 @@
 <!--
   利用者が見るべきことを1枚にまとめたダッシュボード。**作業の区切りごとに更新する** (AGENTS.md)。
   細かい経緯や根拠はここに書かず、各ドキュメントへのリンクにする。
+  **済んだものは消す** (移さない。決めたことと経緯は roadmap.md に、何をしたかは git の履歴にある)。
+  **利用者に確かめてほしいことは「確かめてほしいこと」に具体的な手順で書く** (開く URL・押すもの・見るべき点)。
+  確かめてもらったら消す。
   ブラウザで直接開く (file://)。ビルドもサーバーも要らない。
 
   数字は手で写している (file:// からは data/ を読めない)。出どころ:
@@ -177,7 +180,7 @@
       /* ---- 公開までの段階 ---- */
       .steps {
         display: grid;
-        grid-template-columns: repeat(5, 1fr);
+        grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
         gap: 0.5rem;
         margin: 0;
         padding: 0;
@@ -313,7 +316,7 @@
   <body>
     <header>
       <h1>duck-geocoder ダッシュボード</h1>
-      <span class="meta">更新 2026-10-12 18:00 (日本時間)</span>
+      <span class="meta">更新 2026-10-12 18:32 (日本時間)</span>
       <span class="meta">
         <a href="https://strorkis.github.io/duck-geocoder/">公開サイト</a> ·
         <a href="roadmap.md">方針 (roadmap.md)</a> · STAC 配布形式の実験
@@ -328,12 +331,12 @@
         <div class="meter" role="img" aria-label="無料枠の99%">
           <span style="width: 99%; background: var(--warning)"></span>
         </div>
-        <span class="status you">無料枠の99% (古いファイルは消した)</span>
+        <span class="status you">無料枠の99%</span>
       </div>
       <div class="card kpi">
         <div class="label">公開待ちのコミット</div>
-        <div class="value">20 <small>件</small></div>
-        <span class="status you">カタログを上げて push 待ち (Item の名前・Overture の出典・AW3D30・世界の背景地図・3D のページと地形)</span>
+        <div class="value">22 <small>件</small></div>
+        <span class="status you">カタログを上げて push 待ち</span>
       </div>
       <div class="card kpi">
         <div class="label">建物</div>
@@ -350,59 +353,56 @@
       </div>
     </section>
 
-    <!-- ===== 公開までの段階 ===== -->
-    <section class="card row" aria-label="公開までの段階">
-      <h2>公開までの段階 (いまのまとまり)</h2>
+    <!-- ===== 確かめてほしいこと (確かめてもらったら消す) ===== -->
+    <section class="card row" aria-label="確かめてほしいこと">
+      <h2>確かめてほしいこと — 地図エンジンの切り替え (Cesium) <span class="status you">あなたの番</span></h2>
+      <p class="sub" style="margin: -0.3rem 0 0.5rem">
+        ヘッドレスのブラウザ (GPU 無し) では 3D Tiles や地形を描かせられないので、見た目はここで確かめてください。
+        <b>おかしかったら、その番号を教えてください。</b>
+      </p>
+      <ol class="tasks">
+        <li>
+          <code>cd web &amp;&amp; pnpm dev</code> → <code>http://localhost:5173/?lon=139.7671&amp;lat=35.6812&amp;zoom=16&amp;pitch=50</code> を開く
+        </li>
+        <li>
+          上のバーで <b>Cesium</b> を押す → 同じ場所が開き、淡色地図が出る。一覧の「建物」が灰色で「Cesium ではまだ描けません」。検索欄は押せない
+        </li>
+        <li>
+          地図タイルの「＋ 追加」→ PLATEAU の「建物 (3D Tiles・公式配信)」を足す → <b>建物が地面に乗っている</b> (浮いていない・沈んでいない)。
+          MapLibre ではこの行が灰色
+        </li>
+        <li>
+          地形の欄の下に「楕円体高の Re:Earth Terrain を使います」と出る。
+          富士山 <code>?lon=138.7274&amp;lat=35.3606&amp;zoom=12&amp;pitch=60&amp;engine=cesium</code> で<b>起伏が立体に出る</b>
+        </li>
+        <li>
+          東京駅に戻り、地図タイルの「＋ 追加」→ 国土地理院「最適化ベクトルタイル」の「道路」と「鉄道」を足す → <b>地面に貼られて描かれる</b>。
+          3km ほど動かすと、その周りが読み直される。<b>道路にマウスを乗せると吹き出し</b> (層・種別コード・出所) が出る
+        </li>
+        <li>淡色地図の ⚙ で不透明度を下げる・行を並べ替える → Cesium にも効く</li>
+        <li>
+          バーで <b>MapLibre</b> に戻る → 同じ場所 (向き・傾きも)。建物が描かれ、すぐ検索できる。灰色だった行が戻る
+        </li>
+        <li>
+          古いリンク <code>http://localhost:5173/3d.html?lon=139.7671&amp;lat=35.6812&amp;zoom=15</code> → Cesium で開く
+        </li>
+      </ol>
+    </section>
+
+    <!-- ===== 公開までの残り ===== -->
+    <section class="card row" aria-label="公開までの残り">
+      <h2>公開までの残り</h2>
       <ol class="steps">
-        <li>
-          <b>実装</b><span class="status done">済み</span>
-          <span class="sub">
-            間引き・周辺検索 (結果だけを目立たせる)・使う条件・Overture全国・取得・
-            地理院 (データだけで描く)・一覧 (カタログから足す・ドラッグで並べ替え)・背景地図と地形をレイヤーに・
-            ⓘ と ⚙ の分離・GeoArrow (WKB) で受け取る・STAC Browser を <code>/catalog/</code> に・
-            表示部分のライブラリ化 (main.ts 7,741→859行。ここで止める)・配っているライブラリのライセンス表示・
-            AW3D30 (JAXA) を参照だけで・カタログの追加 (色別標高図・陰影起伏図・PLATEAU の 3D Tiles・N03 と NASA は参照だけ)・
-            追加のダイアログを3タブと目次に・公開前の権利の確認 (deploy.md)・
-            UI とカタログの文章を丁寧語に (使い方・検索できるもの・出典・使っている技術も見直し)・
-            英語の画面 (<code>?lang=en</code>。右下に「🌐 日本語 | English」)・カタログの英語版 (Language extension)・
-            JSON のまとめ (Item は stac-geoparquet 1つ・アプリは起動時にまとめを1回読む)・
-            建物の並べ直し (場所ごと・段ごと。R2 で寄った表示が約35秒 → 約16秒の見積もり)・
-            引いた表示の建物をタイル (PMTiles) で描く (R2 相当の回線で東京駅 z13 39秒 → 10秒。件数は寄った表示でだけ出す)・
-            AW3D30 を地形に (JAXA の COG を直接読む・陰影)・世界の背景地図 (OpenFreeMap)・
-            地図を DuckDB で待たせない・バーで MapLibre ⇄ Cesium を切り替え (描けない行は灰色・ベクトルタイルは PMTiles を中継)
-          </span>
-        </li>
-        <li>
-          <b>テスト</b><span class="status done">済み</span>
-          <span class="sub">
-            E2E 118件 (本番ビルド・手元のデータ)、単体 24件 (WKB・言語・線の切り取り)、パイプライン 205件、remote-zip 11件。
-            R2 の遅さは手元でも再現できる (<code>DATA_LATENCY_MS=450 DATA_BANDWIDTH_MBPS=16</code>)
-          </span>
-        </li>
-        <li>
-          <b>push と CI</b><span class="status done">済み</span>
-          <span class="sub">
-            10-10 11:19 にデプロイの CI が通り、今のカタログ形式のアプリが Pages に載った (10-07 から止まっていた)。
-            鉄道を起点にした周辺検索は、押した地点の前後1.5kmだけを調べるように直した
-          </span>
-        </li>
-        <li>
-          <b>タイルとカタログを上げて push</b><span class="status done">済み</span>
-          <span class="sub">
-            10-10 14:03 にデプロイの CI が通り、引いた表示をタイルで描く版が公開された (実サイトの中身で確かめた)。
-          </span>
-        </li>
-        <li>
-          <b>古いファイルを消す</b><span class="status done">済み</span>
-          <span class="sub">10-10 に消した (概観 48個・古い <code>*-items.json</code>・<code>overture_buildings_minato.parquet</code>)。R2 は無料枠に収まった</span>
-        </li>
         <li class="current">
           <b>カタログを上げて push</b><span class="status you">あなたの番</span>
-          <span class="sub"><a href="deploy.md">deploy.md</a>「2026-10-10 の分 その2」。items.parquet と JSON (89個) → push。データのファイルは変えていない (Item の名前と年度・Overture の出典・AW3D30 を地形に)</span>
+          <span class="sub">
+            <a href="deploy.md">deploy.md</a>「2026-10-10 の分 その2」。items.parquet と JSON (89個) → push。データのファイルは変えていない。
+            載るもの: Item の名前と年度・Overture の出典・AW3D30 を地形に・世界の背景地図・地図を DuckDB で待たせない・地図エンジンの切り替え
+          </span>
         </li>
         <li>
           <b>公開を確かめる</b><span class="status you">あなたの番</span>
-          <span class="sub">実サイトで間引き・地理院・周辺検索を触る</span>
+          <span class="sub">実サイトで間引き・地理院・周辺検索・バーでの切り替えを触る</span>
         </li>
       </ol>
     </section>
@@ -428,15 +428,12 @@
             <tr><th>出所</th><th class="num">ファイル</th><th class="num">大きさ</th><th>次のアップロード</th></tr>
           </thead>
           <tbody>
-            <tr><td>Overture Maps</td><td class="num">401</td><td class="num">5.82 GB</td><td>タイル 1つ (新規・39MB)。概観 3つは消す</td></tr>
-            <tr><td>PLATEAU</td><td class="num">308</td><td class="num">3.93 GB</td><td>タイル 1つ (新規・123MB)。概観 45 は消す</td></tr>
+            <tr><td>Overture Maps</td><td class="num">401</td><td class="num">5.82 GB</td><td>なし</td></tr>
+            <tr><td>PLATEAU</td><td class="num">308</td><td class="num">3.93 GB</td><td>なし</td></tr>
             <tr><td>カタログ (起点)</td><td class="num">1</td><td class="num">0.08 MB</td><td>items.parquet と JSON 全部 (89個)</td></tr>
             <tr><td>そのほか</td><td class="num">—</td><td class="num">0.11 GB</td><td>なし</td></tr>
           </tbody>
         </table>
-        <p class="sub">
-          建物の元のファイルは変えていない。R2 に残る概観 (48個)・古い <code>*-items.json</code> (15個)・<code>*_minato.parquet</code> は、新しいサイトが配られてから消す。
-        </p>
       </section>
 
       <!-- ===== 見てほしい箇所 ===== -->
@@ -585,34 +582,15 @@
             </span>
           </li>
           <li>
-            <b>AW3D30 を地図に出す</b> <span class="status done">済み</span>
+            <b>地図エンジン: Cesium でデータの行を描く</b> <span class="status todo">上の確かめのあと</span>
             <span class="sub">
-              10-10。地形の欄で選べる (日本の外も)。⚙ の「陰影を描く」で日本の外も見える。JAXA の COG を直接読む (R2 は使わない)。
-              NASA の2つはログインかトークンが要るので後回し
+              いま Cesium で灰色のデータの行 (建物・鉄道…) を描けるようにする。描く側の MapLibre の呼び出し (約100か所) をエンジンに依らない形に。
+              3D Tiles の建物の吹き出しも。そのあと Navara をバーに足す (roadmap「バーで切り替える」)
             </span>
           </li>
           <li>
-            <b>Overture の出典を実際の出所に絞る</b> <span class="status done">済み</span>
-            <span class="sub">
-              10-10 に数えた (<code>count_overture_sources</code>)。日本の建物は OpenStreetMap 55.5%・Microsoft 38.8%・Qian Shi ら 5.7%。
-              Esri と Google は入っていなかったので出典から外した (行政区域と道路はまだ)
-            </span>
-          </li>
-          <li>
-            <b>Item に名前と時点を入れる</b> <span class="status done">済み</span>
-            <span class="sub">
-              10-10。PLATEAU の Item に「港区 (東京都)」「2025年度」を載せた (配信カタログのスナップショットから。データは上げ直さない)。
-              カードのファイル一覧に出る
-            </span>
-          </li>
-          <li>
-            <b>地図エンジンの切り替え</b> <span class="status you">見た目を確かめてほしい (10-12)</span>
-            <span class="sub">
-              上のバーで MapLibre ⇄ Cesium を同じページのまま切り替えられるようにした (Navara は準備中)。一覧は同じで、
-              Cesium ではデータの行 (DuckDB) が灰色。先に<b>地図を DuckDB で待たせない</b>ようにした (操作できるまで約4.8秒 → 約0.8秒)。
-              <b>3D Tiles・地形・ベクタが地面に乗るかは、GPU のあるブラウザで見てほしい</b> (ヘッドレスで描かせたら WSL が落ちた)。
-              次は Cesium でデータの行を描く口、そのあと Navara (roadmap)
-            </span>
+            <b>Overture の出典 (行政区域と道路)</b>
+            <span class="sub">建物は実際の出所に絞った。行政区域と道路はまだ数えていない</span>
           </li>
           <li>
             <b>背景地図が全部失敗すると「準備中」のまま</b> <span class="status todo">見つけた (10-12)</span>
