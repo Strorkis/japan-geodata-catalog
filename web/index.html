@@ -50,6 +50,10 @@
         <ul id="results"></ul>
       </div>
       <div id="map"></div>
+      <!-- Cesium (バーで選んだときに作る)。地図と同じ場所に重ね、パネルはその上に出る。 -->
+      <div id="cesium" hidden></div>
+      <!-- 地図のエンジンの切り替え (ui/engine-bar.ts)。 -->
+      <div id="engine-bar" hidden></div>
       <!-- 初期化が終わったあとの待ち時間を知らせる。初期化のオーバーレイ (#loading) と
            違って操作は妨げない。四隅は埋まっているので上端中央に置く。 -->
       <div id="busy" hidden>
@@ -116,6 +120,8 @@
                 <div class="layer-sub">
                   <select id="terrain-source" aria-label="地形に使う標高" data-i18n-aria-label="terrainSourceLabel"></select>
                 </div>
+                <!-- Cesium のときだけ: 選んだ標高の代わりに何を使っているか (楕円体高のものに替える)。 -->
+                <p id="terrain-engine-note" class="layer-unsupported-note" hidden></p>
                 <div id="terrain-slot" hidden></div>
               </div>
             </section>

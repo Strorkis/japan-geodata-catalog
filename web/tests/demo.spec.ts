@@ -1209,15 +1209,20 @@ test('地形の標高を選び直せ、地理院の標高は値なしと負の�
 });
 
 /**
- * **3D Tiles (Re:Earth Buildings) は、この地図では描けない。** それでもカタログにあることは
- * 見せる: 行のチェックは押せず、理由を書き、ⓘ から公式のビューアへ案内する。
+ * **3D Tiles (Re:Earth Buildings) は MapLibre では描けず、Cesium で描く。** 一覧には足せ、MapLibre の間は
+ * 灰色にして理由 (バーで Cesium に替えると描ける) を言う。ⓘ からは公式のビューアへも辿れる。
  */
-test('3D Tiles は描けない理由を出し、ⓘ からビューアへ案内する', async ({ page }) => {
-  // カタログには出すが、一覧には足せない (この地図では描けない)。
+test('3D Tiles は足せるが MapLibre では灰色で理由を出し、ⓘ からビューアへ案内する', { tag: '@map' }, async ({ page }) => {
   await openCatalogFor(page, 'reearth-buildings');
   const row = page.locator('[data-catalog-layer="reearth-buildings"]');
-  await expect(row.locator('.catalog-add')).toBeDisabled();
-  await expect(row).toContainText('描けません');
+  await expect(row).toContainText('MapLibre では描けません');
+  await expect(row.locator('.catalog-add')).toBeEnabled();
+  await row.locator('.catalog-add').click();
+  await closeCatalog(page);
+  const listRow = page.locator('.layer-row[data-layer="reearth-buildings"]');
+  await expect(listRow).toHaveClass(/unsupported/);
+  await expect(listRow).toContainText('Cesium に切り替えると描けます');
+  await openCatalogFor(page, 'reearth-buildings');
   await row.locator('.layer-detail-button').click();
   await expect(page.locator('#layer-detail-dialog')).toBeVisible();
   const card = page.locator('.collection-card[data-collection="reearth-buildings"]');
@@ -1328,117 +1333,173 @@ test('世界の背景地図はスタイルを読んで層を差し込み、ま�
 });
 
 /**
- * **同じ場所を 3D のページ (Cesium) で開き、同じ場所へ戻る。** 位置・ズーム・傾き・向きを URL で渡す。
- * 外の配信 (地理院タイル・3D Tiles) は叩かない (描けるかは目で確かめる。ここでは渡し方を見る)。
+ * 外の配信 (地理院のタイル・3D Tiles・地形) を止める。**Cesium に重いものを描かせない** —
+ * ヘッドレスの Chromium は GPU が無くソフトウェアで描くので、PLATEAU の 3D Tiles と地形を描かせると
+ * メモリを食い尽くす (2026-10-12 に WSL ごと落ちた)。描けるかは目で確かめ、ここでは渡し方を見る。
  */
-test('3D のボタンで同じ場所を Cesium で開き、地図に戻ると同じ場所になる', { tag: '@map' }, async ({ page }) => {
-  const external = /cyberjapandata\.gsi\.go\.jp|api\.plateauview\.mlit\.go\.jp|buildings\.reearth\.land|terrain\.reearth\.land/;
-  await page.route(external, (route) => route.abort());
-  await page.evaluate(() => {
-    (window as unknown as TestWindow).__map!.jumpTo({ center: [139.7671, 35.6812], zoom: 16, pitch: 45, bearing: 30 });
-  });
-  await page.locator('#open-3d').click();
-  await expect(page).toHaveURL(/3d\.html\?/);
-  const url = new URL(page.url());
-  expect(Number(url.searchParams.get('lon'))).toBeCloseTo(139.7671, 3);
-  expect(Number(url.searchParams.get('lat'))).toBeCloseTo(35.6812, 3);
-  expect(Number(url.searchParams.get('zoom'))).toBeCloseTo(16, 1);
-  expect(url.searchParams.get('pitch')).toBe('45');
-  expect(url.searchParams.get('bearing')).toBe('30');
+const CESIUM_EXTERNAL = /cyberjapandata\.gsi\.go\.jp\/.*\.(png|webp)|api\.plateauview\.mlit\.go\.jp|buildings\.reearth\.land|terrain\.reearth\.land/;
 
-  // 背景地図と 3D Tiles は**カタログから**並ぶ (ion は使わない)。既定は淡色地図と PLATEAU。
-  await expect(page.locator('#basemap-select')).toHaveValue('gsi-pale');
-  // 地形は Re:Earth Terrain (楕円体高の quantized-mesh)。ここでは外を止めているので読めず、**平らに戻って**状況の欄に出る。
-  await expect(page.locator('#terrain-select option')).toHaveText(['平ら (楕円体)', 'Re:Earth Terrain 標高']);
-  await expect(page.locator('#viewer3d-status')).toContainText('Re:Earth Terrain 標高');
-  await expect(page.locator('#terrain-select')).toHaveValue('flat');
-  await expect(page.locator('#tileset-options input[type=checkbox]')).toHaveCount(2);
-  await expect(page.locator('#tileset-options input[type=checkbox]').first()).toBeChecked();
-  // カメラは渡した場所を見ている (真ん中の地面の経緯度)。
-  const center = () =>
-    page.evaluate(() => {
-      const viewer = (window as unknown as { __viewer?: import('cesium').Viewer }).__viewer;
-      if (!viewer) return null;
-      const canvas = viewer.canvas;
-      const hit = viewer.camera.pickEllipsoid({ x: canvas.clientWidth / 2, y: canvas.clientHeight / 2 } as import('cesium').Cartesian2);
-      if (!hit) return null;
-      const c = viewer.scene.globe.ellipsoid.cartesianToCartographic(hit);
-      return [(c.longitude * 180) / Math.PI, (c.latitude * 180) / Math.PI];
-    });
-  await expect.poll(center).not.toBeNull();
-  const [lon, lat] = (await center())!;
-  expect(lon).toBeCloseTo(139.7671, 3);
-  expect(lat).toBeCloseTo(35.6812, 3);
-
-  await page.unroute(external);
-  await page.locator('#back-to-map').click();
-  await expect(page).toHaveURL(/\?lon=/);
-  await waitForReady(page);
-  const view = await page.evaluate(() => {
-    const map = (window as unknown as TestWindow).__map!;
-    return { ...map.getCenter(), zoom: map.getZoom(), pitch: map.getPitch(), bearing: map.getBearing() };
+/** Cesium のカメラが見ている真ん中の地面の経緯度。Cesium がまだ無ければ null。 */
+function cesiumCenter(page: Page) {
+  return page.evaluate(() => {
+    const viewer = (window as unknown as { __viewer?: import('cesium').Viewer }).__viewer;
+    if (!viewer) return null;
+    const canvas = viewer.canvas;
+    const hit = viewer.camera.pickEllipsoid({ x: canvas.clientWidth / 2, y: canvas.clientHeight / 2 } as import('cesium').Cartesian2);
+    if (!hit) return null;
+    const c = viewer.scene.globe.ellipsoid.cartesianToCartographic(hit);
+    return [(c.longitude * 180) / Math.PI, (c.latitude * 180) / Math.PI];
   });
-  expect(view.lng).toBeCloseTo(139.7671, 3);
-  expect(view.lat).toBeCloseTo(35.6812, 3);
-  expect(view.zoom).toBeCloseTo(16, 1);
-  expect(view.pitch).toBeCloseTo(45, 0);
-  expect(view.bearing).toBeCloseTo(30, 0);
-});
+}
 
 /**
- * **3D のページで、カタログのベクトルタイル (PMTiles) を Cesium のベクタ (`MVTDataProvider`) で描く。**
- * `MVTDataProvider` は `{z}/{x}/{y}` しか受けないので、PMTiles を `cesium-pmtiles.ts` の中継で渡している。
- * 地理院の PMTiles (16.9GB) は叩かず、手元の別の PMTiles (z12〜14) をその URL の代わりに Range で返す。
- * 「中継が効いている」ことは、PMTiles がヘッダのあとにも Range で読まれる (タイルが取りに行かれる) ことで見る。
+ * **Cesium のテストどうしは同時に走らせない** (同じ worker で順に流す)。ヘッドレスの Chromium は GPU が無く、
+ * Cesium をソフトウェアで描くので重い。同じ理由で**時間の上限を 120 秒に広げる** — ベクトルタイルのテストは
+ * 一覧に2行足して Cesium を作るまでで、全件の中だと 60 秒を使い切った (単体では毎回通る)。
  */
-test('3D のページでベクトルタイルを選ぶと、PMTiles がタイルごとに読まれて Cesium のベクタになる', { tag: '@map' }, async ({ page }) => {
-  const file = path.resolve('..', 'data', 'output', 'overture', 'overture_buildings_tiles.pmtiles');
-  const ranges: number[] = [];
-  await page.route(/cyberjapandata\.gsi\.go\.jp\/xyz\/optimal_bvmap-v1\/.*\.pmtiles/, async (route) => {
-    const match = /bytes=(\d+)-(\d+)/.exec(route.request().headers()['range'] ?? '');
-    if (!match) return route.fulfill({ status: 416 });
-    const [start, end] = [Number(match[1]), Number(match[2])];
-    ranges.push(start);
-    const handle = await fs.open(file, 'r');
-    try {
-      const body = Buffer.alloc(end - start + 1);
-      const { bytesRead } = await handle.read(body, 0, body.length, start);
-      const size = (await handle.stat()).size;
-      return route.fulfill({
-        status: 206,
-        headers: { 'content-range': `bytes ${start}-${start + bytesRead - 1}/${size}`, 'access-control-allow-origin': '*' },
-        body: body.subarray(0, bytesRead),
-      });
-    } finally {
-      await handle.close();
-    }
-  });
-  await page.route(/api\.plateauview\.mlit\.go\.jp|buildings\.reearth\.land|terrain\.reearth\.land|cyberjapandata\.gsi\.go\.jp\/.*\.png/, (route) => route.abort());
+test.describe('地図のエンジン (Cesium)', () => {
+  test.describe.configure({ mode: 'serial', timeout: 120_000 });
 
-  await page.goto('3d.html?lon=139.7671&lat=35.6812&zoom=16&pitch=45&terrain=flat');
-  // テーマはカタログから並ぶ。点だけの注記は 3D では描けないので出ない。
-  const roads = page.locator('#vector-options input[data-collection="gsi-optimal-bvmap"][data-theme="road"]');
-  await expect(roads).toHaveCount(1);
-  await expect(page.locator('#vector-options input[data-theme="anno"]')).toHaveCount(0);
-  // 描いているベクタの URL テンプレート (中継の形)。**クラスの名前では見ない** (本番ビルドでは縮められる)。
-  const providers = () =>
-    page.evaluate(() => {
-      const viewer = (window as unknown as { __viewer?: import('cesium').Viewer }).__viewer!;
-      const primitives = viewer.scene.primitives;
-      return Array.from({ length: primitives.length }, (_, i) => String(primitives.get(i).urlTemplate ?? ''));
+  /**
+   * **上のバーで地図のエンジンを切り替える。UI は同じで、描けない行は灰色。** 1ページのまま入れ替えるので、
+   * DuckDB は起こし直さない (戻るとすぐ検索できる)。見え方 (位置・ズーム・傾き・向き) は行き来しても保たれる。
+   */
+  test('バーで Cesium に切り替えても同じ場所・同じ一覧で、描けない行は灰色になり、戻ると同じ場所になる', async ({ page }) => {
+    await page.route(CESIUM_EXTERNAL, (route) => route.abort());
+    await page.evaluate(() => {
+      (window as unknown as TestWindow).__map!.jumpTo({ center: [139.7671, 35.6812], zoom: 16, pitch: 45, bearing: 30 });
     });
-  expect(ranges).toHaveLength(0); // 選ぶまでは読まない
+    const bar = page.locator('#engine-bar');
+    await expect(bar.locator('button[data-engine="maplibre"]')).toHaveAttribute('aria-pressed', 'true');
+    // Navara はまだ無い (押せない)。
+    await expect(bar.locator('button[data-engine="navara"]')).toBeDisabled();
 
-  const relay = 'https://pmtiles.invalid/gsi-optimal-bvmap/{z}/{x}/{y}.pbf';
-  await roads.check();
-  await expect.poll(providers).toContain(relay);
-  // 測れていること: ヘッダ (0) のあとに、ディレクトリやタイルが Range で読まれている。
-  await expect.poll(() => ranges.filter((start) => start > 0).length).toBeGreaterThan(0);
-  await expect(page.locator('#viewer3d-status')).not.toContainText('最適化ベクトルタイル');
+    await bar.locator('button[data-engine="cesium"]').click();
+    await expect(bar.locator('button[data-engine="cesium"]')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page).toHaveURL(/[?&]engine=cesium/);
+    await expect(page.locator('#cesium')).toBeVisible();
+    // カメラは同じ場所を見ている。
+    await expect.poll(() => cesiumCenter(page)).not.toBeNull();
+    const [lon, lat] = (await cesiumCenter(page))!;
+    expect(lon).toBeCloseTo(139.7671, 3);
+    expect(lat).toBeCloseTo(35.6812, 3);
+    // 一覧は同じ。**データの行は灰色で理由を言う** (まだ Cesium では描かない)。背景地図は描く。
+    const buildings = page.locator(`.layer-row[data-layer="${LAYER.plateauBuildings}"]`);
+    await expect(buildings).toHaveClass(/unsupported/);
+    await expect(buildings).toContainText('Cesium ではまだ描けません');
+    await expect(page.locator('.layer-row[data-layer="gsi-pale"]')).not.toHaveClass(/unsupported/);
+    // 検索は MapLibre の間だけ (結果の描き方が MapLibre のもの)。
+    await expect(page.locator('#search-input')).toBeDisabled();
+    // 地形は、選んでいる標高 (海面からの高さ) の代わりに楕円体高のものを使い、そう言う。
+    await expect(page.locator('#terrain-engine-note')).toContainText('Re:Earth Terrain');
 
-  // 外すと取り除かれる。
-  await roads.uncheck();
-  await expect.poll(providers).not.toContain(relay);
+    await bar.locator('button[data-engine="maplibre"]').click();
+    await expect(page.locator('#cesium')).toBeHidden();
+    await expect(page.locator('#terrain-engine-note')).toBeHidden();
+    await expect(page).not.toHaveURL(/engine=/);
+    // **DuckDB を起こし直さない** — 戻ったらそのまま検索できる。
+    await expect(page.locator('#search-input')).toBeEnabled();
+    await expect(buildings).not.toHaveClass(/unsupported/);
+    const view = await page.evaluate(() => {
+      const map = (window as unknown as TestWindow).__map!;
+      return { ...map.getCenter(), zoom: map.getZoom(), pitch: map.getPitch(), bearing: map.getBearing() };
+    });
+    expect(view.lng).toBeCloseTo(139.7671, 3);
+    expect(view.lat).toBeCloseTo(35.6812, 3);
+    expect(view.zoom).toBeCloseTo(16, 1);
+    expect(view.pitch).toBeCloseTo(45, 0);
+    expect(view.bearing).toBeCloseTo(30, 0);
+  });
+
+  /**
+   * 以前の 3D のページ (3d.html) へのリンクは、同じ場所で Cesium を選んだ地図のページへ転送する。
+   *
+   * **背景地図のタイルは止めない** (止めるのは重い 3D Tiles と地形だけ)。同じタブで2回目に開いたときに背景地図の
+   * タイルが全部失敗すると、地図の準備 (`load`) が終わらないことがある (前からある不具合。roadmap の「見つけた不具合」)。
+   */
+  test('以前の 3D のページのリンクは、同じ場所の Cesium へ転送する', { tag: '@map' }, async ({ page }) => {
+    await page.route(/api\.plateauview\.mlit\.go\.jp|buildings\.reearth\.land|terrain\.reearth\.land/, (route) => route.abort());
+    // **引いたズームで開く。** 地図の準備 (`load`) は最初の画面のタイルが揃うまで待つので、寄った場所から始めると
+    // 地形と建物のタイルを多く読む。確かめたいのは転送と場所の受け渡しだけ。
+    await page.goto('3d.html?lon=139.7671&lat=35.6812&zoom=11&pitch=0&bearing=0');
+    await expect(page).toHaveURL(/[?&]engine=cesium/);
+    await waitForMap(page);
+    await expect(page.locator('#engine-bar button[data-engine="cesium"]')).toHaveAttribute('aria-pressed', 'true');
+    await expect.poll(() => cesiumCenter(page)).not.toBeNull();
+    const [lon, lat] = (await cesiumCenter(page))!;
+    expect(lon).toBeCloseTo(139.7671, 3);
+    expect(lat).toBeCloseTo(35.6812, 3);
+  });
+
+  /**
+   * **一覧のベクトルタイル (PMTiles) を、Cesium ではそのベクタ (`MVTDataProvider`) で描く。**
+   * `MVTDataProvider` は `{z}/{x}/{y}` しか受けないので、PMTiles を `cesium-pmtiles.ts` の中継で渡している。
+   * 地理院の PMTiles (16.9GB) は叩かず、手元の別の PMTiles (z12〜14) をその URL の代わりに Range で返す。
+   * 「中継が効いている」ことは、Cesium に替えたあとも PMTiles が Range で読まれる (タイルが取りに行かれる) ことで見る。
+   */
+  test('ベクトルタイルの行は Cesium では PMTiles を中継してベクタで描き、点だけのテーマは灰色', { tag: '@map' }, async ({ page }) => {
+    test.skip(!(await hasGsiVector(page)), '地理院のベクトルタイルがカタログに無い');
+    const file = path.resolve('..', 'data', 'output', 'overture', 'overture_buildings_tiles.pmtiles');
+    const ranges: number[] = [];
+    await page.route(/cyberjapandata\.gsi\.go\.jp\/xyz\/optimal_bvmap-v1\/.*\.pmtiles/, async (route) => {
+      const match = /bytes=(\d+)-(\d+)/.exec(route.request().headers()['range'] ?? '');
+      if (!match) return route.fulfill({ status: 416 });
+      const [start, end] = [Number(match[1]), Number(match[2])];
+      ranges.push(start);
+      const handle = await fs.open(file, 'r');
+      try {
+        const body = Buffer.alloc(end - start + 1);
+        const { bytesRead } = await handle.read(body, 0, body.length, start);
+        const size = (await handle.stat()).size;
+        return route.fulfill({
+          status: 206,
+          headers: { 'content-range': `bytes ${start}-${start + bytesRead - 1}/${size}`, 'access-control-allow-origin': '*' },
+          body: body.subarray(0, bytesRead),
+        });
+      } finally {
+        await handle.close();
+      }
+    });
+    await page.route(CESIUM_EXTERNAL, (route) => route.abort());
+    await page.evaluate(() => {
+      (window as unknown as TestWindow).__map!.jumpTo({ center: [139.7671, 35.6812], zoom: 16, pitch: 45 });
+    });
+    // 道路と注記 (点だけ) のテーマを一覧に足してから、Cesium に替える。
+    await showLayer(page, gsiRow('road'));
+    await showLayer(page, gsiRow('anno'));
+    // MapLibre の読み込みが落ち着いてから数え始める (ここからの Range は Cesium の中継のもの)。
+    await page.evaluate(
+      () => new Promise<void>((resolve) => {
+        const map = (window as unknown as TestWindow).__map!;
+        if (map.loaded()) resolve();
+        else map.once('idle', () => resolve());
+      }),
+    );
+    const before = ranges.length;
+    await page.locator('#engine-bar button[data-engine="cesium"]').click();
+    await expect(page.locator('#cesium')).toBeVisible();
+    // 点だけの注記は Cesium のベクタでは文字を描けないので灰色。道路は描く。
+    await expect(page.locator(`.layer-row[data-layer="${gsiRow('anno')}"]`)).toHaveClass(/unsupported/);
+    await expect(page.locator(`.layer-row[data-layer="${gsiRow('road')}"]`)).not.toHaveClass(/unsupported/);
+
+    // 描いているベクタの URL テンプレート (中継の形)。**クラスの名前では見ない** (本番ビルドでは縮められる)。
+    const providers = () =>
+      page.evaluate(() => {
+        const viewer = (window as unknown as { __viewer?: import('cesium').Viewer }).__viewer;
+        if (!viewer) return [];
+        const primitives = viewer.scene.primitives;
+        return Array.from({ length: primitives.length }, (_, i) => String(primitives.get(i).urlTemplate ?? ''));
+      });
+    const relay = 'https://pmtiles.invalid/gsi-optimal-bvmap/{z}/{x}/{y}.pbf';
+    await expect.poll(providers).toContain(relay);
+    // 測れていること: 中継は MapLibre とは別の読み手なので、**ヘッダ (0) から読み直し**、そのあとタイルの場所を読む。
+    await expect.poll(() => ranges.slice(before).includes(0)).toBe(true);
+    await expect.poll(() => ranges.slice(before).filter((start) => start > 0).length).toBeGreaterThan(0);
+
+    // 一覧で外すと取り除かれる。
+    await hideLayer(page, gsiRow('road'));
+    await expect.poll(providers).not.toContain(relay);
+  });
 });
 
 test('地形が有効になっていて、コンパスの下のボタンで切れる', { tag: '@map' }, async ({ page }) => {
@@ -4010,8 +4071,9 @@ test('地理院のベクトルタイルは、ズームを変えても層ごと�
 });
 
 /**
- * **カタログが長くなっても探せる。** 足せないもの (3D Tiles・配っていない元データ) は
+ * **カタログが長くなっても探せる。** 足せないもの (配っていない元データ) は
  * 「見るだけ・元データ」のタブに分け、足せるものの間に混ぜない。出所が複数あれば目次から飛べる。
+ * 3D Tiles は Cesium で描けるので、足せる側 (地図タイル) にある。
  */
 test('足せないものは別のタブに分け、目次から出所へ飛べる', async ({ page }) => {
   await page.locator('.layer-add-button[data-section="tile"]').click();
@@ -4025,9 +4087,14 @@ test('足せないものは別のタブに分け、目次から出所へ飛べ�
     await expect(adds.filter({ hasText: '描けません' })).toHaveCount(0);
   }
 
-  // 見るだけのタブは、どれも足せない (3D Tiles も元データもここ)。
+  // 3D Tiles は地図タイルのタブで足せる (MapLibre では灰色、Cesium で描く)。
+  await tab('tile').click();
+  await expect(dialog.locator('[data-catalog-layer="reearth-buildings"] .catalog-add')).toBeEnabled();
+
+  // 見るだけのタブは、どれも足せない (配っていない元データ)。
   await tab('view').click();
-  for (const id of ['reearth-buildings', 'nasa-nasadem', 'gsi-dem-source']) {
+  await expect(dialog.locator('[data-catalog-layer="reearth-buildings"]')).toHaveCount(0);
+  for (const id of ['nasa-nasadem', 'gsi-dem-source']) {
     await expect(dialog.locator(`[data-catalog-layer="${id}"] .catalog-add`)).toBeDisabled();
   }
   expect(await adds.count()).toBe(await adds.filter({ hasText: '描けません' }).count());

@@ -5,12 +5,13 @@ import { readFileSync } from 'node:fs';
 import { detectLang, urlWithLang } from '../src/i18n/index.ts';
 import { HTML_EN, MESSAGES } from '../src/i18n/messages.ts';
 
-const html = ['../index.html', '../3d.html'].map((path) => readFileSync(new URL(path, import.meta.url), 'utf8')).join('\n');
+// 3d.html は地図のページへの転送だけなので、文言は index.html にしか無い。
+const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const htmlKeys = new Set(
   [...html.matchAll(/data-i18n(?:-html|-title|-placeholder|-aria-label)?="([^"]+)"/g)].map((match) => match[1]),
 );
 
-test('index.html と 3d.html の data-i18n のキーは、どれも英語の辞書にある', () => {
+test('index.html の data-i18n のキーは、どれも英語の辞書にある', () => {
   const missing = [...htmlKeys].filter((key) => !(key in HTML_EN));
   assert.deepEqual(missing, []);
 });

@@ -2092,18 +2092,97 @@ a.lang-option {
   }
 }
 
-/* 同じ場所を 3D のページで開くボタン (右上のコントロールの並び)。ボタンと同じ大きさの文字のリンク。 */
-.maplibregl-ctrl-group a.open-3d {
-  display: block;
-  width: 29px;
-  height: 29px;
-  line-height: 29px;
-  text-align: center;
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: #333;
-  text-decoration: none;
+/* Cesium の入れ物。地図と同じ場所に重ねる (重なり順を持たないので、パネルはその上に出る)。 */
+#cesium {
+  position: absolute;
+  inset: 0;
 }
-.maplibregl-ctrl-group a.open-3d:hover {
-  background: rgba(0, 0, 0, 0.05);
+#cesium[hidden] {
+  display: none;
+}
+/* Cesium の出典。既定の左下は一覧に隠れる (出典の表示は義務)。MapLibre の出典と同じ右下の端に置く。 */
+#cesium .cesium-viewer-bottom {
+  left: auto;
+  right: 0.5rem;
+  bottom: 0.2rem;
+  max-width: calc(100vw - 22rem);
+  text-align: right;
+}
+/* スマホ幅では一覧が下端いっぱいなので、出典は下端の帯 (一覧の下) に横いっぱいで出す。 */
+@media (max-width: 640px) {
+  #cesium .cesium-viewer-bottom {
+    left: 0.5rem;
+    right: 0.5rem;
+    bottom: 0;
+    max-width: none;
+    text-align: left;
+    font-size: 10px;
+  }
+}
+#terrain-engine-note {
+  margin: 0.2rem 0 0;
+  font-size: 0.78rem;
+}
+#terrain-engine-note[hidden] {
+  display: none;
+}
+
+/* 地図のエンジンの切り替え (ui/engine-bar.ts)。上端の真ん中。処理中の合図 (#busy) はその下に出す。 */
+#engine-bar {
+  position: absolute;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  display: flex;
+  overflow: hidden;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+#engine-bar[hidden] {
+  display: none;
+}
+#engine-bar button {
+  padding: 0.35rem 0.85rem;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 0.85rem;
+  color: #333;
+  cursor: pointer;
+}
+#engine-bar button + button {
+  border-left: 1px solid #ddd;
+}
+#engine-bar button[aria-pressed='true'] {
+  background: #2a78d6;
+  color: #fff;
+  font-weight: 600;
+}
+#engine-bar button:disabled {
+  color: #aaa;
+  cursor: default;
+}
+#engine-bar ~ #busy {
+  top: 3.4rem;
+}
+/* スマホ幅では検索欄が上端いっぱいなので、その下に置く。 */
+@media (max-width: 640px) {
+  #engine-bar {
+    top: 4.2rem;
+  }
+  #engine-bar ~ #busy {
+    top: 6.6rem;
+  }
+}
+
+/* いまのエンジンでは描けない行 (灰色)。出し入れはできる (エンジンを戻せば描く)。 */
+.layer-row.unsupported .layer-name {
+  color: #999;
+}
+.layer-unsupported-note {
+  flex: none;
+  margin-right: 0.3rem;
+  color: #888;
 }

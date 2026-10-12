@@ -16,10 +16,15 @@ const ja = {
   terrain: '地形',
   opacity: '不透明度',
   sourceData: '元データ',
-  viewOnly3dTiles: 'この地図では描けません (3D Tiles)。ⓘ から公式のビューアで見られます',
   viewOnlyReference: 'このカタログからは配っていません。ⓘ から公開元へ辿れます',
-  open3dTitle: '同じ場所を 3D で開きます (Cesium。3D Tiles の建物を見られます)',
-  flatTerrain: '平ら (楕円体)',
+  // ---- 地図のエンジン (ui/engine-bar.ts) ----
+  engineBarLabel: '地図のエンジン',
+  engineComingSoon: (name: string) => `${name} は準備中です`,
+  /** 一覧の行の注記。そのエンジンでは描けない行 (灰色)。 */
+  notDrawnIn: (engine: string) => `${engine} ではまだ描けません`,
+  notDrawn3dTilesInMapLibre: 'MapLibre では描けません。上のバーで Cesium に切り替えると描けます',
+  notUsableIn: (engine: string) => `${engine} ではまだ使えません`,
+  cesiumTerrainInstead: (name: string) => `Cesium では、建物が地面に乗るよう楕円体高の ${name} を使います`,
   // 検索できるもの
   searchMunicipality: '市区町村',
   searchTown: '町名・丁目',
@@ -332,10 +337,13 @@ const en: Messages = {
   terrain: 'Terrain',
   opacity: 'Opacity',
   sourceData: 'Source data',
-  viewOnly3dTiles: 'Cannot be drawn on this map (3D Tiles). Open the official viewer from ⓘ',
   viewOnlyReference: 'Not distributed by this catalog. Follow ⓘ to the original publisher',
-  open3dTitle: 'Open the same place in 3D (Cesium, with 3D Tiles buildings)',
-  flatTerrain: 'Flat (ellipsoid)',
+  engineBarLabel: 'Map engine',
+  engineComingSoon: (name) => `${name} is coming soon`,
+  notDrawnIn: (engine) => `Not drawn in ${engine} yet`,
+  notDrawn3dTilesInMapLibre: 'Not drawn in MapLibre. Switch to Cesium in the bar above to draw it',
+  notUsableIn: (engine) => `Not available in ${engine} yet`,
+  cesiumTerrainInstead: (name) => `In Cesium, ${name} (ellipsoidal heights) is used so buildings sit on the ground`,
   searchMunicipality: 'Municipalities',
   searchTown: 'Towns and chōme',
   searchStation: 'Stations',
@@ -619,17 +627,8 @@ const en: Messages = {
 
 export const MESSAGES: Record<'ja' | 'en', Messages> = { ja, en };
 
-/** index.html と 3d.html の `data-i18n*` のキー → 英語。日本語は HTML に書いてある。 */
+/** index.html の `data-i18n*` のキー → 英語。日本語は HTML に書いてある。 */
 export const HTML_EN: Record<string, string> = {
-  // ---- 3d.html ----
-  viewer3dTitle: 'View in 3D (Cesium)',
-  backToMap: '← Back to the map (same place)',
-  viewer3dBasemap: 'Background map',
-  viewer3dTerrain: 'Terrain',
-  viewer3dVector: 'Vector tiles',
-  viewer3dVectorNote: 'Only the area around the view is loaded.',
-  viewer3dVectorReload: 'Reload around here',
-  // ---- index.html ----
   // 入力欄は狭い (日本語の「地名・駅・路線で検索」と同じくらいの長さに収める)。日本語で打つことは
   // 「検索できるもの」と使い方で言う。
   searchPlaceholder: 'Search in Japanese',

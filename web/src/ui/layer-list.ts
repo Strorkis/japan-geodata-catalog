@@ -16,6 +16,7 @@ import type { Map as MapLibreMap } from 'maplibre-gl';
 import type { Bbox, CatalogGroup, Collection, VectorLayerInfo } from '../lib/stac';
 import type { BuildingCoverage } from '../lib/sources';
 import type { VectorOverlay } from '../lib/tiles';
+import type { EngineId } from './engine-bar';
 import { m } from '../i18n';
 
 /** 一覧の区分。データ (GeoParquet) と、見るだけの地図タイル。 */
@@ -57,8 +58,13 @@ export interface Layer {
    * 入り切りの状態は `overlay.visible` が持つ (**ズームでは変えない**)。
    */
   parts?: { overlay: VectorOverlay; layers: VectorLayerInfo[] };
-  /** この地図では描けない理由 (3D Tiles)。あれば一覧に足せない。 */
+  /** **どのエンジンでも**描けない理由 (配っていない元データ)。あれば一覧に足せない。 */
   viewOnly?: string;
+  /**
+   * **そのエンジンでは描けない理由** (データの行は Cesium で、3D Tiles は MapLibre で)。一覧には足せ、
+   * 出し入れもできるが、そのエンジンの間は灰色にして理由を添える (描けるようにするのは TOBE)。
+   */
+  unsupportedIn?: Partial<Record<EngineId, string>>;
 }
 
 /** 区分ごとの目印の層 (描かない)。その区分の層は、この直下に重ねる。 */
@@ -78,6 +84,12 @@ export interface LayerListOptions {
   openDetails: (layer: Layer) => void;
   /** サブカタログの JSON を開くボタン。 */
   catalogLink: (path: string | undefined, label: string) => HTMLElement;
+  /** いま使っている地図のエンジン。描けない行を灰色にする。 */
+  engine: () => EngineId;
+  /** 「寄る」ボタンの行き先へ寄る (いまのエンジンで)。 */
+  zoomTo: (zoom: number) => void;
+  /** 出し入れ・並べ替えのあと (MapLibre 以外のエンジンが一覧を写し直す)。 */
+  onChange: () => void;
 }
 
 export interface LayerList {
@@ -85,6 +97,8 @@ export interface LayerList {
   render: () => void;
   /** 地図の重ね順を一覧に合わせる。**層をあとから作ったら呼ぶ** (地理院のテーマ)。 */
   applyOrder: () => void;
+  /** その区分の、一覧に置いている行 (**先頭がいちばん上**)。 */
+  ordered: (section: Section) => Layer[];
 }
 
 /** 範囲つきのスライダー1つ (不透明度・起伏の強調)。地図を見ながら動かすので行の下に開く。 */
@@ -131,7 +145,9 @@ const tabOf = (layer: Layer): CatalogTab => (layer.viewOnly ? 'view' : layer.sec
 const fromZoom = (minzoom: number) => m.fromZoom(minzoom);
 
 export function createLayerList(options: LayerListOptions): LayerList {
-  const { map, layers, statusOf, isPresent, openDetails, catalogLink } = options;
+  const { map, layers, statusOf, isPresent, openDetails, catalogLink, engine, zoomTo, onChange } = options;
+  /** いまのエンジンで描けない理由。描けるなら undefined。 */
+  const unsupported = (layer: Layer) => layer.unsupportedIn?.[engine()];
   const byId = new Map(layers.map((layer) => [layer.id, layer]));
 
   const rowsEl: Record<Section, HTMLElement> = {
@@ -217,6 +233,7 @@ export function createLayerList(options: LayerListOptions): LayerList {
     layer.refresh();
     applyOrder();
     render();
+    onChange();
   };
 
   /** 一覧から外す (地図からも消す)。 */
@@ -227,6 +244,7 @@ export function createLayerList(options: LayerListOptions): LayerList {
     lastParts.delete(layer.id);
     layer.refresh();
     render();
+    onChange();
   };
 
   /** 並びを替える (ドラッグを放したとき・キーボードの ↑↓)。 */
@@ -235,6 +253,7 @@ export function createLayerList(options: LayerListOptions): LayerList {
     order[section] = ids;
     applyOrder();
     render();
+    onChange();
   };
 
   // ---- 並べ替え (ドラッグ) -------------------------------------------------------
@@ -350,6 +369,7 @@ export function createLayerList(options: LayerListOptions): LayerList {
       setVisible(layer, toggle.checked, parts && toggle.checked ? parts.layers.map((p) => p.id) : undefined);
       layer.refresh();
       if (parts) render();
+      onChange();
     });
 
     const name = document.createElement('label');
@@ -366,8 +386,9 @@ export function createLayerList(options: LayerListOptions): LayerList {
         setVisible(layer, true);
         toggle.checked = true;
       }
-      map.easeTo({ zoom: layer.minZoom, duration: 600 });
+      zoomTo(layer.minZoom);
       layer.refresh();
+      onChange();
     });
     zoomIn.hidden = layer.minZoom === undefined || map.getZoom() >= layer.minZoom;
 
@@ -408,6 +429,16 @@ export function createLayerList(options: LayerListOptions): LayerList {
     status.title = status.textContent;
     const sub = document.createElement('div');
     sub.className = 'layer-sub';
+    // **いまのエンジンで描けない行は灰色にし、理由を添える。** 出し入れの状態は残す (エンジンを戻せば描く)。
+    const reason = unsupported(layer);
+    if (reason) {
+      el.classList.add('unsupported');
+      const note = document.createElement('span');
+      note.className = 'layer-unsupported-note';
+      note.textContent = reason;
+      note.title = reason;
+      sub.append(note);
+    }
     if (!present) {
       const absent = document.createElement('span');
       absent.className = 'layer-absent-note';
@@ -483,6 +514,7 @@ export function createLayerList(options: LayerListOptions): LayerList {
         layer.visible = parts.layers.some((p) => parts.overlay.visible.get(p.id));
         layer.refresh();
         render();
+        onChange();
       });
       const title = document.createElement('span');
       title.textContent = part.title;
@@ -556,6 +588,7 @@ export function createLayerList(options: LayerListOptions): LayerList {
       present ? null : m.notInView,
       layer.minZoom !== undefined ? fromZoom(layer.minZoom) : null,
       layer.viewOnly ?? null,
+      unsupported(layer) ?? null,
     ]
       .filter(Boolean)
       .join(' · ');
@@ -711,5 +744,8 @@ export function createLayerList(options: LayerListOptions): LayerList {
     if (dialog.open) renderCatalog();
   };
 
-  return { render, applyOrder };
+  const ordered = (section: Section) =>
+    order[section].map((id) => byId.get(id)).filter((l): l is Layer => l !== undefined);
+
+  return { render, applyOrder, ordered };
 }

@@ -1,8 +1,8 @@
 /**
- * **地図の見え方を URL で渡す。** いまの地図 (MapLibre) と 3D のページ (Cesium) の間で、同じ場所を開くため。
+ * **地図の見え方。** URL で場所を渡すときと、地図のエンジン (MapLibre ⇄ Cesium) を切り替えるときに使う。
  *
  * 意味は MapLibre に合わせる (ズームは 512 画素のタイル、傾きは真上からの度、向きは北から時計回りの度)。
- * Cesium 側でカメラの距離に直す (viewer3d.ts)。
+ * Cesium 側でカメラの距離に直す (lib/engines/cesium.ts)。
  */
 export interface View {
   lon: number;

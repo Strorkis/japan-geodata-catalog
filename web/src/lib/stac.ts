@@ -359,7 +359,7 @@ export interface Collection {
   styleUrl: string | undefined;
   /**
    * Cesium 用の地形 (quantized-mesh) の `layer.json` (`rel: "quantized-mesh"`)。**高さは楕円体から**で、
-   * 3D のページだけが使う。MapLibre の地形 (`tileLink`・海面からの高さ) とは別。
+   * Cesium のエンジンだけが使う。MapLibre の地形 (`tileLink`・海面からの高さ) とは別。
    */
   quantizedMesh: string | undefined;
   /** 地図タイルが実際にあるズーム [最小, 最大]。 */

@@ -1,70 +1,17 @@
 <!doctype html>
+<!--
+  以前の 3D のページ (Cesium)。いまは地図のページの上のバーで Cesium に切り替える。
+  古いリンクのために、同じ場所 (lon/lat/zoom/pitch/bearing) と言語を地図のページへ渡して転送するだけ残す。
+-->
 <html lang="ja">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>duck-geocoder 3D (Cesium)</title>
-    <style>
-      html,
-      body,
-      #viewer {
-        margin: 0;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-        font-family: system-ui, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
-      }
-      #panel {
-        position: absolute;
-        top: 12px;
-        left: 12px;
-        z-index: 2;
-        max-width: 22rem;
-        padding: 0.6rem 0.8rem;
-        border-radius: 0.5rem;
-        background: rgba(255, 255, 255, 0.92);
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
-        font-size: 0.9rem;
-        line-height: 1.6;
-      }
-      #panel h1 {
-        font-size: 1rem;
-        margin: 0 0 0.3rem;
-      }
-      #panel label {
-        display: block;
-      }
-      #panel select {
-        max-width: 100%;
-      }
-      #panel .note {
-        color: #555;
-        font-size: 0.8rem;
-      }
-    </style>
+    <title>duck-geocoder</title>
+    <script>
+      const params = new URLSearchParams(location.search);
+      params.set('engine', 'cesium');
+      location.replace(`./?${params}`);
+    </script>
   </head>
-  <body>
-    <div id="viewer"></div>
-    <div id="panel">
-      <h1 data-i18n="viewer3dTitle">3D で見る (Cesium)</h1>
-      <p><a id="back-to-map" href="./" data-i18n="backToMap">← 地図に戻る (同じ場所)</a></p>
-      <label>
-        <span data-i18n="viewer3dBasemap">背景地図</span>
-        <select id="basemap-select"></select>
-      </label>
-      <label>
-        <span data-i18n="viewer3dTerrain">地形</span>
-        <select id="terrain-select"></select>
-      </label>
-      <div id="tileset-options"></div>
-      <details id="vector-panel" open hidden>
-        <summary data-i18n="viewer3dVector">ベクトルタイル</summary>
-        <p class="note" data-i18n="viewer3dVectorNote">見ている場所の周りだけを読みます。</p>
-        <div id="vector-options"></div>
-        <button id="vector-reload" type="button" data-i18n="viewer3dVectorReload">この辺りを読み直す</button>
-      </details>
-      <p id="viewer3d-status" class="note"></p>
-    </div>
-    <script type="module" src="/src/viewer3d.ts"></script>
-  </body>
+  <body></body>
 </html>

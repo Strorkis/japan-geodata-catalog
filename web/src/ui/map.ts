@@ -10,15 +10,14 @@ import {
   NavigationControl,
   TerrainControl,
   type ExpressionSpecification,
-  type IControl,
 } from 'maplibre-gl';
 import type { Collection } from '../lib/stac';
 import { LINE_KINDS, type LineKind } from '../lib/sources';
 import { TERRAIN_SOURCE, baseStyle } from '../lib/tiles';
 import { buildDataCredits, collapseAttribution, watchAttributionHeight } from './credits';
 import { LAYER_ANCHORS } from './layer-list';
-import { lang, m } from '../i18n';
-import { readView, viewParams } from '../lib/view-params';
+import { m } from '../i18n';
+import { readView } from '../lib/view-params';
 
 export const EMPTY_FEATURE_COLLECTION: GeoJSON.FeatureCollection = {
   type: 'FeatureCollection',
@@ -132,45 +131,6 @@ export function tileColor(expression: ExpressionSpecification, palette: number):
   return replace(expression) as ExpressionSpecification;
 }
 
-/** 同じ場所を 3D のページで開くボタン。位置・ズーム・傾き・向きを URL で渡す (lib/view-params.ts)。 */
-class Open3dControl implements IControl {
-  private container: HTMLDivElement | undefined;
-
-  onAdd(map: MapLibreMap): HTMLElement {
-    const container = document.createElement('div');
-    container.className = 'maplibregl-ctrl maplibregl-ctrl-group';
-    const link = document.createElement('a');
-    link.id = 'open-3d';
-    link.className = 'open-3d';
-    link.textContent = '3D';
-    link.title = m.open3dTitle;
-    link.setAttribute('aria-label', m.open3dTitle);
-    // 押す直前に、いまの見え方で URL を組む (中ボタン・新しいタブでも同じ場所が開く)。
-    const update = () => {
-      const center = map.getCenter();
-      const params = viewParams({
-        lon: center.lng,
-        lat: center.lat,
-        zoom: map.getZoom(),
-        pitch: map.getPitch(),
-        bearing: map.getBearing(),
-      });
-      if (lang !== 'ja') params.set('lang', lang);
-      link.href = `./3d.html?${params}`;
-    };
-    link.addEventListener('pointerdown', update);
-    link.addEventListener('focus', update);
-    update();
-    container.append(link);
-    this.container = container;
-    return container;
-  }
-
-  onRemove(): void {
-    this.container?.remove();
-  }
-}
-
 /**
  * 地図を生成し、スタイルのロードとデータ・周辺検索・ハイライトの層の追加が終わるまで待つ。
  *
@@ -179,7 +139,7 @@ class Open3dControl implements IControl {
  * ライセンス違反になるため、データ側に追随させる。
  */
 export function initMap(collections: Collection[]): Promise<MapLibreMap> {
-  // 3D のページから戻ったときは、URL の場所から始める (無ければ東京駅のあたりを広く)。
+  // URL に場所があればそこから始める (無ければ東京駅のあたりを広く)。
   const view = readView(location.search, { zoom: 9, pitch: 0, bearing: 0 });
   const map = new MapLibreMap({
     container: 'map',
@@ -202,8 +162,6 @@ export function initMap(collections: Collection[]): Promise<MapLibreMap> {
   // 0に戻る。つまり「2Dに戻す」手段が標準で付いてくるので、自前で切り替えUIを持たない。
   // 左上は検索欄、右下は出典表示があるので右上に置く。
   map.addControl(new NavigationControl({ visualizePitch: true }), 'top-right');
-  // 同じ場所を 3D のページ (Cesium) で開く。3D Tiles はこの地図では描けないので、そちらで見る。
-  if (collections.some((c) => c.kind === '3d_tiles')) map.addControl(new Open3dControl(), 'top-right');
   // 地形を切る手段。平野部では起伏が無く、タイルを読むだけになる場面もある。
   // 一覧の「地形」の行と同じもの (どちらで切っても、もう一方が追随する)。
   // 地図の上ですぐ切れるので残す。地形がカタログに無ければ出さない。

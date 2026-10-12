@@ -6,7 +6,7 @@
  * `pmtiles` から該当のタイルを返す。それ以外の URL は元の取得に任せる。
  *
  * - `Resource._Implementations.loadWithXhr` は Cesium の内部の口 (公開 API ではない)。
- *   **Cesium の版を上げたら、E2E (3D のページのベクトルタイル) で効いていることを確かめる。**
+ *   **Cesium の版を上げたら、E2E (Cesium のベクトルタイル) で効いていることを確かめる。**
  *   Cesium に PMTiles の口ができれば、この中継は要らない
  * - 無いタイルは 404 で返す。`MVTDataProvider` はそれを空のタイルとして扱う
  */

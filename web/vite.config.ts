@@ -13,7 +13,7 @@ const DUCKDB_EXTENSIONS_CACHE = fileURLToPath(new URL('./.duckdb-extensions/', i
 
 /** DuckDB-WASM本体の在り処。開発時の配信元と、ビルド時のコピー元を兼ねる。 */
 const DUCKDB_DIST = './node_modules/@duckdb/duckdb-wasm/dist/';
-/** CesiumJS の実行時の資産 (Workers・Assets・Widgets・ThirdParty)。3D のページ (3d.html) が読む。 */
+/** CesiumJS の実行時の資産 (Workers・Assets・Widgets・ThirdParty)。バーで Cesium を選んだときに読む。 */
 const CESIUM_BUILD = './node_modules/cesium/Build/Cesium/';
 
 /**
@@ -198,7 +198,7 @@ function copyDuckDbRuntime(): Plugin {
 }
 
 /**
- * CesiumJS の実行時の資産をビルド成果物の `cesium/` に置く。3D のページ (3d.html) が `CESIUM_BASE_URL` で読む。
+ * CesiumJS の実行時の資産をビルド成果物の `cesium/` に置く。Cesium のエンジン (lib/engines/cesium.ts) が `CESIUM_BASE_URL` で読む。
  * **写して配るので、ライセンス (Apache-2.0) の本文も一緒に置く。**
  */
 function copyCesiumRuntime(): Plugin {
@@ -239,7 +239,8 @@ export default defineConfig(async () => {
     // 隠しディレクトリ (既定の .vite/) にしない。開いて読めるところに置く。
     build: {
       license: { fileName: 'THIRD-PARTY-LICENSES.md' },
-      // **2つのページ。** 3D (Cesium) は別のページにして、いまの地図の読み込みを重くしない。
+      // 地図は1ページ (Cesium はバーで選んだときに動的 import で読むので、起動は重くならない)。
+      // 3d.html は以前の 3D のページへのリンクを地図のページへ転送するだけ。
       rolldownOptions: { input: { main: 'index.html', viewer3d: '3d.html' } },
     },
     plugins: [

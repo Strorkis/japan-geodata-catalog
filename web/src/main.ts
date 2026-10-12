@@ -43,6 +43,11 @@ import { createNearbyPanel } from './ui/nearby-panel';
 import { createCollectionCards } from './ui/collection-card';
 import { createSearchBox } from './ui/search-box';
 import { createTerrainRow } from './ui/terrain-row';
+import { createEngineBar, engineFromUrl, type EngineId } from './ui/engine-bar';
+// Cesium は**型だけ**。本体はバーで選んだときに読む (地図の起動を重くしない)。
+import type { CesiumEngine, CesiumRow } from './lib/engines/cesium';
+import { vectorThemeLook } from './lib/vector-looks';
+import type { View } from './lib/view-params';
 import { applyHtmlText, lang, m, urlWithLang } from './i18n';
 // MapLibreは既定では new URL(`./${名前}`, import.meta.url) でワーカーを探すが、
 // 名前が変数なのでバンドラが静的に検出できず、ビルド成果物に出力されない。
@@ -275,6 +280,20 @@ async function main() {
     }, 5000);
   };
 
+  /**
+   * 検索・📍・◎ を押せるか。**DuckDB の準備が済み、MapLibre を使っているとき**だけ
+   * (結果の描き方と、地図を押して選ぶ操作が MapLibre のもの。Cesium では TOBE)。
+   */
+  let dbIsReady = false;
+  /** いま使っている地図のエンジン (下の「地図のエンジン」で切り替える)。 */
+  let engine: EngineId = 'maplibre';
+  const searchRowEl = document.querySelector<HTMLDivElement>('#search-row')!;
+  const updateSearchInputs = () => {
+    const usable = dbIsReady && engine === 'maplibre';
+    for (const el of [input, pickButton, nearbyButton]) el.disabled = !usable;
+    searchRowEl.title = dbIsReady && !usable ? m.notUsableIn('Cesium') : '';
+  };
+
   // **DuckDB の準備を待つ。** その間は処理中の合図に出し、済んだら検索を押せるようにする。
   busy(m.preparingDatabase, () => dbReady)
     .then(() => {
@@ -283,11 +302,10 @@ async function main() {
       // 実際に使うころには済んでいることが多い (用意していないと、最初の検索やクリックでその場の待ち時間になる)。
       void ensureOaza().catch((e: unknown) => console.error('[warmup] oaza', e));
       void ensureSpatial().catch((e: unknown) => console.error('[warmup] spatial', e));
-      input.disabled = false;
-      pickButton.disabled = false;
-      nearbyButton.disabled = false;
+      dbIsReady = true;
+      updateSearchInputs();
       // 準備の間に別の所を触っていたら、フォーカスを奪わない。
-      if (document.activeElement === document.body) input.focus();
+      if (document.activeElement === document.body && !input.disabled) input.focus();
     })
     .catch((e: unknown) => {
       // 地図は使えるので、**出したままにする** (検索が押せない理由が分かるように)。
@@ -359,7 +377,8 @@ async function main() {
     setStatus: setLayerStatus,
     statusOf: (id) => layerStatus.get(id) ?? '',
     // 一覧の行は下で作る。呼ばれるのは地図を動かしたときや行を出し入れしたとき。
-    isVisible: (id) => isLayerVisible(id),
+    // **MapLibre を使っている間だけ描く** (Cesium の間は引かない。戻ったときに描き直す)。
+    isVisible: (id) => engine === 'maplibre' && isLayerVisible(id),
     currentBounds,
     detail: () => detail,
   };
@@ -427,6 +446,65 @@ async function main() {
   /** 外部のベクトルタイル。ホバーで引き当てるために持っておく。 */
   const vectorOverlays: VectorOverlay[] = [];
 
+  // ---- 地図のエンジン (ui/engine-bar.ts・lib/engines/) ----------------------------------
+  //
+  // **UI は同じで、エンジンだけが替わる。** 一覧の状態 (出している行・重ね順・不透明度) はエンジンに依らず、
+  // 描くかどうかだけがエンジンに依る。描けない行は一覧で灰色にする (`unsupportedIn`)。
+  // **見え方の正本は MapLibre** — Cesium で動かしたら、隠れている MapLibre を合わせる (一覧の「この範囲にあるか」などがそのまま効く)。
+  const NOT_IN_CESIUM: Layer['unsupportedIn'] = { cesium: m.notDrawnIn('Cesium') };
+  let cesium: CesiumEngine | undefined;
+  /** 背景地図の不透明度 (Collection ID → 0〜1)。MapLibre は層の paint に持つが、Cesium に渡すために覚える。 */
+  const rasterOpacity = new Map<string, number>();
+  /** ベクトルタイルのテーマの行 → Collection とテーマ。 */
+  const vectorThemeRows = new Map<string, { collection: Collection; themeId: string }>();
+  /** 地形 (地形の欄の状態)。Cesium に写す。 */
+  const terrainToggle = document.querySelector<HTMLInputElement>('#terrain-toggle')!;
+  const terrainSelect = document.querySelector<HTMLSelectElement>('#terrain-source')!;
+
+  const terrainNote = document.querySelector<HTMLParagraphElement>('#terrain-engine-note')!;
+
+  /** 一覧の状態を Cesium に写す。Cesium を使っていなければ何もしない。 */
+  const syncCesium = () => {
+    terrainNote.hidden = true;
+    if (engine !== 'cesium' || !cesium || !layerList) return;
+    const rows: CesiumRow[] = [];
+    const vectorRows = new Map<string, Extract<CesiumRow, { kind: 'vector' }>>();
+    for (const layer of layerList.ordered('tile')) {
+      if (!layer.visible || layer.unsupportedIn?.cesium) continue;
+      const collection = layer.collections[0];
+      const theme = vectorThemeRows.get(layer.id);
+      if (theme && layer.parts) {
+        // テーマをまたいで Collection ごとに1つにまとめる (読むのは同じ PMTiles)。点は描かない。
+        let row = vectorRows.get(collection.id);
+        if (!row) {
+          row = { kind: 'vector', collection, layers: [] };
+          vectorRows.set(collection.id, row);
+          rows.push(row);
+        }
+        const color = vectorThemeLook(theme.themeId).color;
+        for (const part of layer.parts.layers) {
+          if (layer.parts.overlay.visible.get(part.id) && part.geometry !== 'Point') row.layers.push({ layer: part, color });
+        }
+      } else if (collection.kind === 'raster_tiles' && collection.tileLink) {
+        rows.push({ kind: 'raster', collection, opacity: rasterOpacity.get(collection.id) ?? 1 });
+      } else if (collection.kind === '3d_tiles' && collection.tileLink?.rel === '3d-tiles') {
+        rows.push({ kind: '3d_tiles', collection });
+      }
+    }
+    const selected = terrainCollections.find((c) => c.id === terrainSelect.value);
+    const used = cesium.sync(
+      rows.filter((row) => row.kind !== 'vector' || row.layers.length > 0),
+      { enabled: terrainToggle.checked, selected },
+    );
+    // 選んだ標高が海面からの高さなら、Cesium は楕円体高のものに替えて描く。替えたことを地形の欄で言う。
+    if (used && used.id !== selected?.id) {
+      terrainNote.textContent = m.cesiumTerrainInstead(used.title);
+      terrainNote.hidden = false;
+    }
+  };
+  terrainToggle.addEventListener('change', syncCesium);
+  terrainSelect.addEventListener('change', syncCesium);
+
   // ---- 地図タイル (背景地図・ベクタータイル) と地形 ---------------------------------
   //
   // **QGISと同じく、背景地図も重ねられるレイヤーの1つ。** 一覧に重ね順で並べる
@@ -457,8 +535,10 @@ async function main() {
       section: 'data' as const,
       rank: DATA_RANKS[collection.kind] ?? 0,
       mapLayerIds: () => dataMapLayers,
+      // **データの行 (DuckDB) は Cesium ではまだ描かない** (問い合わせはエンジンに依らないが、描く側が MapLibre の層)。
+      unsupportedIn: NOT_IN_CESIUM,
     };
-    const tileBase = { ...base, section: 'tile' as const, rank: 0 };
+    const tileBase = { ...base, section: 'tile' as const, rank: 0, unsupportedIn: undefined };
     switch (collection.kind) {
       case 'plateau_buildings':
       case 'buildings': {
@@ -530,9 +610,11 @@ async function main() {
           visible: collection === first,
           // 何のソースかを行で言う (出所の名前は一覧が前に足す)。
           vintage: `地図タイル (XYZ) · ズーム${collection.zoom?.join('〜') ?? ''}`,
-          settings: sliderSettings(m.opacity, 0, 100, 5, 100, (v) => `${v}%`, (v) =>
-            map.setPaintProperty(id, 'raster-opacity', v / 100),
-          ),
+          settings: sliderSettings(m.opacity, 0, 100, 5, 100, (v) => `${v}%`, (v) => {
+            map.setPaintProperty(id, 'raster-opacity', v / 100);
+            rasterOpacity.set(collection.id, v / 100);
+            syncCesium();
+          }),
           refresh: () => {
             map.setLayoutProperty(id, 'visibility', isLayerVisible(collection.id) ? 'visible' : 'none');
           },
@@ -554,6 +636,8 @@ async function main() {
         };
         layers.push({
           ...tileBase,
+          // スタイルの JSON で描く背景地図。Cesium はスタイルを読まない。
+          unsupportedIn: NOT_IN_CESIUM,
           vintage: `${m.vectorStyle} · ズーム${collection.zoom?.join('〜') ?? ''}`,
           settings: sliderSettings(m.opacity, 0, 100, 5, 100, (v) => `${v}%`, (v) => {
             opacity = v / 100;
@@ -584,15 +668,14 @@ async function main() {
         if (collection.tileLink || collection.dem?.grid) terrainCollections.push(collection);
         break;
       case '3d_tiles':
-        // **この地図では描けない** (MapLibre は 3D Tiles を描かない)。それでも、カタログに
-        // 何があるかは見せる — 足すダイアログに出して足せなくし、ⓘ からビューアへ案内する。
+        // **MapLibre では描けず、Cesium で描く。** 一覧には足せて、MapLibre の間は灰色。
         layers.push({
           ...tileBase,
           vintage: '3D Tiles',
           settings: document.createElement('div'),
           refresh: () => {},
           mapLayerIds: () => [],
-          viewOnly: m.viewOnly3dTiles,
+          unsupportedIn: { maplibre: m.notDrawn3dTilesInMapLibre },
         });
         break;
       case 'reference':
@@ -616,8 +699,11 @@ async function main() {
         for (const theme of collection.themes ?? []) {
           // 行ID。`:` を使わない (CSSのセレクタで要素IDとして引けなくなる)。
           const rowId = `${collection.id}--${theme.id}`;
+          vectorThemeRows.set(rowId, { collection, themeId: theme.id });
           layers.push({
             ...tileBase,
+            // 点だけのテーマ (注記) は、Cesium のベクタでは文字を描けないので出さない。
+            unsupportedIn: theme.layers.every((l) => l.geometry === 'Point') ? NOT_IN_CESIUM : undefined,
             id: rowId,
             title: theme.title,
             // 出所が同じでも、どのタイルセットの層かを版と一緒に添える。
@@ -751,6 +837,17 @@ async function main() {
     isPresent,
     openDetails: openLayerDetails,
     catalogLink: jsonLink,
+    engine: () => engine,
+    zoomTo: (zoom) => {
+      if (engine === 'cesium' && cesium) {
+        // 見え方の正本 (MapLibre) を寄せてから、Cesium をそこへ置き直す。
+        map.jumpTo({ zoom });
+        void cesium.show(mapView());
+      } else {
+        map.easeTo({ zoom, duration: 600 });
+      }
+    },
+    onChange: syncCesium,
   });
   const renderLayerList = () => layerList?.render();
 
@@ -974,6 +1071,79 @@ async function main() {
     hover.hide();
     search.pickAt(e.lngLat);
   });
+
+  // ---- 地図のエンジンの切り替え (バー) ---------------------------------------------
+  //
+  // **1ページのまま入れ替える** (DuckDB を起こし直さない)。Cesium は初めて選んだときに読み込み、
+  // 一度作ったら壊さずに隠す (2026-10-12 に、同じページで5往復しても壊れないことを確かめた。roadmap)。
+  const cesiumEl = document.querySelector<HTMLDivElement>('#cesium')!;
+  /** いまの MapLibre の見え方 (見え方の正本)。 */
+  const mapView = (): View => {
+    const c = map.getCenter();
+    return { lon: c.lng, lat: c.lat, zoom: map.getZoom(), pitch: map.getPitch(), bearing: map.getBearing() };
+  };
+  const setEngineInUrl = (id: EngineId) => {
+    const url = new URL(location.href);
+    if (id === 'maplibre') url.searchParams.delete('engine');
+    else url.searchParams.set('engine', id);
+    history.replaceState(history.state, '', url);
+  };
+  const switchEngine = async (next: EngineId) => {
+    if (next === engine || next === 'navara') return;
+    bar.setBusy(true);
+    try {
+      if (next === 'cesium') {
+        // 押して選ぶ操作は MapLibre のもの。出ている吹き出しも片付ける。
+        setPicking(false);
+        if (nearby.choosing()) nearby.setChoosing(false);
+        hover.hide();
+        const { createCesiumEngine } = await busy(m.loadingNamed('Cesium'), () => import('./lib/engines/cesium'));
+        cesium ??= createCesiumEngine({
+          container: cesiumEl,
+          quantizedMeshTerrains: collections.filter((c) => c.quantizedMesh),
+          // 隠れている MapLibre を合わせる (一覧の「この範囲にあるか」・寄るボタンが今の場所で効く)。
+          onMoveEnd: (view) =>
+            map.jumpTo({ center: [view.lon, view.lat], zoom: view.zoom, pitch: view.pitch, bearing: view.bearing }),
+          onFailure: (collection) => showFailure(m.loadFailed(collection.title)),
+        });
+        (window as unknown as { __viewer?: unknown }).__viewer = cesium.viewer;
+        engine = 'cesium';
+        syncCesium();
+        await cesium.show(mapView());
+        map.getContainer().style.visibility = 'hidden';
+      } else {
+        engine = 'maplibre';
+        map.jumpTo(cesium ? toMapLibre(cesium.view()) : {});
+        map.getContainer().style.visibility = '';
+        cesium?.hide();
+        terrainNote.hidden = true;
+        map.resize();
+        // Cesium の間は引いていないので、出しているデータの行を描き直す。
+        for (const layer of layers) if (layer.section === 'data' && layer.visible) layer.refresh();
+      }
+      bar.set(engine);
+      setEngineInUrl(engine);
+      updateSearchInputs();
+      renderLayerList();
+    } catch (e) {
+      console.error('[engine] switch failed', e);
+      showFailure(m.loadFailed(next));
+    } finally {
+      bar.setBusy(false);
+    }
+  };
+  const toMapLibre = (view: View) => ({
+    center: [view.lon, view.lat] as [number, number],
+    zoom: view.zoom,
+    pitch: view.pitch,
+    bearing: view.bearing,
+  });
+  const bar = createEngineBar(document.querySelector<HTMLDivElement>('#engine-bar')!, engine, (id) => {
+    void switchEngine(id);
+  });
+  // URL で Cesium を指していれば、そこから始める (古い 3D のページ 3d.html からの転送もここへ来る)。
+  const requested = engineFromUrl(location.search);
+  if (requested !== 'maplibre') void switchEngine(requested);
 }
 
 void main();
