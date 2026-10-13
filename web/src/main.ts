@@ -45,6 +45,7 @@ import { createSearchBox } from './ui/search-box';
 import { createTerrainRow } from './ui/terrain-row';
 import { createEngineBar, engineFromUrl, engineLabel, usesMapLibre, type EngineId } from './ui/engine-bar';
 import type { DeckEngine } from './lib/engines/deckgl';
+import type { ThreeEngine } from './lib/engines/three';
 // Cesium は**型だけ**。本体はバーで選んだときに読む (地図の起動を重くしない)。
 import type { CesiumEngine, CesiumRow, CesiumVectorHit } from './lib/engines/cesium';
 import { hoverContent, vectorHover } from './ui/hover-rows';
@@ -519,6 +520,18 @@ async function main() {
       terrainNote.hidden = false;
     }
   };
+  /** MapLibre + Three.js のときに重ねる Three.js (初めて選んだときに作る)。 */
+  let three: ThreeEngine | undefined;
+  /** 一覧で出している 3D Tiles を Three.js に写す。 */
+  const syncThree = () => {
+    if (engine !== 'maplibre-three' || !three || !layerList) return;
+    three.sync(
+      layerList
+        .ordered('tile')
+        .filter((layer) => layer.visible && layer.collections[0].kind === '3d_tiles' && layer.collections[0].tileLink)
+        .map((layer) => layer.collections[0]),
+    );
+  };
   terrainToggle.addEventListener('change', syncCesium);
   terrainSelect.addEventListener('change', syncCesium);
   terrainToggle.addEventListener('change', () => void syncDeckTerrain());
@@ -922,6 +935,7 @@ async function main() {
     },
     onChange: () => {
       syncCesium();
+      syncThree();
       // 一覧のいちばん上の背景地図を、deck.gl の地形の表面に貼り直す。
       void syncDeckTerrain();
     },
@@ -1205,13 +1219,17 @@ async function main() {
     if (engine === 'maplibre-deckgl' && map.getTerrain()) map.setTerrain(null);
   });
   const switchEngine = async (next: EngineId) => {
-    if (next === engine || next === 'navara' || next === 'maplibre-three') return;
+    if (next === engine || next === 'navara') return;
     bar.setBusy(true);
     try {
       // ---- 出る (MapLibre に重ねていたものを外す) ----
       if (engine === 'maplibre-deckgl') {
         deck?.detach();
         setMapLibreBuildingsVisible(true);
+        terrainNote.hidden = true;
+      }
+      if (engine === 'maplibre-three') {
+        three?.detach();
         terrainNote.hidden = true;
       }
       // ---- 入る ----
@@ -1257,6 +1275,18 @@ async function main() {
           deck.setBuildings(lastBuildings);
         }
         await syncDeckTerrain();
+        if (next === 'maplibre-three') {
+          const { createThreeEngine } = await busy(m.loadingNamed('Three.js'), () => import('./lib/engines/three'));
+          three ??= createThreeEngine({ map, onFailure: (collection) => showFailure(m.loadFailed(collection.title)) });
+          (window as unknown as { __three?: unknown }).__three = three;
+          await busy(m.loadingNamed('Three.js'), () => three!.attach());
+          syncThree();
+          // 高さの基準 (ジオイド) を読めなければ、3D Tiles は楕円体高のまま描く。浮くことを地形の欄で言う。
+          if (!three.datumApplied()) {
+            terrainNote.textContent = m.threeNoDatum;
+            terrainNote.hidden = false;
+          }
+        }
         // 入れ替える側 (Cesium) の間は引いていないので、出しているデータの行を描き直す。
         if (fromSwapped) for (const layer of layers) if (layer.section === 'data' && layer.visible) layer.refresh();
       }

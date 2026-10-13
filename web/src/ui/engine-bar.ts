@@ -13,7 +13,7 @@ export type EngineId = 'maplibre' | 'maplibre-deckgl' | 'maplibre-three' | 'cesi
 const ENGINES: { id: EngineId; label: string; ready: boolean }[] = [
   { id: 'maplibre', label: 'MapLibre', ready: true },
   { id: 'maplibre-deckgl', label: '+ deck.gl', ready: true },
-  { id: 'maplibre-three', label: '+ Three.js', ready: false },
+  { id: 'maplibre-three', label: '+ Three.js', ready: true },
   { id: 'cesium', label: 'Cesium', ready: true },
   { id: 'navara', label: 'Navara', ready: false },
 ];

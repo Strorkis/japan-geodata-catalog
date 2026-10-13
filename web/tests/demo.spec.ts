@@ -302,7 +302,9 @@ async function waitForMap(page: Page) {
 async function waitForReady(page: Page) {
   // 単独なら5秒前後だが、並列で流して CPU を取り合うと15秒を超えることがあった。
   await expect(page.locator('#loading')).toBeHidden({ timeout: DATA_TIMEOUT });
-  await expect(page.locator('#search-input')).toBeEnabled();
+  // **DuckDB の準備も同じだけ待つ。** 地図を DuckDB で待たせなくしたので (2026-10-12)、`#loading` が消えたあとも
+  // DuckDB の準備は続く。既定の15秒では、重いときに足りずに落ちた (2026-10-13)。
+  await expect(page.locator('#search-input')).toBeEnabled({ timeout: DATA_TIMEOUT });
 }
 
 /** 指定したGeoJSONソースに入っている地物の数を返す。 */
@@ -1475,6 +1477,46 @@ test.describe('地図のエンジン (Cesium)', () => {
     await page.locator('#engine-bar button[data-engine="maplibre"]').click();
     await expect.poll(layerIds).toEqual([]);
     await expect.poll(terrainOn).toBe(true);
+    await expect(page.locator('#terrain-engine-note')).toBeHidden();
+  });
+
+  /**
+   * **MapLibre + Three.js: 3D Tiles を MapLibre に重ねて描く** (maplibre-gl-three)。MapLibre 単体では灰色の 3D Tiles の行が描ける行になる。
+   * 外の 3D Tiles と高さの基準の格子 (PROJ の配信) は止める。格子が読めないときは補正なしで描き、そう言う。
+   */
+  test('MapLibre + Three.js では 3D Tiles の行を描き、高さの基準を読めなければそう言う', async ({ page }) => {
+    await page.route(CESIUM_EXTERNAL, (route) => route.abort());
+    await page.route('https://cdn.proj.org/**', (route) => route.abort());
+    await page.evaluate(() => {
+      (window as unknown as TestWindow).__map!.jumpTo({ center: [139.7671, 35.6812], zoom: 15, pitch: 45 });
+    });
+    await openCatalogFor(page, 'plateau-3dtiles');
+    await page.locator('[data-catalog-layer="plateau-3dtiles"] .catalog-add').click();
+    await closeCatalog(page);
+    const row = page.locator('.layer-row[data-layer="plateau-3dtiles"]');
+    await expect(row).toHaveClass(/unsupported/); // MapLibre 単体では描けない
+
+    await page.locator('#engine-bar button[data-engine="maplibre-three"]').click();
+    await expect(page).toHaveURL(/[?&]engine=maplibre-three/);
+    await expect(row).not.toHaveClass(/unsupported/);
+    const shown = () =>
+      page.evaluate(() => (window as unknown as { __three?: { shown: () => string[] } }).__three?.shown() ?? []);
+    await expect.poll(shown).toEqual(['plateau-3dtiles']);
+    await expect
+      .poll(() => page.evaluate(() => Boolean((window as unknown as TestWindow).__map!.getLayer('three-3d-tiles'))))
+      .toBe(true);
+    await expect(page.locator('#terrain-engine-note')).toContainText('高さの基準');
+    // 地図は MapLibre のまま (検索も使える)。
+    await expect(page.locator('#search-input')).toBeEnabled();
+
+    // 一覧で外すと描かなくなる。
+    await page.locator('#layer-toggle-plateau-3dtiles').uncheck();
+    await expect.poll(shown).toEqual([]);
+
+    await page.locator('#engine-bar button[data-engine="maplibre"]').click();
+    await expect
+      .poll(() => page.evaluate(() => Boolean((window as unknown as TestWindow).__map!.getLayer('three-3d-tiles'))))
+      .toBe(false);
     await expect(page.locator('#terrain-engine-note')).toBeHidden();
   });
 

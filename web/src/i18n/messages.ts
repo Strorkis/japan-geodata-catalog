@@ -27,6 +27,7 @@ const ja = {
   notUsableIn: (engine: string) => `${engine} ではまだ使えません`,
   cesiumTerrainInstead: (name: string) => `Cesium では、建物が地面に乗るよう楕円体高の ${name} を使います`,
   deckTerrain: 'deck.gl で地形を描きます。鉄道などほかの行は地形の下に隠れます',
+  threeNoDatum: '高さの基準 (ジオイド) を読めなかったので、3D Tiles が地面から数十 m 浮いて見えます',
   deckTerrainInstead: (name: string) =>
     `deck.gl は選んだ標高を読めないので、${name} で地形を描きます。鉄道などほかの行は地形の下に隠れます`,
   // 検索できるもの
@@ -349,6 +350,7 @@ const en: Messages = {
   notUsableIn: (engine) => `Not available in ${engine} yet`,
   cesiumTerrainInstead: (name) => `In Cesium, ${name} (ellipsoidal heights) is used so buildings sit on the ground`,
   deckTerrain: 'Terrain is drawn by deck.gl. Other layers such as railways are hidden under it',
+  threeNoDatum: 'The vertical datum (geoid) could not be loaded, so 3D Tiles float tens of metres above the ground',
   deckTerrainInstead: (name) =>
     `deck.gl cannot read the selected elevation, so ${name} is used. Other layers such as railways are hidden under it`,
   searchMunicipality: 'Municipalities',

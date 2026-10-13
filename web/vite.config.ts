@@ -15,6 +15,8 @@ const DUCKDB_EXTENSIONS_CACHE = fileURLToPath(new URL('./.duckdb-extensions/', i
 const DUCKDB_DIST = './node_modules/@duckdb/duckdb-wasm/dist/';
 /** CesiumJS の実行時の資産 (Workers・Assets・Widgets・ThirdParty)。バーで Cesium を選んだときに読む。 */
 const CESIUM_BUILD = './node_modules/cesium/Build/Cesium/';
+/** three.js の同梱の読み手 (Draco・Basis)。MapLibre + Three.js が 3D Tiles を読むのに使う。 */
+const THREE_LIBS = './node_modules/three/examples/jsm/libs/';
 
 /**
  * DuckDB-WASM本体のうち、ビルド成果物にそのままコピーするファイル。
@@ -216,6 +218,24 @@ function copyCesiumRuntime(): Plugin {
   };
 }
 
+/**
+ * three.js の **Draco と KTX2 (Basis) の読み手** をビルド成果物の `three/` に置く。MapLibre + Three.js (lib/engines/three.ts) が
+ * 3D Tiles の圧縮された形を読むのに使う。補助ライブラリ (maplibre-gl-three) の既定は jsDelivr から読むが、外へ読みに行かないよう自前で配る。
+ * **写して配るので、ライセンスの文書も一緒に置く** (three.js は MIT、Draco と Basis は Apache-2.0。各ディレクトリの README に書いてある)。
+ */
+function copyThreeDecoders(): Plugin {
+  const source = fileURLToPath(new URL(THREE_LIBS, import.meta.url));
+  return {
+    name: 'copy-three-decoders',
+    apply: 'build',
+    writeBundle(options) {
+      const destination = join(options.dir ?? 'dist', 'three');
+      for (const dir of ['draco', 'basis']) copyDirIfChanged(join(source, dir), join(destination, dir));
+      copyFileIfChanged(join(source, '..', '..', '..', 'LICENSE'), join(destination, 'LICENSE'));
+    },
+  };
+}
+
 /** spatialなど拡張のWASM本体をビルド成果物の `duckdb/extensions/` に置く。 */
 function copyDuckDbExtensions(cacheDir: string): Plugin {
   return {
@@ -251,9 +271,12 @@ export default defineConfig(async () => {
       serveLikeObjectStorage('/duckdb', DUCKDB_DIST),
       // 開発時は Cesium の資産を node_modules から配る (ビルド時はコピーする)。
       serveLikeObjectStorage('/cesium', CESIUM_BUILD),
+      // 開発時は three.js の読み手を node_modules から配る (ビルド時はコピーする)。
+      serveLikeObjectStorage('/three', THREE_LIBS),
       copyDuckDbRuntime(),
       copyDuckDbExtensions(DUCKDB_EXTENSIONS_CACHE),
       copyCesiumRuntime(),
+      copyThreeDecoders(),
     ],
   };
 });
