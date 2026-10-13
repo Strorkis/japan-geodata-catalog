@@ -225,7 +225,7 @@
   <body>
     <header>
       <h1>duck-geocoder ダッシュボード</h1>
-      <span class="meta">更新 2026-10-12 22:02 (日本時間)</span>
+      <span class="meta">更新 2026-10-13 20:04 (日本時間)</span>
       <span class="meta">
         <a href="https://strorkis.github.io/duck-geocoder/">公開サイト</a> ·
         <a href="roadmap.md">方針 (roadmap)</a> ·
@@ -240,7 +240,7 @@
     <section class="kpis" aria-label="数字">
       <div class="card kpi">
         <div class="label">公開待ちのコミット</div>
-        <div class="value">28 <small>件</small></div>
+        <div class="value">30 <small>件</small></div>
         <span class="status you">カタログを上げて push 待ち</span>
       </div>
       <div class="card kpi">
@@ -255,7 +255,7 @@
 
     <!-- ===== 確かめてほしいこと (確かめてもらったら消す) ===== -->
     <section class="card row" aria-label="確かめてほしいこと">
-      <h2>確かめてほしいこと — MapLibre + deck.gl <span class="status you">あなたの番</span></h2>
+      <h2>確かめてほしいこと — MapLibre + deck.gl / + Three.js <span class="status you">あなたの番</span></h2>
       <p class="sub" style="margin: -0.3rem 0 0.5rem"><b>おかしかったら、その番号を教えてください。</b></p>
       <ol class="tasks">
         <li>
@@ -267,6 +267,11 @@
           で起伏が出て、淡色地図が貼られている (鉄道などほかの行は地形の下に隠れるのは分かっている制約)
         </li>
         <li>バーで MapLibre に戻る → いつもの建物と地形に戻る</li>
+        <li>
+          <code>?lon=139.7671&amp;lat=35.6812&amp;zoom=16&amp;pitch=55&amp;engine=maplibre-three</code> → 地図タイルの「＋ 追加」→
+          PLATEAU の「建物 (3D Tiles・公式配信)」を足す → <b>3D Tiles の建物が地面に乗っている</b> (浮かない・沈まない。高さの基準は自動で合わせている)。
+          地形の欄に「高さの基準…読めなかった」が出ていたらその旨も教えてください
+        </li>
       </ol>
     </section>
 
@@ -295,9 +300,9 @@
         <h2>次にやること</h2>
         <ol class="tasks">
           <li>
-            <b>エンジンをざっと足す</b> <span class="status todo">deck.gl まで</span>
+            <b>エンジンをざっと足す</b> <span class="status todo">Three.js まで</span>
             <span class="sub">
-              次は <b>MapLibre を 6.8 → 6.12 以上に上げる</b> (Three.js の補助ライブラリが要る) → MapLibre + Three.js → Navara。
+              MapLibre を 6.14 に上げ、deck.gl と Three.js を入れた。次は Navara (入れ替える側)。
               分ける前に、性格の違う使い方を揃えるため
             </span>
           </li>

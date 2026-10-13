@@ -67,10 +67,21 @@
   **ブラウザに配る中身には入らない** (本番ビルドの出力で確かめた) ので、理由と外せる条件を添えて受け入れた (`sprintf-js` は直った版がまだ無い)。
   設定は `web/pnpm-workspace.yaml` (pnpm 11 は `package.json` の `pnpm` を読まない)
 
-**Three.js は次に。** MapLibre の公式の例 (3d-tiles-renderer を直接使う custom layer) が手元のクローンの履歴にある
-(`maplibre-gl-js` の `f98ef79b4^:test/examples/add-3d-tiles-using-threejs.html`)。その例は原点をタイルセットの中心に置くので、
-全国 (PLATEAU)・全世界 (Re:Earth) のタイルセットでは**見ている場所を原点にした東・北・上の座標**に直す。
-補助のライブラリ `maplibre-gl-three` (MIT) は MapLibre 6.12 以上が要る — **先に MapLibre を上げる** (いまは 6.8)
+**MapLibre + Three.js をざっと入れた (2026-10-13、`web/src/lib/engines/three.ts`):**
+
+- **先に MapLibre を 6.8 → 6.14 に上げた** (補助のライブラリ `maplibre-gl-three` が 6.12 以上を求める)。変更履歴に壊れる変更は無く
+  (地形まわりの修正が多い)、全件の E2E で確かめた。6.13 で custom layer が地形に描ける口 (`renderToTerrainTile`) が増えている — deck.gl・Three.js の
+  地形の問題に使えるかもしれない (TOBE)
+- **`maplibre-gl-three` (MIT) + 3d-tiles-renderer (Apache-2.0) で 3D Tiles を MapLibre に重ねる。** 3D Tiles の行は MapLibre 単体・deck.gl では灰色、
+  Three.js では描ける。ライブラリは地図が動くたびに見ている場所を原点に取り直すので、全国 (PLATEAU)・全世界 (Re:Earth) でも位置が合う
+  (公式の例 (`maplibre-gl-js` の `f98ef79b4^:test/examples/add-3d-tiles-using-threejs.html`) はタイルセットの中心を原点にしていて、全国・全世界では合わない)
+- **高さの基準を自動で合わせる:** ライブラリがジオイド (EGM96) の格子を読み、楕円体高 (3D Tiles) と海面 (MapLibre の地形) の差を引く。
+  格子は PROJ の配信 (`cdn.proj.org`、パブリックドメイン) から読む — **自前で配るのは TOBE**。読めなければ補正なしで描き、地形の欄でそう言う
+- Draco・KTX2 の読み手は jsDelivr ではなく three.js の同梱のものを自前で配る (`dist/three/`。ライセンスの文書も置く)
+- custom layer なので**同じ画面に描く** — deck.gl のような「別の画面で地形の下に隠れる」問題は無い
+- 見た目 (PLATEAU が地面に乗るか) は確かめていない (ヘッドレスで 3D Tiles を描かせると WSL が落ちた)。ボードの「確かめてほしいこと」
+- **参考: Mini Tokyo 3D** (`.reference/github.com/nagix/mini-tokyo-3d`、MIT) は Mapbox GL v3 + deck.gl 8.9 の `Tile3DLayer` で PLATEAU を描き、
+  Three.js は自前の層。MapLibre 6 ではないので deck.gl の件の答えにはならないが、deck.gl でも 3D Tiles を描ける道の実例
 
 ### ジオコーディング (2026-10-12)
 
