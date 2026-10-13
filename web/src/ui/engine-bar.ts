@@ -1,18 +1,29 @@
 /**
- * **地図のエンジンを切り替えるバー** (MapLibre | Cesium | Navara)。地図の上の真ん中に置く。
+ * **地図のエンジンを切り替えるバー**。地図の上の真ん中に置く。
  *
  * 切り替えても UI (一覧・カタログ・検索…) は同じで、そのエンジンで描けない行は一覧で灰色になる。
- * Navara はまだ無いので押せない (TOBE)。
+ * エンジンは2種類ある (docs/roadmap.md「エンジン」):
+ * - **MapLibre に重ねる** (MapLibre + deck.gl・MapLibre + Three.js): 地図は MapLibre のまま、一部の行を別の描き手が描く
+ * - **入れ替える** (Cesium・Navara): 地図そのものが替わる
  */
 import { m } from '../i18n';
 
-export type EngineId = 'maplibre' | 'cesium' | 'navara';
+export type EngineId = 'maplibre' | 'maplibre-deckgl' | 'maplibre-three' | 'cesium' | 'navara';
 
 const ENGINES: { id: EngineId; label: string; ready: boolean }[] = [
   { id: 'maplibre', label: 'MapLibre', ready: true },
+  { id: 'maplibre-deckgl', label: '+ deck.gl', ready: true },
+  { id: 'maplibre-three', label: '+ Three.js', ready: false },
   { id: 'cesium', label: 'Cesium', ready: true },
   { id: 'navara', label: 'Navara', ready: false },
 ];
+
+/** **MapLibre の地図を使うエンジン** (MapLibre 単体と、MapLibre に重ねるもの)。一覧・検索・吹き出しは MapLibre のまま使える。 */
+export const usesMapLibre = (id: EngineId) => id === 'maplibre' || id === 'maplibre-deckgl' || id === 'maplibre-three';
+
+/** バーと文言に出す名前。 */
+export const engineLabel = (id: EngineId) =>
+  ({ maplibre: 'MapLibre', 'maplibre-deckgl': 'MapLibre + deck.gl', 'maplibre-three': 'MapLibre + Three.js', cesium: 'Cesium', navara: 'Navara' })[id];
 
 /** URL の `engine` を読む。知らない値や、まだ無いエンジンなら MapLibre。 */
 export function engineFromUrl(search: string): EngineId {

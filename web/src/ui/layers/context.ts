@@ -29,6 +29,11 @@ export interface DrawContext {
   currentBounds: () => ViewBounds;
   /** いまの表示量 (上限とズームの閾値)。切り替えられるので関数で読む。 */
   detail: () => DetailSettings;
+  /**
+   * 建物を描き終えたとき (地図に渡したのと同じ GeoJSON)。**MapLibre に重ねるエンジン** (deck.gl) が同じ建物を描くため。
+   * 空にしたときも呼ぶ。
+   */
+  onBuildingsDrawn?: (features: GeoJSON.Feature[]) => void;
 }
 
 /** 描き直しを頼む関数にする。失敗はコンソールと画面に出し、投げない (moveend から呼ばれる)。 */

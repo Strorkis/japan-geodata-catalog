@@ -26,6 +26,9 @@ const ja = {
   notDrawn3dTilesInMapLibre: 'MapLibre では描けません (Cesium で描けます)',
   notUsableIn: (engine: string) => `${engine} ではまだ使えません`,
   cesiumTerrainInstead: (name: string) => `Cesium では、建物が地面に乗るよう楕円体高の ${name} を使います`,
+  deckTerrain: 'deck.gl で地形を描きます。鉄道などほかの行は地形の下に隠れます',
+  deckTerrainInstead: (name: string) =>
+    `deck.gl は選んだ標高を読めないので、${name} で地形を描きます。鉄道などほかの行は地形の下に隠れます`,
   // 検索できるもの
   searchMunicipality: '市区町村',
   searchTown: '町名・丁目',
@@ -345,6 +348,9 @@ const en: Messages = {
   notDrawn3dTilesInMapLibre: 'Not drawn in MapLibre (drawn in Cesium)',
   notUsableIn: (engine) => `Not available in ${engine} yet`,
   cesiumTerrainInstead: (name) => `In Cesium, ${name} (ellipsoidal heights) is used so buildings sit on the ground`,
+  deckTerrain: 'Terrain is drawn by deck.gl. Other layers such as railways are hidden under it',
+  deckTerrainInstead: (name) =>
+    `deck.gl cannot read the selected elevation, so ${name} is used. Other layers such as railways are hidden under it`,
   searchMunicipality: 'Municipalities',
   searchTown: 'Towns and chōme',
   searchStation: 'Stations',

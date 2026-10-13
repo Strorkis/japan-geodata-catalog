@@ -43,7 +43,8 @@ import { createNearbyPanel } from './ui/nearby-panel';
 import { createCollectionCards } from './ui/collection-card';
 import { createSearchBox } from './ui/search-box';
 import { createTerrainRow } from './ui/terrain-row';
-import { createEngineBar, engineFromUrl, type EngineId } from './ui/engine-bar';
+import { createEngineBar, engineFromUrl, engineLabel, usesMapLibre, type EngineId } from './ui/engine-bar';
+import type { DeckEngine } from './lib/engines/deckgl';
 // Cesium は**型だけ**。本体はバーで選んだときに読む (地図の起動を重くしない)。
 import type { CesiumEngine, CesiumRow, CesiumVectorHit } from './lib/engines/cesium';
 import { hoverContent, vectorHover } from './ui/hover-rows';
@@ -290,9 +291,9 @@ async function main() {
   let engine: EngineId = 'maplibre';
   const searchRowEl = document.querySelector<HTMLDivElement>('#search-row')!;
   const updateSearchInputs = () => {
-    const usable = dbIsReady && engine === 'maplibre';
+    const usable = dbIsReady && usesMapLibre(engine);
     for (const el of [input, pickButton, nearbyButton]) el.disabled = !usable;
-    searchRowEl.title = dbIsReady && !usable ? m.notUsableIn('Cesium') : '';
+    searchRowEl.title = dbIsReady && !usable ? m.notUsableIn(engineLabel(engine)) : '';
   };
 
   // **DuckDB の準備を待つ。** その間は処理中の合図に出し、済んだら検索を押せるようにする。
@@ -370,6 +371,10 @@ async function main() {
   //
   // 建物・人口メッシュ・鉄道・道路・送電線と川。どれも「世代を進める → 出していなければ
   // 空に → 表示範囲で引く → 描いて行に状態を書く」の形で、地図を動かすたびに描き直す。
+  /** MapLibre + deck.gl のときに重ねる deck.gl (初めて選んだときに作る)。 */
+  let deck: DeckEngine | undefined;
+  /** 最後に描いた建物 (deck.gl に切り替えたとき、引き直さずに描くため)。 */
+  let lastBuildings: GeoJSON.Feature[] = [];
   const drawContext: DrawContext = {
     map,
     conn,
@@ -379,7 +384,12 @@ async function main() {
     statusOf: (id) => layerStatus.get(id) ?? '',
     // 一覧の行は下で作る。呼ばれるのは地図を動かしたときや行を出し入れしたとき。
     // **MapLibre を使っている間だけ描く** (Cesium の間は引かない。戻ったときに描き直す)。
-    isVisible: (id) => engine === 'maplibre' && isLayerVisible(id),
+    isVisible: (id) => usesMapLibre(engine) && isLayerVisible(id),
+    // MapLibre + deck.gl のときは、同じ建物を deck.gl でも描く (MapLibre の層は透明にしてある)。
+    onBuildingsDrawn: (features) => {
+      lastBuildings = features;
+      if (engine === 'maplibre-deckgl') deck?.setBuildings(features);
+    },
     currentBounds,
     detail: () => detail,
   };
@@ -452,7 +462,13 @@ async function main() {
   // **UI は同じで、エンジンだけが替わる。** 一覧の状態 (出している行・重ね順・不透明度) はエンジンに依らず、
   // 描くかどうかだけがエンジンに依る。描けない行は一覧で灰色にする (`unsupportedIn`)。
   // **見え方の正本は MapLibre** — Cesium で動かしたら、隠れている MapLibre を合わせる (一覧の「この範囲にあるか」などがそのまま効く)。
-  const NOT_IN_CESIUM: Layer['unsupportedIn'] = { cesium: m.notDrawnIn('Cesium') };
+  /** 地図を入れ替えるエンジン (Cesium・Navara) で描けない行。 */
+  const NOT_IN_SWAPPED: Layer['unsupportedIn'] = { cesium: m.notDrawnIn('Cesium'), navara: m.notDrawnIn('Navara') };
+  /** 3D Tiles は、MapLibre 単体と deck.gl を重ねたときは描けない (Three.js を重ねると描ける)。 */
+  const NOT_3D_TILES: Layer['unsupportedIn'] = {
+    maplibre: m.notDrawn3dTilesInMapLibre,
+    'maplibre-deckgl': m.notDrawn3dTilesInMapLibre,
+  };
   let cesium: CesiumEngine | undefined;
   /** 背景地図の不透明度 (Collection ID → 0〜1)。MapLibre は層の paint に持つが、Cesium に渡すために覚える。 */
   const rasterOpacity = new Map<string, number>();
@@ -466,8 +482,8 @@ async function main() {
 
   /** 一覧の状態を Cesium に写す。Cesium を使っていなければ何もしない。 */
   const syncCesium = () => {
-    terrainNote.hidden = true;
     if (engine !== 'cesium' || !cesium || !layerList) return;
+    terrainNote.hidden = true;
     const rows: CesiumRow[] = [];
     const vectorRows = new Map<string, Extract<CesiumRow, { kind: 'vector' }>>();
     for (const layer of layerList.ordered('tile')) {
@@ -505,6 +521,61 @@ async function main() {
   };
   terrainToggle.addEventListener('change', syncCesium);
   terrainSelect.addEventListener('change', syncCesium);
+  terrainToggle.addEventListener('change', () => void syncDeckTerrain());
+  terrainSelect.addEventListener('change', () => void syncDeckTerrain());
+
+  /** TileJSON から、タイルの URL テンプレートと最大のズームを読む (地形ごとに1回)。 */
+  const tileJsons = new Map<string, Promise<{ template: string; maxZoom: number }>>();
+  const terrariumTiles = (collection: Collection) => {
+    const link = collection.tileLink!;
+    if (link.rel !== 'tilejson') {
+      return Promise.resolve({ template: link.href, maxZoom: collection.zoom?.[1] ?? 14 });
+    }
+    let tiles = tileJsons.get(link.href);
+    if (!tiles) {
+      tiles = fetch(link.href)
+        .then((response) => response.json() as Promise<{ tiles: string[]; maxzoom?: number }>)
+        .then((json) => ({ template: json.tiles[0], maxZoom: json.maxzoom ?? collection.zoom?.[1] ?? 14 }));
+      tileJsons.set(link.href, tiles);
+    }
+    return tiles;
+  };
+  /**
+   * **deck.gl の地形を、地形の欄と一覧に合わせる。** deck.gl が読めるのは Terrarium の XYZ だけなので、選んだ標高が
+   * 地理院の独自形式・COG なら Mapterhorn に替え、地形の欄でそう言う。表面には一覧のいちばん上の背景地図を貼る。
+   */
+  const syncDeckTerrain = async () => {
+    if (engine !== 'maplibre-deckgl' || !deck) return;
+    if (!terrainToggle.checked) {
+      deck.setTerrain(undefined);
+      terrainNote.hidden = true;
+      return;
+    }
+    const selected = terrainCollections.find((c) => c.id === terrainSelect.value);
+    const readable = (c: Collection | undefined) => c?.demEncoding === 'terrarium' && c.tileLink !== undefined;
+    const used = readable(selected)
+      ? selected!
+      : (terrainCollections.find((c) => c.id === 'mapterhorn-terrain' && readable(c)) ?? terrainCollections.find(readable));
+    if (!used) {
+      deck.setTerrain(undefined);
+      return;
+    }
+    const top = layerList
+      ?.ordered('tile')
+      .find((layer) => layer.visible && layer.collections[0].kind === 'raster_tiles' && layer.collections[0].tileLink);
+    try {
+      const { template, maxZoom } = await terrariumTiles(used);
+      if (engine !== 'maplibre-deckgl') return;
+      deck.setTerrain({ elevation: template, maxZoom, texture: top?.collections[0].tileLink!.href });
+    } catch (e) {
+      console.error('[deck] terrain failed', used.id, e);
+      showFailure(m.loadFailed(used.title));
+      deck.setTerrain(undefined);
+      return;
+    }
+    terrainNote.textContent = used === selected ? m.deckTerrain : m.deckTerrainInstead(used.title);
+    terrainNote.hidden = false;
+  };
 
   // ---- 地図タイル (背景地図・ベクタータイル) と地形 ---------------------------------
   //
@@ -537,7 +608,7 @@ async function main() {
       rank: DATA_RANKS[collection.kind] ?? 0,
       mapLayerIds: () => dataMapLayers,
       // **データの行 (DuckDB) は Cesium ではまだ描かない** (問い合わせはエンジンに依らないが、描く側が MapLibre の層)。
-      unsupportedIn: NOT_IN_CESIUM,
+      unsupportedIn: NOT_IN_SWAPPED,
     };
     const tileBase = { ...base, section: 'tile' as const, rank: 0, unsupportedIn: undefined };
     switch (collection.kind) {
@@ -638,7 +709,7 @@ async function main() {
         layers.push({
           ...tileBase,
           // スタイルの JSON で描く背景地図。Cesium はスタイルを読まない。
-          unsupportedIn: NOT_IN_CESIUM,
+          unsupportedIn: NOT_IN_SWAPPED,
           vintage: `${m.vectorStyle} · ズーム${collection.zoom?.join('〜') ?? ''}`,
           settings: sliderSettings(m.opacity, 0, 100, 5, 100, (v) => `${v}%`, (v) => {
             opacity = v / 100;
@@ -676,7 +747,7 @@ async function main() {
           settings: document.createElement('div'),
           refresh: () => {},
           mapLayerIds: () => [],
-          unsupportedIn: { maplibre: m.notDrawn3dTilesInMapLibre },
+          unsupportedIn: NOT_3D_TILES,
         });
         break;
       case 'reference':
@@ -704,7 +775,7 @@ async function main() {
           layers.push({
             ...tileBase,
             // 点だけのテーマ (注記) は、Cesium のベクタでは文字を描けないので出さない。
-            unsupportedIn: theme.layers.every((l) => l.geometry === 'Point') ? NOT_IN_CESIUM : undefined,
+            unsupportedIn: theme.layers.every((l) => l.geometry === 'Point') ? NOT_IN_SWAPPED : undefined,
             id: rowId,
             title: theme.title,
             // 出所が同じでも、どのタイルセットの層かを版と一緒に添える。
@@ -781,7 +852,7 @@ async function main() {
   };
 
   // 地形の行 (ui/terrain-row.ts)。標高を1つ選び、地図右上の地形ボタンと追随する。
-  createTerrainRow({
+  const terrainRow = createTerrainRow({
     map,
     collections: terrainCollections,
     openDetails: (collection) => {
@@ -789,6 +860,7 @@ async function main() {
       layerCatalogEl.replaceChildren(collectionCard(collection));
       layerDetailDialog.showModal();
     },
+    mapLibreDrawsTerrain: () => engine !== 'maplibre-deckgl',
   });
 
   /**
@@ -848,7 +920,11 @@ async function main() {
         map.easeTo({ zoom, duration: 600 });
       }
     },
-    onChange: syncCesium,
+    onChange: () => {
+      syncCesium();
+      // 一覧のいちばん上の背景地図を、deck.gl の地形の表面に貼り直す。
+      void syncDeckTerrain();
+    },
   });
   const renderLayerList = () => layerList?.render();
 
@@ -1112,10 +1188,33 @@ async function main() {
     else url.searchParams.set('engine', id);
     history.replaceState(history.state, '', url);
   };
+  /**
+   * 建物の MapLibre の層の濃さ。deck.gl が描くときは**消さずに透明にする** (吹き出しは MapLibre が地物を引き当てて出すので、
+   * 層があれば効く)。戻すときは元の濃さに。
+   */
+  let buildingsOpacity: unknown;
+  const setMapLibreBuildingsVisible = (visible: boolean) => {
+    if (!map.getLayer('buildings-3d')) return;
+    buildingsOpacity ??= map.getPaintProperty('buildings-3d', 'fill-extrusion-opacity');
+    map.setPaintProperty('buildings-3d', 'fill-extrusion-opacity', visible ? (buildingsOpacity as number) : 0);
+  };
+  // **deck.gl の間は MapLibre の地形を付けない** (地形の欄が `mapLibreDrawsTerrain` で見る)。deck.gl 9.4 は MapLibre に
+  // 地形があると MapLibre の内部 (`map.transform.elevation`) を読み、MapLibre 6 ではそれが無いので描くたびに落ちる。
+  // 地図右上の地形ボタンで付けられても外す。地形は deck.gl の TerrainLayer が描く (syncDeckTerrain)。
+  map.on('terrain', () => {
+    if (engine === 'maplibre-deckgl' && map.getTerrain()) map.setTerrain(null);
+  });
   const switchEngine = async (next: EngineId) => {
-    if (next === engine || next === 'navara') return;
+    if (next === engine || next === 'navara' || next === 'maplibre-three') return;
     bar.setBusy(true);
     try {
+      // ---- 出る (MapLibre に重ねていたものを外す) ----
+      if (engine === 'maplibre-deckgl') {
+        deck?.detach();
+        setMapLibreBuildingsVisible(true);
+        terrainNote.hidden = true;
+      }
+      // ---- 入る ----
       if (next === 'cesium') {
         // 押して選ぶ操作は MapLibre のもの。出ている吹き出しも片付ける。
         setPicking(false);
@@ -1137,14 +1236,29 @@ async function main() {
         await cesium.show(mapView());
         map.getContainer().style.visibility = 'hidden';
       } else {
-        engine = 'maplibre';
-        map.jumpTo(cesium ? toMapLibre(cesium.view()) : {});
-        map.getContainer().style.visibility = '';
-        cesium?.hide();
-        terrainNote.hidden = true;
-        map.resize();
-        // Cesium の間は引いていないので、出しているデータの行を描き直す。
-        for (const layer of layers) if (layer.section === 'data' && layer.visible) layer.refresh();
+        const fromSwapped = !usesMapLibre(engine);
+        engine = next;
+        if (fromSwapped) {
+          map.jumpTo(cesium ? toMapLibre(cesium.view()) : {});
+          map.getContainer().style.visibility = '';
+          cesium?.hide();
+          terrainNote.hidden = true;
+          map.resize();
+        }
+        // MapLibre の地形を、このエンジンに合わせて付け直す (deck.gl なら外す。**deck.gl を付ける前に** —
+        // MapLibre に地形があると、付けた時点で deck.gl が MapLibre の内部を読んで落ちる)。地形は deck.gl が描く。
+        terrainRow.reapply();
+        if (next === 'maplibre-deckgl') {
+          const { createDeckEngine } = await busy(m.loadingNamed('deck.gl'), () => import('./lib/engines/deckgl'));
+          deck ??= createDeckEngine(map);
+          (window as unknown as { __deck?: unknown }).__deck = deck;
+          setMapLibreBuildingsVisible(false);
+          deck.attach();
+          deck.setBuildings(lastBuildings);
+        }
+        await syncDeckTerrain();
+        // 入れ替える側 (Cesium) の間は引いていないので、出しているデータの行を描き直す。
+        if (fromSwapped) for (const layer of layers) if (layer.section === 'data' && layer.visible) layer.refresh();
       }
       bar.set(engine);
       setEngineInUrl(engine);

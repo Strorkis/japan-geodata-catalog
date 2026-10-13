@@ -1,0 +1,21 @@
+# pnpm の設定。pnpm 11 は package.json の "pnpm" ではなくここを読む。
+#
+# **公開から1日たたない版は入れない** (pnpm 11 の既定の minimumReleaseAge)。足りない版に当たったとき、pnpm が
+# minimumReleaseAgeExclude をここへ黙って書き足すことがある (2026-10-12 に起きた)。**例外は足さず、1日待つ。**
+
+overrides:
+  # fflate 0.7.4 は壊れた ZIP64 で無限ループする (GHSA-px8p-9vwx-vf98)。0.7.5 で直った (同じ 0.7 の中の修正)。
+  # deck.gl の地形 (@deck.gl/geo-layers) が @loaders.gl/compression 経由で入れる。上流が 0.7.5 以上を求めるようになったら外す。
+  fflate@<0.7.5: 0.7.5
+
+auditConfig:
+  # **受け入れた脆弱性** (scripts/audit.sh。判断のうえで受け入れるものは、理由と外せる条件を添えてここに書く)。
+  ignoreGhsas:
+    # image-size 0.7.5 (ICNS の解析で無限ループ)。texture-compressor (Node で画像を圧縮する道具) の依存で、deck.gl の地形
+    # (@deck.gl/geo-layers → mesh-layers → @loaders.gl/textures) が入れる。**ブラウザに配る中身には入らない**
+    # (2026-10-13 に本番ビルドの出力で確かめた) し、この道具を動かすこともない。直った 2.x は大きな版の上げで、
+    # texture-compressor が 0.x を求める。@loaders.gl/textures が texture-compressor を外すか、上げたら外す
+    - GHSA-w3rx-r6r6-pgpr
+    # sprintf-js 1.0.3 (精度の指定で DoS)。同じ texture-compressor が使う argparse 1.x の依存で、**ブラウザに配る中身には入らない**。
+    # 直った版がまだ出ていない (最新は 1.1.3、2026-10-13)。直った版が出るか、texture-compressor が外れたら外す
+    - GHSA-hp3w-g68c-fv3c

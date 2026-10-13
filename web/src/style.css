@@ -2092,6 +2092,12 @@ a.lang-option {
   }
 }
 
+/* deck.gl (MapLibre に重ねる、別の画面) は、MapLibre の左上の操作部品の入れ物 (重なり順 2) の中に画面を置く。
+   そのままだと一覧などのパネル (重なり順 1) を覆うので、deck.gl を入れたときだけ下げる (地図の画面よりは上のまま)。 */
+#map .maplibregl-ctrl-top-left:has(#deckgl-overlay) {
+  z-index: 0;
+}
+
 /* Cesium の入れ物。地図と同じ場所に重ねる (重なり順を持たないので、パネルはその上に出る)。 */
 #cesium {
   position: absolute;

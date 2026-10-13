@@ -184,6 +184,7 @@ export function createBuildingLayers(ctx: DrawContext, sources: BuildingSource[]
     if (visible.length === 0) {
       await coverage?.setData(EMPTY_FEATURE_COLLECTION);
       await mapSource.setData(EMPTY_FEATURE_COLLECTION);
+      ctx.onBuildingsDrawn?.([]);
       return;
     }
 
@@ -289,6 +290,7 @@ export function createBuildingLayers(ctx: DrawContext, sources: BuildingSource[]
       statuses.push([source, count + thinned + sourceLodNote(source, bounds)]);
     }
     await mapSource.setData({ type: 'FeatureCollection', features });
+    ctx.onBuildingsDrawn?.(features);
     for (const [source, text] of statuses) showStatus(source, text);
   };
 

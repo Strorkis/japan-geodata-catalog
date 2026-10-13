@@ -21,9 +21,21 @@ export interface TerrainRowOptions {
   collections: Collection[];
   /** ⓘ (いま選んでいる標高のカード) を開く。 */
   openDetails: (collection: Collection) => void;
+  /**
+   * **いま MapLibre が地形を描いてよいか。** deck.gl を重ねている間は deck.gl が地形を描くので、MapLibre の地形は付けない
+   * (付けると deck.gl が MapLibre の内部を読んで落ちる)。チェックは「地形を描く」の意味のまま残る。
+   */
+  mapLibreDrawsTerrain: () => boolean;
 }
 
-export function createTerrainRow({ map, collections, openDetails }: TerrainRowOptions): void {
+export interface TerrainRow {
+  /** チェックと選択を地図に当て直す (エンジンを替えたとき)。 */
+  reapply: () => void;
+  /** いま選んでいる標高。 */
+  choice: () => Collection | undefined;
+}
+
+export function createTerrainRow({ map, collections, openDetails, mapLibreDrawsTerrain }: TerrainRowOptions): TerrainRow {
   const rowEl = document.querySelector<HTMLDivElement>('#terrain-row')!;
   const toggle = document.querySelector<HTMLInputElement>('#terrain-toggle')!;
   const select = document.querySelector<HTMLSelectElement>('#terrain-source')!;
@@ -46,7 +58,7 @@ export function createTerrainRow({ map, collections, openDetails }: TerrainRowOp
   toggle.checked = map.getTerrain() !== null;
 
   const apply = () =>
-    map.setTerrain(toggle.checked && choice ? { source: TERRAIN_SOURCE, exaggeration } : null);
+    map.setTerrain(toggle.checked && choice && mapLibreDrawsTerrain() ? { source: TERRAIN_SOURCE, exaggeration } : null);
   toggle.addEventListener('change', apply);
   select.addEventListener('change', () => {
     const next = collections.find((c) => c.id === select.value);
@@ -98,8 +110,10 @@ export function createTerrainRow({ map, collections, openDetails }: TerrainRowOp
     if (choice) openDetails(choice);
   });
   // 地図右上の地形ボタンで切られたら、一覧のチェックを追随させる。
+  // MapLibre が地形を描かない間 (deck.gl) は写さない (外したのはこちらで、利用者ではない)。
   map.on('terrain', () => {
-    if (switching) return;
+    if (switching || !mapLibreDrawsTerrain()) return;
     toggle.checked = map.getTerrain() !== null;
   });
+  return { reapply: apply, choice: () => choice };
 }

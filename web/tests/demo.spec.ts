@@ -1437,6 +1437,48 @@ test.describe('地図のエンジン (Cesium)', () => {
   });
 
   /**
+   * **MapLibre + deck.gl: 建物と地形を deck.gl で描く。** 地図は MapLibre のまま (検索も使える)。建物の MapLibre の層は
+   * 透明にして残し (吹き出しのため)、MapLibre の地形は外して deck.gl の TerrainLayer が描く (MapLibre 6 と deck.gl 9.4 の都合)。
+   * 外の地形 (Mapterhorn) は TileJSON だけ返し、タイルは止める (描くものは見ない。配線を見る)。
+   */
+  test('MapLibre + deck.gl では建物と地形を deck.gl で描き、戻すと MapLibre の地形と建物が戻る', async ({ page }) => {
+    await page.route(CESIUM_EXTERNAL, (route) => route.abort());
+    await page.route('https://tiles.mapterhorn.com/tilejson.json', (route) =>
+      route.fulfill({ json: { tiles: ['https://tiles.mapterhorn.com/{z}/{x}/{y}.webp'], maxzoom: 12 } }),
+    );
+    await page.route(/tiles\.mapterhorn\.com\/\d+/, (route) => route.abort());
+    await page.evaluate(() => {
+      (window as unknown as TestWindow).__map!.jumpTo({ center: [139.7671, 35.6812], zoom: 16, pitch: 45 });
+    });
+    const terrainOn = () => page.evaluate(() => (window as unknown as TestWindow).__map!.getTerrain() !== null);
+    expect(await terrainOn()).toBe(true);
+
+    await page.locator('#engine-bar button[data-engine="maplibre-deckgl"]').click();
+    await expect(page).toHaveURL(/[?&]engine=maplibre-deckgl/);
+    const layerIds = () =>
+      page.evaluate(() => (window as unknown as { __deck?: { layerIds: () => string[] } }).__deck?.layerIds() ?? []);
+    await expect.poll(layerIds).toEqual(['deck-terrain', 'deck-buildings']);
+    // MapLibre の地形は外れ (deck.gl が描く)、地形の欄のチェックは「描く」のまま。そう言う。
+    expect(await terrainOn()).toBe(false);
+    await expect(page.locator('#terrain-toggle')).toBeChecked();
+    await expect(page.locator('#terrain-engine-note')).toContainText('deck.gl で地形を描きます');
+    // 地図は MapLibre のまま (検索も使える)。建物の行は灰色にならない。
+    await expect(page.locator('#search-input')).toBeEnabled();
+    await expect(page.locator(`.layer-row[data-layer="${LAYER.plateauBuildings}"]`)).not.toHaveClass(/unsupported/);
+    // 地形を切ると deck.gl の地形の層も外れる。
+    await page.locator('#terrain-toggle').uncheck();
+    await expect.poll(layerIds).toEqual(['deck-buildings']);
+    await page.locator('#terrain-toggle').check();
+    await expect.poll(layerIds).toEqual(['deck-terrain', 'deck-buildings']);
+    expect(await terrainOn()).toBe(false);
+
+    await page.locator('#engine-bar button[data-engine="maplibre"]').click();
+    await expect.poll(layerIds).toEqual([]);
+    await expect.poll(terrainOn).toBe(true);
+    await expect(page.locator('#terrain-engine-note')).toBeHidden();
+  });
+
+  /**
    * **URL の `engine=cesium` で、その場所の Cesium から始まる** (バーで替えると URL に載るので、読み直しても同じエンジンで開く)。
    *
    * **背景地図のタイルは止めない** (止めるのは重い 3D Tiles と地形だけ)。同じタブで2回目に開いたときに背景地図の

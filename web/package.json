@@ -18,6 +18,10 @@
     "vite": "^8.2.0"
   },
   "dependencies": {
+    "@deck.gl/core": "^9.4.0",
+    "@deck.gl/geo-layers": "^9.4.0",
+    "@deck.gl/layers": "^9.4.0",
+    "@deck.gl/mapbox": "^9.4.0",
     "@duckdb/duckdb-wasm": "1.33.1-dev57.0",
     "cesium": "^1.146.0",
     "geotiff": "^3.0.5",
