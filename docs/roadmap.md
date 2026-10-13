@@ -40,7 +40,7 @@
 
 ### エンジン (2026-10-12)
 
-いまは MapLibre・Cesium (Navara は準備中)。**MapLibre + deck.gl・MapLibre + Three.js を TOBE** に足す。
+MapLibre・MapLibre + deck.gl・MapLibre + Three.js・Cesium・Navara の5つ (2026-10-13 に全部「ざっと」入った)。
 
 - Cesium・Navara は地図そのものを**入れ替える**。deck.gl (`MapboxOverlay`) と Three.js (3DTilesRendererJS など) は
   **MapLibre の上に重ねる** — 一覧・周辺検索・吹き出しは MapLibre のまま使える。バーでは別の項目に並べ、中身は「MapLibre ＋ 描き手」
@@ -82,6 +82,22 @@
 - 見た目 (PLATEAU が地面に乗るか) は確かめていない (ヘッドレスで 3D Tiles を描かせると WSL が落ちた)。ボードの「確かめてほしいこと」
 - **参考: Mini Tokyo 3D** (`.reference/github.com/nagix/mini-tokyo-3d`、MIT) は Mapbox GL v3 + deck.gl 8.9 の `Tile3DLayer` で PLATEAU を描き、
   Three.js は自前の層。MapLibre 6 ではないので deck.gl の件の答えにはならないが、deck.gl でも 3D Tiles を描ける道の実例
+
+**Navara をざっと入れた (2026-10-13、`web/src/lib/engines/navara.ts`):**
+
+- `@navaramap/three` 0.2.1 (MIT OR Apache-2.0) + `three-default-plugin`。Cesium と同じく**入れ替える側**で、同じページに載せて隠すときは入れ物を隠すだけ
+  (変化があったときだけ描くので、隠れている間は描かない)。描くのは背景地図・3D Tiles・地形 (Re:Earth Terrain の quantized-mesh)。
+  **ベクトルタイルとデータの行は灰色** (ベクトルタイルは URL テンプレートで受けるので PMTiles に中継が要る。Cesium の中継は Cesium の取得の口に差すもので使い回せない)
+- 写真のような空 (`addDefaultPhotorealScene`) は使わず、光は ambient と太陽だけ。配る大きさは約29MB (WASM 4.6MB・大気のテクスチャ・
+  Gaussian Splatting の部品 spark 5MB) だが、大気と spark は**使うときだけ読む**。初めて Navara を選んだときに読むのは JS 2.5MB と WASM
+- **重ね順は足した順** (地形を先に)。並びや地形が変わったら地形から足し直す
+- ズームと距離の行き来は Cesium と共用にした (`lib/engines/zoom.ts`)。0.2.1 には MapLibre のズームと距離を行き来する関数が無い
+- **画面の真ん中の地面は、描いた地表を拾わず、カメラの位置と向きから計算する** (視線と、地面の高さだけ膨らませた楕円体の交点)。
+  `pickTerrainPosition` で拾うと、読み込みの途中の粗いタイルに当たって傾けた表示で約500mずれた (本番ビルドで。Cesium の約300mと同じ理由)
+- **画角を明示する** (50°)。作った直後は `camera.fov` が読めず、仮の値で置いていてズームが 0.17 ずれた
+- E2E は Navara に替えて同じ場所・灰色・3D Tiles を読みに行く・戻ると同じ場所、まで。**Navara から Cesium へ直接替えるところは E2E で流さない** —
+  1ページに 3D のエンジンを2つ抱えると GPU の無いヘッドレスでは重く、本番ビルドで流した直後に WSL ごと落ちた (2026-10-13)。利用者のブラウザで確かめる
+- 吹き出し・検索・データの行は TOBE (Cesium と同じ)
 
 ### ジオコーディング (2026-10-12)
 
@@ -789,7 +805,7 @@ Re:Earth Terrain (Terrarium) ＋ 地理院の写真 ＋ Re:Earth Buildings (3D T
 
 ### バーで切り替える (2026-10-12、1段目)
 
-地図の上の真ん中に **MapLibre | Cesium | Navara** のバーを置いた (`web/src/ui/engine-bar.ts`)。Navara はまだ押せない (準備中)。
+地図の上の真ん中に **MapLibre | Cesium | Navara** のバーを置いた (`web/src/ui/engine-bar.ts`)。Navara はこの段では押せなかった (10-13 に入った)。
 Cesium は**同じページに載せる** (`web/src/lib/engines/cesium.ts`。上の 3D のページの中身を移した)。3D のページ (`viewer3d.ts`) は消し、
 `3d.html` も消した (はじめは古いリンクのために転送だけ残したが、公開していないので要らない、と利用者)。地図の右上の「3D」ボタンも外した。
 選んでいるエンジンは URL の `?engine=cesium` に載るので、読み直しても同じエンジンで開く。
@@ -826,7 +842,7 @@ Cesium は**同じページに載せる** (`web/src/lib/engines/cesium.ts`。上
   描かせて測っていたら WSL ごと落ちた (2026-10-12)。**3D Tiles・地形の見た目は、GPU のあるブラウザで目で確かめる**
 
 **次の段:** 見た目の確認 (3D Tiles・地形・ベクタが地面に乗るか)。そのあと Cesium で DuckDB のデータを描く口
-(描く側の MapLibre の呼び出し約100か所をエンジンに依らない形に) を育て、Navara を足す。
+(描く側の MapLibre の呼び出し約100か所をエンジンに依らない形に) を育てる。Navara は 10-13 に足した (上の「エンジン」)。
 
 ### 世界の背景地図 (2026-10-10)
 

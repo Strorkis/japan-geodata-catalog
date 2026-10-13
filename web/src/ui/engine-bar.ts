@@ -10,12 +10,12 @@ import { m } from '../i18n';
 
 export type EngineId = 'maplibre' | 'maplibre-deckgl' | 'maplibre-three' | 'cesium' | 'navara';
 
-const ENGINES: { id: EngineId; label: string; ready: boolean }[] = [
-  { id: 'maplibre', label: 'MapLibre', ready: true },
-  { id: 'maplibre-deckgl', label: '+ deck.gl', ready: true },
-  { id: 'maplibre-three', label: '+ Three.js', ready: true },
-  { id: 'cesium', label: 'Cesium', ready: true },
-  { id: 'navara', label: 'Navara', ready: false },
+const ENGINES: { id: EngineId; label: string }[] = [
+  { id: 'maplibre', label: 'MapLibre' },
+  { id: 'maplibre-deckgl', label: '+ deck.gl' },
+  { id: 'maplibre-three', label: '+ Three.js' },
+  { id: 'cesium', label: 'Cesium' },
+  { id: 'navara', label: 'Navara' },
 ];
 
 /** **MapLibre の地図を使うエンジン** (MapLibre 単体と、MapLibre に重ねるもの)。一覧・検索・吹き出しは MapLibre のまま使える。 */
@@ -25,10 +25,10 @@ export const usesMapLibre = (id: EngineId) => id === 'maplibre' || id === 'mapli
 export const engineLabel = (id: EngineId) =>
   ({ maplibre: 'MapLibre', 'maplibre-deckgl': 'MapLibre + deck.gl', 'maplibre-three': 'MapLibre + Three.js', cesium: 'Cesium', navara: 'Navara' })[id];
 
-/** URL の `engine` を読む。知らない値や、まだ無いエンジンなら MapLibre。 */
+/** URL の `engine` を読む。知らない値なら MapLibre。 */
 export function engineFromUrl(search: string): EngineId {
   const requested = new URLSearchParams(search).get('engine');
-  return ENGINES.find((e) => e.id === requested && e.ready)?.id ?? 'maplibre';
+  return ENGINES.find((e) => e.id === requested)?.id ?? 'maplibre';
 }
 
 export interface EngineBar {
@@ -41,18 +41,14 @@ export interface EngineBar {
 export function createEngineBar(el: HTMLElement, current: EngineId, onSelect: (id: EngineId) => void): EngineBar {
   el.setAttribute('role', 'group');
   el.setAttribute('aria-label', m.engineBarLabel);
-  const buttons = ENGINES.map(({ id, label, ready }) => {
+  const buttons = ENGINES.map(({ id, label }) => {
     const button = document.createElement('button');
     button.type = 'button';
     button.dataset.engine = id;
     button.textContent = label;
-    if (!ready) {
-      button.disabled = true;
-      button.title = m.engineComingSoon(label);
-    }
     button.addEventListener('click', () => onSelect(id));
     el.append(button);
-    return { id, ready, button };
+    return { id, button };
   });
   const set = (id: EngineId) => {
     for (const { id: own, button } of buttons) button.setAttribute('aria-pressed', String(own === id));
@@ -62,7 +58,7 @@ export function createEngineBar(el: HTMLElement, current: EngineId, onSelect: (i
   return {
     set,
     setBusy: (busy) => {
-      for (const { ready, button } of buttons) button.disabled = busy || !ready;
+      for (const { button } of buttons) button.disabled = busy;
     },
   };
 }

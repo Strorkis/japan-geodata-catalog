@@ -19,13 +19,13 @@ const ja = {
   viewOnlyReference: 'このカタログからは配っていません。ⓘ から公開元へ辿れます',
   // ---- 地図のエンジン (ui/engine-bar.ts) ----
   engineBarLabel: '地図のエンジン',
-  engineComingSoon: (name: string) => `${name} は準備中です`,
   /** 一覧の行の注記。そのエンジンでは描けない行 (灰色)。 */
   notDrawnIn: (engine: string) => `${engine} ではまだ描けません`,
   // 一覧の2段目は1行なので短く (長いと末尾が切れる)。
-  notDrawn3dTilesInMapLibre: 'MapLibre では描けません (Cesium で描けます)',
+  notDrawn3dTilesInMapLibre: 'MapLibre では描けません (Cesium などで描けます)',
   notUsableIn: (engine: string) => `${engine} ではまだ使えません`,
-  cesiumTerrainInstead: (name: string) => `Cesium では、建物が地面に乗るよう楕円体高の ${name} を使います`,
+  ellipsoidTerrainInstead: (engine: string, name: string) =>
+    `${engine} では、建物が地面に乗るよう楕円体高の ${name} を使います`,
   deckTerrain: 'deck.gl で地形を描きます。鉄道などほかの行は地形の下に隠れます',
   threeNoDatum: '高さの基準 (ジオイド) を読めなかったので、3D Tiles が地面から数十 m 浮いて見えます',
   deckTerrainInstead: (name: string) =>
@@ -344,11 +344,11 @@ const en: Messages = {
   sourceData: 'Source data',
   viewOnlyReference: 'Not distributed by this catalog. Follow ⓘ to the original publisher',
   engineBarLabel: 'Map engine',
-  engineComingSoon: (name) => `${name} is coming soon`,
   notDrawnIn: (engine) => `Not drawn in ${engine} yet`,
-  notDrawn3dTilesInMapLibre: 'Not drawn in MapLibre (drawn in Cesium)',
+  notDrawn3dTilesInMapLibre: 'Not drawn in MapLibre (drawn in Cesium and others)',
   notUsableIn: (engine) => `Not available in ${engine} yet`,
-  cesiumTerrainInstead: (name) => `In Cesium, ${name} (ellipsoidal heights) is used so buildings sit on the ground`,
+  ellipsoidTerrainInstead: (engine, name) =>
+    `In ${engine}, ${name} (ellipsoidal heights) is used so buildings sit on the ground`,
   deckTerrain: 'Terrain is drawn by deck.gl. Other layers such as railways are hidden under it',
   threeNoDatum: 'The vertical datum (geoid) could not be loaded, so 3D Tiles float tens of metres above the ground',
   deckTerrainInstead: (name) =>

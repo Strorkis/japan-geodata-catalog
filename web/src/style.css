@@ -2098,12 +2098,14 @@ a.lang-option {
   z-index: 0;
 }
 
-/* Cesium の入れ物。地図と同じ場所に重ねる (重なり順を持たないので、パネルはその上に出る)。 */
-#cesium {
+/* Cesium・Navara の入れ物。地図と同じ場所に重ねる (重なり順を持たないので、パネルはその上に出る)。 */
+#cesium,
+#navara {
   position: absolute;
   inset: 0;
 }
-#cesium[hidden] {
+#cesium[hidden],
+#navara[hidden] {
   display: none;
 }
 /* Cesium の出典。既定の左下は一覧に隠れる (出典の表示は義務)。MapLibre の出典と同じ右下の端に置く。 */

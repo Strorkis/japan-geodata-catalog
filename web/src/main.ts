@@ -46,8 +46,9 @@ import { createTerrainRow } from './ui/terrain-row';
 import { createEngineBar, engineFromUrl, engineLabel, usesMapLibre, type EngineId } from './ui/engine-bar';
 import type { DeckEngine } from './lib/engines/deckgl';
 import type { ThreeEngine } from './lib/engines/three';
-// Cesium は**型だけ**。本体はバーで選んだときに読む (地図の起動を重くしない)。
+// エンジンは**型だけ**。本体はバーで選んだときに読む (地図の起動を重くしない)。
 import type { CesiumEngine, CesiumRow, CesiumVectorHit } from './lib/engines/cesium';
+import type { NavaraEngine, NavaraRow } from './lib/engines/navara';
 import { hoverContent, vectorHover } from './ui/hover-rows';
 import { vectorThemeLook } from './lib/vector-looks';
 import type { View } from './lib/view-params';
@@ -465,12 +466,15 @@ async function main() {
   // **見え方の正本は MapLibre** — Cesium で動かしたら、隠れている MapLibre を合わせる (一覧の「この範囲にあるか」などがそのまま効く)。
   /** 地図を入れ替えるエンジン (Cesium・Navara) で描けない行。 */
   const NOT_IN_SWAPPED: Layer['unsupportedIn'] = { cesium: m.notDrawnIn('Cesium'), navara: m.notDrawnIn('Navara') };
+  /** Navara で描けない行 (ベクトルタイル。PMTiles の中継が要る。lib/engines/navara.ts)。 */
+  const NOT_IN_NAVARA: Layer['unsupportedIn'] = { navara: m.notDrawnIn('Navara') };
   /** 3D Tiles は、MapLibre 単体と deck.gl を重ねたときは描けない (Three.js を重ねると描ける)。 */
   const NOT_3D_TILES: Layer['unsupportedIn'] = {
     maplibre: m.notDrawn3dTilesInMapLibre,
     'maplibre-deckgl': m.notDrawn3dTilesInMapLibre,
   };
   let cesium: CesiumEngine | undefined;
+  let navara: NavaraEngine | undefined;
   /** 背景地図の不透明度 (Collection ID → 0〜1)。MapLibre は層の paint に持つが、Cesium に渡すために覚える。 */
   const rasterOpacity = new Map<string, number>();
   /** ベクトルタイルのテーマの行 → Collection とテーマ。 */
@@ -481,14 +485,18 @@ async function main() {
 
   const terrainNote = document.querySelector<HTMLParagraphElement>('#terrain-engine-note')!;
 
-  /** 一覧の状態を Cesium に写す。Cesium を使っていなければ何もしない。 */
-  const syncCesium = () => {
-    if (engine !== 'cesium' || !cesium || !layerList) return;
+  /** いま使っている、地図を入れ替えるエンジン (MapLibre を使っていれば undefined)。 */
+  const swappedEngine = () => (engine === 'cesium' ? cesium : engine === 'navara' ? navara : undefined);
+  /** 一覧の状態を、地図を入れ替えるエンジン (Cesium・Navara) に写す。使っていなければ何もしない。 */
+  const syncSwapped = () => {
+    const target = swappedEngine();
+    if (!layerList || !target) return;
+    const engineId = engine;
     terrainNote.hidden = true;
     const rows: CesiumRow[] = [];
     const vectorRows = new Map<string, Extract<CesiumRow, { kind: 'vector' }>>();
     for (const layer of layerList.ordered('tile')) {
-      if (!layer.visible || layer.unsupportedIn?.cesium) continue;
+      if (!layer.visible || layer.unsupportedIn?.[engineId]) continue;
       const collection = layer.collections[0];
       const theme = vectorThemeRows.get(layer.id);
       if (theme && layer.parts) {
@@ -510,13 +518,21 @@ async function main() {
       }
     }
     const selected = terrainCollections.find((c) => c.id === terrainSelect.value);
-    const used = cesium.sync(
-      rows.filter((row) => row.kind !== 'vector' || row.layers.length > 0),
-      { enabled: terrainToggle.checked, selected },
-    );
-    // 選んだ標高が海面からの高さなら、Cesium は楕円体高のものに替えて描く。替えたことを地形の欄で言う。
+    const choice = { enabled: terrainToggle.checked, selected };
+    const used =
+      target === cesium
+        ? cesium.sync(
+            rows.filter((row) => row.kind !== 'vector' || row.layers.length > 0),
+            choice,
+          )
+        : navara!.sync(
+            // Navara はベクトルタイルを描かない (一覧で灰色。ここには来ない)。
+            rows.filter((row): row is NavaraRow => row.kind !== 'vector'),
+            choice,
+          );
+    // 選んだ標高が海面からの高さなら、楕円体高のものに替えて描く。替えたことを地形の欄で言う。
     if (used && used.id !== selected?.id) {
-      terrainNote.textContent = m.cesiumTerrainInstead(used.title);
+      terrainNote.textContent = m.ellipsoidTerrainInstead(engineLabel(engineId), used.title);
       terrainNote.hidden = false;
     }
   };
@@ -532,8 +548,8 @@ async function main() {
         .map((layer) => layer.collections[0]),
     );
   };
-  terrainToggle.addEventListener('change', syncCesium);
-  terrainSelect.addEventListener('change', syncCesium);
+  terrainToggle.addEventListener('change', syncSwapped);
+  terrainSelect.addEventListener('change', syncSwapped);
   terrainToggle.addEventListener('change', () => void syncDeckTerrain());
   terrainSelect.addEventListener('change', () => void syncDeckTerrain());
 
@@ -698,7 +714,7 @@ async function main() {
           settings: sliderSettings(m.opacity, 0, 100, 5, 100, (v) => `${v}%`, (v) => {
             map.setPaintProperty(id, 'raster-opacity', v / 100);
             rasterOpacity.set(collection.id, v / 100);
-            syncCesium();
+            syncSwapped();
           }),
           refresh: () => {
             map.setLayoutProperty(id, 'visibility', isLayerVisible(collection.id) ? 'visible' : 'none');
@@ -787,8 +803,8 @@ async function main() {
           vectorThemeRows.set(rowId, { collection, themeId: theme.id });
           layers.push({
             ...tileBase,
-            // 点だけのテーマ (注記) は、Cesium のベクタでは文字を描けないので出さない。
-            unsupportedIn: theme.layers.every((l) => l.geometry === 'Point') ? NOT_IN_SWAPPED : undefined,
+            // 点だけのテーマ (注記) は、Cesium のベクタでは文字を描けないので出さない。Navara はベクトルタイルをまだ描かない。
+            unsupportedIn: theme.layers.every((l) => l.geometry === 'Point') ? NOT_IN_SWAPPED : NOT_IN_NAVARA,
             id: rowId,
             title: theme.title,
             // 出所が同じでも、どのタイルセットの層かを版と一緒に添える。
@@ -925,16 +941,17 @@ async function main() {
     catalogLink: jsonLink,
     engine: () => engine,
     zoomTo: (zoom) => {
-      if (engine === 'cesium' && cesium) {
-        // 見え方の正本 (MapLibre) を寄せてから、Cesium をそこへ置き直す。
+      const swapped = swappedEngine();
+      if (swapped) {
+        // 見え方の正本 (MapLibre) を寄せてから、入れ替えたエンジンをそこへ置き直す。
         map.jumpTo({ zoom });
-        void cesium.show(mapView());
+        void swapped.show(mapView());
       } else {
         map.easeTo({ zoom, duration: 600 });
       }
     },
     onChange: () => {
-      syncCesium();
+      syncSwapped();
       syncThree();
       // 一覧のいちばん上の背景地図を、deck.gl の地形の表面に貼り直す。
       void syncDeckTerrain();
@@ -1165,9 +1182,10 @@ async function main() {
 
   // ---- 地図のエンジンの切り替え (バー) ---------------------------------------------
   //
-  // **1ページのまま入れ替える** (DuckDB を起こし直さない)。Cesium は初めて選んだときに読み込み、
-  // 一度作ったら壊さずに隠す (2026-10-12 に、同じページで5往復しても壊れないことを確かめた。roadmap)。
+  // **1ページのまま入れ替える** (DuckDB を起こし直さない)。Cesium・Navara は初めて選んだときに読み込み、
+  // 一度作ったら壊さずに隠す (2026-10-12 に、Cesium を同じページで5往復しても壊れないことを確かめた。roadmap)。
   const cesiumEl = document.querySelector<HTMLDivElement>('#cesium')!;
+  const navaraEl = document.querySelector<HTMLDivElement>('#navara')!;
   // **Cesium の吹き出し** (地理院のベクタの地物)。中身は MapLibre と共用 (ui/hover-rows.ts)、置き方だけ違う
   // (MapLibre の Popup は地図に結び付いているので使えない)。マウスの右下に出す。
   const cesiumHover = document.createElement('div');
@@ -1218,49 +1236,65 @@ async function main() {
   map.on('terrain', () => {
     if (engine === 'maplibre-deckgl' && map.getTerrain()) map.setTerrain(null);
   });
+  /** 入れ替える側のエンジンで動かしたら、隠れている MapLibre を合わせる (一覧の「この範囲にあるか」・寄るボタンが今の場所で効く)。 */
+  const followSwapped = (view: View) => map.jumpTo(toMapLibre(view));
+  /** 入れ替える側のエンジンを (初めてなら読み込んで) 用意する。 */
+  const prepareSwapped = async (next: 'cesium' | 'navara') => {
+    const quantizedMeshTerrains = collections.filter((c) => c.quantizedMesh);
+    if (next === 'cesium') {
+      const { createCesiumEngine } = await busy(m.loadingNamed('Cesium'), () => import('./lib/engines/cesium'));
+      cesium ??= createCesiumEngine({
+        container: cesiumEl,
+        quantizedMeshTerrains,
+        onMoveEnd: followSwapped,
+        onFailure: (collection) => showFailure(m.loadFailed(collection.title)),
+        onHover: showCesiumHover,
+      });
+      (window as unknown as { __viewer?: unknown }).__viewer = cesium.viewer;
+      return cesium;
+    }
+    if (!navara) {
+      const { createNavaraEngine } = await busy(m.loadingNamed('Navara'), () => import('./lib/engines/navara'));
+      navara = await busy(m.loadingNamed('Navara'), () =>
+        createNavaraEngine({ container: navaraEl, quantizedMeshTerrains, onMoveEnd: followSwapped }),
+      );
+      (window as unknown as { __navara?: unknown }).__navara = navara;
+    }
+    return navara;
+  };
   const switchEngine = async (next: EngineId) => {
-    if (next === engine || next === 'navara') return;
+    if (next === engine) return;
     bar.setBusy(true);
     try {
-      // ---- 出る (MapLibre に重ねていたものを外す) ----
+      // 入れ替える側は先に読み込んでおく (読めなければ、いまのエンジンのまま)。
+      const nextSwapped = next === 'cesium' || next === 'navara' ? await prepareSwapped(next) : undefined;
+      // ---- 出る (MapLibre に重ねていたもの・入れ替えていたものを外す) ----
       if (engine === 'maplibre-deckgl') {
         deck?.detach();
         setMapLibreBuildingsVisible(true);
-        terrainNote.hidden = true;
       }
-      if (engine === 'maplibre-three') {
-        three?.detach();
-        terrainNote.hidden = true;
+      if (engine === 'maplibre-three') three?.detach();
+      terrainNote.hidden = true;
+      const fromSwapped = swappedEngine();
+      if (fromSwapped) {
+        // 見え方の正本 (MapLibre) を、いま見ているところに合わせてから隠す。
+        map.jumpTo(toMapLibre(fromSwapped.view()));
+        fromSwapped.hide();
       }
       // ---- 入る ----
-      if (next === 'cesium') {
+      if (nextSwapped) {
         // 押して選ぶ操作は MapLibre のもの。出ている吹き出しも片付ける。
         setPicking(false);
         if (nearby.choosing()) nearby.setChoosing(false);
         hover.hide();
-        const { createCesiumEngine } = await busy(m.loadingNamed('Cesium'), () => import('./lib/engines/cesium'));
-        cesium ??= createCesiumEngine({
-          container: cesiumEl,
-          quantizedMeshTerrains: collections.filter((c) => c.quantizedMesh),
-          // 隠れている MapLibre を合わせる (一覧の「この範囲にあるか」・寄るボタンが今の場所で効く)。
-          onMoveEnd: (view) =>
-            map.jumpTo({ center: [view.lon, view.lat], zoom: view.zoom, pitch: view.pitch, bearing: view.bearing }),
-          onFailure: (collection) => showFailure(m.loadFailed(collection.title)),
-          onHover: showCesiumHover,
-        });
-        (window as unknown as { __viewer?: unknown }).__viewer = cesium.viewer;
-        engine = 'cesium';
-        syncCesium();
-        await cesium.show(mapView());
+        engine = next;
+        syncSwapped();
+        await nextSwapped.show(mapView());
         map.getContainer().style.visibility = 'hidden';
       } else {
-        const fromSwapped = !usesMapLibre(engine);
         engine = next;
         if (fromSwapped) {
-          map.jumpTo(cesium ? toMapLibre(cesium.view()) : {});
           map.getContainer().style.visibility = '';
-          cesium?.hide();
-          terrainNote.hidden = true;
           map.resize();
         }
         // MapLibre の地形を、このエンジンに合わせて付け直す (deck.gl なら外す。**deck.gl を付ける前に** —
@@ -1287,7 +1321,7 @@ async function main() {
             terrainNote.hidden = false;
           }
         }
-        // 入れ替える側 (Cesium) の間は引いていないので、出しているデータの行を描き直す。
+        // 入れ替える側 (Cesium・Navara) の間は引いていないので、出しているデータの行を描き直す。
         if (fromSwapped) for (const layer of layers) if (layer.section === 'data' && layer.visible) layer.refresh();
       }
       bar.set(engine);
@@ -1310,7 +1344,7 @@ async function main() {
   const bar = createEngineBar(document.querySelector<HTMLDivElement>('#engine-bar')!, engine, (id) => {
     void switchEngine(id);
   });
-  // URL で Cesium を指していれば、そこから始める (バーで替えると URL に載るので、読み直しても同じエンジンで開く)。
+  // URL でほかのエンジンを指していれば、そこから始める (バーで替えると URL に載るので、読み直しても同じエンジンで開く)。
   const requested = engineFromUrl(location.search);
   if (requested !== 'maplibre') void switchEngine(requested);
 }

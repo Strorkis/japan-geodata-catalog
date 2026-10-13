@@ -1223,7 +1223,7 @@ test('3D Tiles は足せるが MapLibre では灰色で理由を出し、ⓘ か
   await closeCatalog(page);
   const listRow = page.locator('.layer-row[data-layer="reearth-buildings"]');
   await expect(listRow).toHaveClass(/unsupported/);
-  await expect(listRow).toContainText('Cesium で描けます');
+  await expect(listRow).toContainText('Cesium などで描けます');
   // **注記は行の枠に収まる** (2段目は1行。以前は長い注記が枠をはみ出した)。
   const note = listRow.locator('.layer-unsupported-note');
   const [noteRight, rowRight] = await Promise.all([
@@ -1398,8 +1398,6 @@ test.describe('地図のエンジン (Cesium)', () => {
     });
     const bar = page.locator('#engine-bar');
     await expect(bar.locator('button[data-engine="maplibre"]')).toHaveAttribute('aria-pressed', 'true');
-    // Navara はまだ無い (押せない)。
-    await expect(bar.locator('button[data-engine="navara"]')).toBeDisabled();
 
     await bar.locator('button[data-engine="cesium"]').click();
     await expect(bar.locator('button[data-engine="cesium"]')).toHaveAttribute('aria-pressed', 'true');
@@ -1518,6 +1516,62 @@ test.describe('地図のエンジン (Cesium)', () => {
       .poll(() => page.evaluate(() => Boolean((window as unknown as TestWindow).__map!.getLayer('three-3d-tiles'))))
       .toBe(false);
     await expect(page.locator('#terrain-engine-note')).toBeHidden();
+  });
+
+  /**
+   * **Navara も入れ替える側** (Cesium と同じ流儀)。描くのは背景地図・3D Tiles・地形で、ベクトルタイルとデータの行は灰色。
+   * 外の 3D Tiles・地形・背景地図のタイルは止める (配線を見る)。
+   * **Navara から Cesium へ直接替えるところは流さない** — 1ページに 3D のエンジンを2つ抱えさせると、GPU の無いヘッドレスでは
+   * 重く、2026-10-13 に WSL ごと落ちた。そこは利用者のブラウザで確かめる (ボードの手順)。
+   */
+  test('バーで Navara に切り替えても同じ場所で、描けない行は灰色になり、3D Tiles を読みに行く', async ({ page }) => {
+    const tilesets: string[] = [];
+    await page.route(CESIUM_EXTERNAL, (route) => {
+      if (route.request().url().includes('plateauview')) tilesets.push(route.request().url());
+      return route.abort();
+    });
+    await page.evaluate(() => {
+      (window as unknown as TestWindow).__map!.jumpTo({ center: [139.7671, 35.6812], zoom: 16, pitch: 45, bearing: 30 });
+    });
+    await openCatalogFor(page, 'plateau-3dtiles');
+    await page.locator('[data-catalog-layer="plateau-3dtiles"] .catalog-add').click();
+    await closeCatalog(page);
+
+    const bar = page.locator('#engine-bar');
+    await bar.locator('button[data-engine="navara"]').click();
+    await expect(bar.locator('button[data-engine="navara"]')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page).toHaveURL(/[?&]engine=navara/);
+    await expect(page.locator('#navara')).toBeVisible();
+    await expect(page.locator('#navara canvas')).toBeVisible();
+    // カメラは同じ場所を見ている (Navara の見え方を MapLibre の形に直したもの)。
+    const navaraView = () =>
+      page.evaluate(() => (window as unknown as { __navara?: { view: () => { lon: number; lat: number; zoom: number } } }).__navara?.view());
+    const view = (await navaraView())!;
+    expect(view.lon).toBeCloseTo(139.7671, 3);
+    expect(view.lat).toBeCloseTo(35.6812, 3);
+    expect(view.zoom).toBeCloseTo(16, 1);
+    // データの行は灰色。3D Tiles と背景地図は描き、3D Tiles は読みに行く。
+    const buildings = page.locator(`.layer-row[data-layer="${LAYER.plateauBuildings}"]`);
+    await expect(buildings).toContainText('Navara ではまだ描けません');
+    await expect(page.locator('.layer-row[data-layer="plateau-3dtiles"]')).not.toHaveClass(/unsupported/);
+    await expect(page.locator('.layer-row[data-layer="gsi-pale"]')).not.toHaveClass(/unsupported/);
+    await expect.poll(() => tilesets.length).toBeGreaterThan(0);
+    await expect(page.locator('#search-input')).toBeDisabled();
+    await expect(page.locator('#terrain-engine-note')).toContainText('Re:Earth Terrain');
+
+    // 戻ると同じ場所。
+    await bar.locator('button[data-engine="maplibre"]').click();
+    await expect(page.locator('#navara')).toBeHidden();
+    await expect(page.locator('#search-input')).toBeEnabled();
+    const back = await page.evaluate(() => {
+      const map = (window as unknown as TestWindow).__map!;
+      return { ...map.getCenter(), zoom: map.getZoom(), pitch: map.getPitch(), bearing: map.getBearing() };
+    });
+    expect(back.lng).toBeCloseTo(139.7671, 3);
+    expect(back.lat).toBeCloseTo(35.6812, 3);
+    expect(back.zoom).toBeCloseTo(16, 1);
+    expect(back.pitch).toBeCloseTo(45, 0);
+    expect(back.bearing).toBeCloseTo(30, 0);
   });
 
   /**

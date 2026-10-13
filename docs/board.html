@@ -225,7 +225,7 @@
   <body>
     <header>
       <h1>duck-geocoder ダッシュボード</h1>
-      <span class="meta">更新 2026-10-13 20:04 (日本時間)</span>
+      <span class="meta">更新 2026-10-13 20:55 (日本時間)</span>
       <span class="meta">
         <a href="https://strorkis.github.io/duck-geocoder/">公開サイト</a> ·
         <a href="roadmap.md">方針 (roadmap)</a> ·
@@ -240,7 +240,7 @@
     <section class="kpis" aria-label="数字">
       <div class="card kpi">
         <div class="label">公開待ちのコミット</div>
-        <div class="value">30 <small>件</small></div>
+        <div class="value">31 <small>件</small></div>
         <span class="status you">カタログを上げて push 待ち</span>
       </div>
       <div class="card kpi">
@@ -255,7 +255,7 @@
 
     <!-- ===== 確かめてほしいこと (確かめてもらったら消す) ===== -->
     <section class="card row" aria-label="確かめてほしいこと">
-      <h2>確かめてほしいこと — MapLibre + deck.gl / + Three.js <span class="status you">あなたの番</span></h2>
+      <h2>確かめてほしいこと — MapLibre + deck.gl / + Three.js / Navara <span class="status you">あなたの番</span></h2>
       <p class="sub" style="margin: -0.3rem 0 0.5rem"><b>おかしかったら、その番号を教えてください。</b></p>
       <ol class="tasks">
         <li>
@@ -271,6 +271,13 @@
           <code>?lon=139.7671&amp;lat=35.6812&amp;zoom=16&amp;pitch=55&amp;engine=maplibre-three</code> → 地図タイルの「＋ 追加」→
           PLATEAU の「建物 (3D Tiles・公式配信)」を足す → <b>3D Tiles の建物が地面に乗っている</b> (浮かない・沈まない。高さの基準は自動で合わせている)。
           地形の欄に「高さの基準…読めなかった」が出ていたらその旨も教えてください
+        </li>
+        <li>
+          4 の続きでバーの Navara → 同じ場所・同じ向きで、淡色地図・地形・PLATEAU の 3D Tiles が描かれ、<b>建物が地面に乗っている</b>。
+          ドラッグで動かしてからバーで MapLibre に戻る → 動かした先の場所になる
+        </li>
+        <li>
+          Navara からバーの Cesium へ<b>直接</b>替える → 同じ場所の Cesium になる (ヘッドレスでは重くて流せないので、ここだけ目で確かめてほしい)
         </li>
       </ol>
     </section>
@@ -300,15 +307,8 @@
         <h2>次にやること</h2>
         <ol class="tasks">
           <li>
-            <b>エンジンをざっと足す</b> <span class="status todo">Three.js まで</span>
-            <span class="sub">
-              MapLibre を 6.14 に上げ、deck.gl と Three.js を入れた。次は Navara (入れ替える側)。
-              分ける前に、性格の違う使い方を揃えるため
-            </span>
-          </li>
-          <li>
-            <b>名前を決める</b>
-            <span class="sub">分けるとパッケージの名前が要る。エンジンを入れている間に候補を出す</span>
+            <b>名前を決める</b> <span class="status todo">次</span>
+            <span class="sub">分けるとパッケージの名前が要る。5つのエンジンが揃ったので、候補を出して選んでもらう</span>
           </li>
           <li>
             <b>ライブラリに分ける</b>

@@ -40,28 +40,10 @@ import 'cesium/Build/Cesium/Widgets/widgets.css';
 import type { Collection, VectorLayerInfo } from '../stac';
 import { pmtilesTemplate } from '../cesium-pmtiles';
 import type { View } from '../view-params';
+import { rangeForZoom, zoomForRange } from './zoom';
 
 // Cesium の資産 (Workers・Assets・Widgets) の置き場所。ビルドでは `cesium/` に写す (vite.config.ts)。
 (window as unknown as { CESIUM_BASE_URL: string }).CESIUM_BASE_URL = `${import.meta.env.BASE_URL}cesium/`;
-
-/** 赤道の1周 (m)。MapLibre のズームの元。 */
-const EARTH_CIRCUMFERENCE_M = 40075016.686;
-
-/**
- * MapLibre のズームを、注視点からカメラまでの距離 (m) にする。MapLibre の画面の縦の広さ (画素 × 1画素の m)
- * が、Cesium の縦の画角 `fovy` に収まる距離。傾けても注視点からの距離は変わらない (MapLibre と同じ)。
- */
-function rangeForZoom(zoom: number, lat: number, viewportHeight: number, fovy: number): number {
-  const metersPerPixel = (EARTH_CIRCUMFERENCE_M * Math.cos(CesiumMath.toRadians(lat))) / (512 * 2 ** zoom);
-  return ((viewportHeight / 2) * metersPerPixel) / Math.tan(fovy / 2);
-}
-
-/** `rangeForZoom` の逆。 */
-const zoomForRange = (range: number, lat: number, viewportHeight: number, fovy: number) =>
-  Math.log2(
-    (EARTH_CIRCUMFERENCE_M * Math.cos(CesiumMath.toRadians(lat)) * (viewportHeight / 2)) /
-      (512 * range * Math.tan(fovy / 2)),
-  );
 
 /** `scene.pick` で拾った地物のうち、吹き出しに使うところ。 */
 interface PickedTileFeature {
