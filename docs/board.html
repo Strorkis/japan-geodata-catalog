@@ -225,7 +225,7 @@
   <body>
     <header>
       <h1>duck-geocoder ダッシュボード</h1>
-      <span class="meta">更新 2026-10-12 21:05 (日本時間)</span>
+      <span class="meta">更新 2026-10-12 22:02 (日本時間)</span>
       <span class="meta">
         <a href="https://strorkis.github.io/duck-geocoder/">公開サイト</a> ·
         <a href="roadmap.md">方針 (roadmap)</a> ·
@@ -240,7 +240,7 @@
     <section class="kpis" aria-label="数字">
       <div class="card kpi">
         <div class="label">公開待ちのコミット</div>
-        <div class="value">26 <small>件</small></div>
+        <div class="value">28 <small>件</small></div>
         <span class="status you">カタログを上げて push 待ち</span>
       </div>
       <div class="card kpi">
@@ -251,6 +251,23 @@
         </div>
         <span class="status you">無料枠の99% (超えた分は払う方針)</span>
       </div>
+    </section>
+
+    <!-- ===== 確かめてほしいこと (確かめてもらったら消す) ===== -->
+    <section class="card row" aria-label="確かめてほしいこと">
+      <h2>確かめてほしいこと — MapLibre + deck.gl <span class="status you">あなたの番</span></h2>
+      <p class="sub" style="margin: -0.3rem 0 0.5rem"><b>おかしかったら、その番号を教えてください。</b></p>
+      <ol class="tasks">
+        <li>
+          <code>cd web &amp;&amp; pnpm dev</code> → <code>http://localhost:5173/?lon=139.7671&amp;lat=35.6812&amp;zoom=16&amp;pitch=55&amp;engine=maplibre-deckgl</code>
+          → 建物が<b>青く</b> (deck.gl で) 描かれ、一覧と右下のパネルは建物の<b>上</b>に出る。建物にマウスを乗せると吹き出しが出る
+        </li>
+        <li>
+          地形の欄に「deck.gl で地形を描きます…」。富士山 <code>?lon=138.7274&amp;lat=35.3606&amp;zoom=12&amp;pitch=60&amp;engine=maplibre-deckgl</code>
+          で起伏が出て、淡色地図が貼られている (鉄道などほかの行は地形の下に隠れるのは分かっている制約)
+        </li>
+        <li>バーで MapLibre に戻る → いつもの建物と地形に戻る</li>
+      </ol>
     </section>
 
     <!-- ===== 公開までの残り ===== -->
@@ -278,23 +295,26 @@
         <h2>次にやること</h2>
         <ol class="tasks">
           <li>
-            <b>ライブラリに分ける (core から)</b>
+            <b>エンジンをざっと足す</b> <span class="status todo">deck.gl まで</span>
             <span class="sub">
-              方針は決めた: 取って・変換して・自己配信すれば表示できるライブラリ。地図に依らない core と、地図ライブラリごとの部品に分ける。
-              Web サイトは日本のカタログビジュアライザーに (roadmap「全体方針」)
+              次は <b>MapLibre を 6.8 → 6.12 以上に上げる</b> (Three.js の補助ライブラリが要る) → MapLibre + Three.js → Navara。
+              分ける前に、性格の違う使い方を揃えるため
             </span>
           </li>
           <li>
-            <b>MapLibre に deck.gl を重ねる</b>
-            <span class="sub">DuckDB が返す Arrow をそのまま描ける。建物が多いときに効く見込み (未計測)。Three.js はそのあと</span>
+            <b>名前を決める</b>
+            <span class="sub">分けるとパッケージの名前が要る。エンジンを入れている間に候補を出す</span>
+          </li>
+          <li>
+            <b>ライブラリに分ける</b>
+            <span class="sub">
+              地図に依らない core と、地図ライブラリごとの部品に分ける。Web サイトは日本のカタログビジュアライザーに。
+              Rust の変換はビルド済みにせず cargo で使う (roadmap「全体方針」)
+            </span>
           </li>
           <li>
             <b>ジオコーダーを並べる</b>
             <span class="sub">住所の正規化 (Geolonia の normalize-japanese-addresses) と Nominatim (押したときだけ・毎秒1回まで)</span>
-          </li>
-          <li>
-            <b>Cesium でデータの行を描く</b>
-            <span class="sub">いま Cesium で灰色の建物・鉄道…。描く側をエンジンに依らない形に (ライブラリの分割と一緒に)</span>
           </li>
           <li>
             <b>背景地図が全部失敗すると「準備中」のまま</b> <span class="status todo">不具合</span>
@@ -321,10 +341,6 @@
           <li>
             <b>リポジトリの名前</b>
             <span class="sub">duck-geocoder は実態から外れた。方針が文になったので、候補を出す時期</span>
-          </li>
-          <li>
-            <b>変換の部品をどう配るか</b>
-            <span class="sub">Rust の CLI をビルドして配るか、WASM でブラウザの中で変換するか</span>
           </li>
           <li>
             <b>R2 に独自ドメインを付けるか</b>

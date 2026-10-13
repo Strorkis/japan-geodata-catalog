@@ -28,8 +28,8 @@
 
 **気を付けること:**
 
-1. **変換は Rust の CLI。** JS の人に Rust を入れさせるのは重い → 配る形 (ビルド済みの CLI か WASM) を決める。
-   棚上げした「配らずに手元で変換 (WASM)」(下の節) はここで生き返る
+1. **変換は Rust の CLI。ビルド済みにはしない** (2026-10-12、利用者。Rust を広めたい)。`cargo install` / `cargo run` で使ってもらう。
+   ブラウザの中で変換する道 (下の「配らずに手元で変換」、WASM) は別の話として残る
 2. **自己配信すると、配る責任が使う人に移る。** 基盤地図情報は測量法の複製の承認、PLATEAU は国交省の出典の書き方、
    Overture・OSM 由来は ODbL の継承。**ライセンスを持ち回る仕組み (STAC の `duck:attribution`・`duck:terms`、切り出した
    GeoParquet の KV) が、このライブラリのいちばんの売り**になる。README と出力で必ず伝える
@@ -48,6 +48,29 @@
   GeoJSON にしているので、建物が多いときに効く見込み (**測っていない**)
 - Three.js は MapLibre の上に 3D Tiles を重ねる道 (下の「Navara は立ち位置が違う」に既出)
 - 「MapLibre 単体」はいまの MapLibre (バーの名前はそのまま)
+
+**MapLibre + deck.gl をざっと入れた (2026-10-12、`web/src/lib/engines/deckgl.ts`):**
+
+- 建物 (DuckDB の行) と地形を deck.gl で描く。建物の MapLibre の層は透明にして残す (吹き出しは MapLibre が引き当てるので効く)。
+  ジオメトリはいまは MapLibre と同じ GeoJSON。**座標の配列を直接渡す (binary)・GeoArrow で受けるのは次の段** (deck.gl-geoarrow は WKB を受けない)
+- **deck.gl 9.4 の「同じ画面に重ねる」方式 (`interleaved`) は MapLibre 6 で動かない** — MapLibre の内部 (`map.transform`) を読み、
+  6 ではそれが無い。**別の画面に重ねる**方式にした。代わりに地図の文字との前後関係は共有されない。MapLibre を上げても直らない (deck.gl 側の対応待ち)
+- **地形は deck.gl の `TerrainLayer`** (利用者の指摘)。MapLibre の地形は deck.gl の間は外す (地形があると deck.gl がやはり内部を読んで落ちる)。
+  表面には一覧のいちばん上の背景地図を貼る。読めるのは Terrarium の XYZ だけ (地理院の独自形式・COG なら Mapterhorn に替えてそう言う)。
+  **別の画面なので、鉄道などほかの行は deck.gl の地形の下に隠れる**
+- 建物は高さ 0 から押し出す。`TerrainExtension` (地形の高さを足す) を付けると**ヘッドレスでは建物が消えた**。GPU のあるブラウザで試すのが TOBE
+- 色は出所ごとの塗りだけ (段の色分けは TOBE)
+- pnpm 11 は公開から1日たたない版を入れない。deck.gl の部品 (`@loaders.gl/worker-utils` 4.5.4) がそれに当たり、pnpm が例外の設定
+  (`pnpm-workspace.yaml` の `minimumReleaseAgeExclude`) を**黙って作った**。約束を緩めないよう消し、1日たってから入れ直した
+- **`@deck.gl/geo-layers` (TerrainLayer) が脆弱性のある部品を3つ引き込み、コミット前の確認 (`scripts/audit.sh`) で止まった** (2026-10-13)。
+  `fflate` は直った版 (0.7.5) に固定した。`image-size`・`sprintf-js` は Node で画像を圧縮する道具 (`texture-compressor`) の依存で、
+  **ブラウザに配る中身には入らない** (本番ビルドの出力で確かめた) ので、理由と外せる条件を添えて受け入れた (`sprintf-js` は直った版がまだ無い)。
+  設定は `web/pnpm-workspace.yaml` (pnpm 11 は `package.json` の `pnpm` を読まない)
+
+**Three.js は次に。** MapLibre の公式の例 (3d-tiles-renderer を直接使う custom layer) が手元のクローンの履歴にある
+(`maplibre-gl-js` の `f98ef79b4^:test/examples/add-3d-tiles-using-threejs.html`)。その例は原点をタイルセットの中心に置くので、
+全国 (PLATEAU)・全世界 (Re:Earth) のタイルセットでは**見ている場所を原点にした東・北・上の座標**に直す。
+補助のライブラリ `maplibre-gl-three` (MIT) は MapLibre 6.12 以上が要る — **先に MapLibre を上げる** (いまは 6.8)
 
 ### ジオコーディング (2026-10-12)
 
