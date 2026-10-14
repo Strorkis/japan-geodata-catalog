@@ -47,7 +47,7 @@ const DOCUMENT_RELS: &[&str] = &[
 /// 日本語 → 英語。**題名・説明・名前のすべて**。足りなければ [`localize`] がエラーにする。
 const EN: &[(&str, &str)] = &[
     // ---- サブカタログ・ルート ----
-    ("duck-geocoder のデータ", "duck-geocoder data"),
+    ("日本の地理データのカタログ", "Japan geodata catalogue"),
     (
         "OpenStreetMap のデータから作られた世界の背景地図です。このカタログでは複製せず、公開元の配信をそのまま使っています。",
         "Background maps of the whole world made from OpenStreetMap data. This catalogue does not copy them; it uses the publisher's own service.",
@@ -90,24 +90,34 @@ const EN: &[(&str, &str)] = &[
         "Vector tiles of buildings for zoomed-out views (important tiers only)",
     ),
     (
-        "国土交通省が整備している3D都市モデルです。",
-        "3D city models maintained by the Ministry of Land, Infrastructure, Transport and Tourism (MLIT).",
+        "国土交通省が整備している3D都市モデルです。\
+         このカタログに置いているデータは、配布元のデータを変換した非公式のミラーです。原典は配布元にあります。",
+        "3D city models maintained by the Ministry of Land, Infrastructure, Transport and Tourism (MLIT). \
+         The data hosted in this catalogue is an unofficial mirror converted from the publisher's data; the original stays with the publisher.",
     ),
     (
-        "Overture Maps Foundation が公開している地図データです。OpenStreetMap など、複数の出所をまとめたものです。",
-        "Map data published by the Overture Maps Foundation, combining several sources such as OpenStreetMap.",
+        "Overture Maps Foundation が公開している地図データです。OpenStreetMap など、複数の出所をまとめたものです。\
+         このカタログに置いているデータは、配布元のデータを変換した非公式のミラーです。原典は配布元にあります。",
+        "Map data published by the Overture Maps Foundation, combining several sources such as OpenStreetMap. \
+         The data hosted in this catalogue is an unofficial mirror converted from the publisher's data; the original stays with the publisher.",
     ),
     (
-        "国土交通省が整備している国土数値情報です。",
-        "National Land Numerical Information maintained by MLIT.",
+        "国土交通省が整備している国土数値情報です。\
+         このカタログに置いているデータは、配布元のデータを変換した非公式のミラーです。原典は配布元にあります。",
+        "National Land Numerical Information maintained by MLIT. \
+         The data hosted in this catalogue is an unofficial mirror converted from the publisher's data; the original stays with the publisher.",
     ),
     (
-        "総務省統計局の国勢調査を、地域メッシュごとに集計したものです。",
-        "The national census by the Statistics Bureau of Japan, aggregated by grid square.",
+        "総務省統計局の国勢調査を、地域メッシュごとに集計したものです。\
+         このカタログに置いているデータは、配布元のデータを変換した非公式のミラーです。原典は配布元にあります。",
+        "The national census by the Statistics Bureau of Japan, aggregated by grid square. \
+         The data hosted in this catalogue is an unofficial mirror converted from the publisher's data; the original stays with the publisher.",
     ),
     (
-        "国土交通省の位置参照情報です。住所の代表点を持っています。",
-        "Location reference information by MLIT, holding representative points of addresses.",
+        "国土交通省の位置参照情報です。住所の代表点を持っています。\
+         このカタログに置いているデータは、配布元のデータを変換した非公式のミラーです。原典は配布元にあります。",
+        "Location reference information by MLIT, holding representative points of addresses. \
+         The data hosted in this catalogue is an unofficial mirror converted from the publisher's data; the original stays with the publisher.",
     ),
     (
         "国土地理院が公開している地図タイル・ベクトルタイル・標高タイルです。このカタログでは複製せず、公開元の配信をそのまま使っています。",
@@ -651,7 +661,7 @@ mod tests {
         vec![
             document(
                 "catalog.json",
-                json!({ "type": "Catalog", "stac_extensions": [], "id": "root", "title": "duck-geocoder のデータ", "links": [
+                json!({ "type": "Catalog", "stac_extensions": [], "id": "root", "title": "日本の地理データのカタログ", "links": [
                     { "rel": "self", "href": "catalog.json" },
                     { "rel": "child", "href": "gsi/catalog.json", "title": "国土地理院" },
                 ]}),

@@ -386,7 +386,7 @@ const html = `<!doctype html>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>duck-geocoder コードの読みどころ</title>
+    <title>japan-geodata-catalog コードの読みどころ</title>
     <style>
       :root { --page:#f9f9f7; --surface:#fcfcfb; --ink:#0b0b0b; --ink-2:#52514e; --muted:#898781; --hairline:#e1e0d9; --accent:#2a78d6; --code:#f1f0ec; }
       @media (prefers-color-scheme: dark) {

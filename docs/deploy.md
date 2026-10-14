@@ -81,7 +81,7 @@ Viteにバンドルさせているが、同種の破綻は再び起こりうる�
 サブパス配信での参照解決まで含めて確かめるなら、`VITE_BASE_PATH` も渡す。
 
 ```sh
-VITE_BASE_PATH=/duck-geocoder/ pnpm test:dist
+VITE_BASE_PATH=/japan-geodata-catalog/ pnpm test:dist
 ```
 
 **R2 の遅さは手元では見えない** (往復の待ちがほぼ0)。手元の配信に待ちを足して確かめられる
@@ -162,7 +162,7 @@ E2Eが落ちればその間ずっと壊れたままになる。
 ### アップロードのコマンド
 
 rclone を使う。**リモート名は `rclone config` で付けた名前**で、バケットは
-`duck-geocoder`。以下は `R2` に入れて使う。
+`duck-geocoder` (改名の前の名前のまま。バケットの名前は配信の URL に出ないので、変えていない)。以下は `R2` に入れて使う。
 
 ```sh
 R2=<リモート名>:duck-geocoder
@@ -530,7 +530,7 @@ curl -sI -H 'Origin: https://<user>.github.io' "$URL" | grep -i access-control
 
 ```sh
 cd web
-PLAYWRIGHT_BASE_URL=https://<user>.github.io/duck-geocoder/ pnpm test
+PLAYWRIGHT_BASE_URL=https://<user>.github.io/japan-geodata-catalog/ pnpm test
 ```
 
 ローカルで通っても配信側のヘッダ設定で壊れうるので、必ず実測する。

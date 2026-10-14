@@ -34,7 +34,7 @@
    Overture・OSM 由来は ODbL の継承。**ライセンスを持ち回る仕組み (STAC の `duck:attribution`・`duck:terms`、切り出した
    GeoParquet の KV) が、このライブラリのいちばんの売り**になる。README と出力で必ず伝える
 3. **公開する API は約束になる。** npm に出すのは使い方が固まってから。まずは同じリポジトリの中でワークスペースに分ける
-4. **リポジトリの名前** (duck-geocoder) が合わなくなる。この方針が「名前を決める前に要る文」になった (下の「名前について」)
+4. **リポジトリの名前**は `japan-geodata-catalog` に決めた (2026-10-14。下の「名前について」)
 
 形式は自前で作らず、Portolan・stac-geoparquet に寄せる (下の「Portolan について」)。
 
@@ -166,10 +166,25 @@ MapLibre・MapLibre + deck.gl・MapLibre + Three.js・Cesium・Navara の5つ (2
 
 ### 名前について
 
-`duck-geocoder` は実態から外れた (DuckDBは道具で、geocoderは機能の一つ)。
-**方針が文になってから選ぶ。** 除外条件は上の表のとおりで、
-`duck` / ドローン / `geoparquet` / `stac` / `jp` は入れない。
-`geo-lab` のような広い語も、主題が広くなりすぎるので避ける。
+**`japan-geodata-catalog` に決めた (2026-10-14、利用者)。** `duck-geocoder` は実態から外れていた (DuckDBは道具で、geocoderは機能の一つ)。
+
+決めるまでに確かめたこと:
+
+- **芯は「STAC と Portolan に沿って、日本に関するオープンデータを集めてみたカタログ。そのうえで可視化と問い合わせのために
+  一部を加工して配信している」** (利用者の言い方)。STAC に沿うのは「中身の都合」ではない (CNG の界隈では STAC に沿わない
+  カタログは微妙とされるほど)。カタログなら STAC に沿うのが当たり前なので、名前は `stac` より `catalog`
+- 道具 (変換・地図の部品) とカタログを別の名前にする案は取り下げた。PLATEAU・国土数値情報・地域メッシュなど、**全体が日本のデータに最適化している**
+- 「自己配信」は芯ではない (配信されているデータを使うだけもできる)。`lab` は public なリポジトリで名乗ると、注目されたあと変えにくい。
+  `mirror` は加工しているので、リポジトリ全体の名前には合わない
+- **ミラーとは、変換して置いている出所のサブカタログで名乗る** (ID に `-mirror`、説明に「非公式のミラー。原典は配布元」)。
+  Portolan の registry で、1つの出所を写したカタログが ID と題名に mirror を付けている流儀 (`st-louis-open-data-mirror` など) に倣った。
+  カタログ全体をミラーと呼ぶと、カタログの原典がどこかにあるように読めるので付けない。題名は画面の見出しに出るので付けない
+- **個人の勉強用・実験用。registry には載せない** (日本のオープンデータへのアクセスが増えて、配布元の管理コストが上がるのは本意ではない)。
+  名前は「場所 + 主題」の一般的な形 (registry でも `ireland-open-geodata`・`moldova-geodata` など)。ユーザー名が前に付くので、被っても構わない
+- **GeoParquet の部分は本来は外に出すもの** (docs の比重が大きいのは意図ではなく副次的、利用者)。TOBE
+
+**まだ古い名前のもの:** pipeline のクレート (`duck-geocoder`。ライブラリに分けるときに付け直す)、STAC の独自の項目の接頭辞 (`duck:`。
+変えるとデータの上げ直しが要る)、R2 のバケット (URL に出ないので変えない)、`pyproject.toml` の名前、画面の状態を覚える localStorage の鍵。
 
 **改名の費用は小さい**ことは確認済み。CIは
 [deploy.yml](../.github/workflows/deploy.yml) が `github.event.repository.name` から

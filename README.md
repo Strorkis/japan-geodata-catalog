@@ -1,8 +1,9 @@
-# duck-geocoder
+# japan-geodata-catalog
 
-**置いてあるデータを動かさずに、必要な分だけ取って、その場で使えるようにする実験。**
+**[STAC](https://stacspec.org/) と [Portolan](https://www.portolan-sdi.org/) に沿って、日本に関する地理空間のオープンデータを集めてみたカタログ。**
+そのうえで、可視化と問い合わせのために一部のデータを加工して配信している。**個人の勉強用・実験用で、公式のものではない。**
 
-**デモ: https://strorkis.github.io/duck-geocoder/**
+**デモ: https://strorkis.github.io/japan-geodata-catalog/**
 
 形式もライセンスも配布元もばらばらな地理空間データを、共通の形に揃えてカタログに載せ、
 **ブラウザから直接クエリしてその場で見られる**ようにしている。サーバーは持たない
@@ -12,12 +13,11 @@
 ジオコーディングAPIと違って返すものが決まっていないので、隣接自治体や範囲内集計の
 ような任意の空間クエリを足していける。
 
-**正典のカタログを作ろうとしているのではない。** ここにあるのは変換した複製で、
+**正典のカタログを作ろうとしているのではない。** 変換して置いているデータは非公式のミラーで、
 **原典は配布元**。出典とライセンスは配布元のものに従う。
 
-いまの実装は GeoParquet + [STAC](https://stacspec.org/) + DuckDB-WASM + MapLibre、
-対象は日本。**どれも主題ではなく、いまの選択**
-([docs/roadmap.md](docs/roadmap.md) の「このリポジトリは何か」)。
+いまの実装は GeoParquet + STAC + DuckDB-WASM + 地図のエンジン (MapLibre・deck.gl・Three.js・Cesium・Navara)
+([docs/roadmap.md](docs/roadmap.md) の「全体方針」)。
 
 - **[pipeline/](pipeline)** — 元データをWGS84のGeoParquetに変換するRust CLI
 - **[web/](web)** — DuckDB-WASM + MapLibreで検索・表示するWebアプリ

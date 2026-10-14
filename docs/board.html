@@ -20,7 +20,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>duck-geocoder ダッシュボード</title>
+    <title>japan-geodata-catalog ダッシュボード</title>
     <style>
       :root {
         --page: #f9f9f7;
@@ -224,10 +224,10 @@
   </head>
   <body>
     <header>
-      <h1>duck-geocoder ダッシュボード</h1>
-      <span class="meta">更新 2026-10-13 20:55 (日本時間)</span>
+      <h1>japan-geodata-catalog ダッシュボード</h1>
+      <span class="meta">更新 2026-10-14 21:35 (日本時間)</span>
       <span class="meta">
-        <a href="https://strorkis.github.io/duck-geocoder/">公開サイト</a> ·
+        <a href="https://strorkis.github.io/japan-geodata-catalog/">公開サイト (改名後の URL)</a> ·
         <a href="roadmap.md">方針 (roadmap)</a> ·
         <a href="tour.html">コードの読みどころ</a> ·
         <a href="deploy.md">上げる手順 (deploy)</a> ·
@@ -240,7 +240,7 @@
     <section class="kpis" aria-label="数字">
       <div class="card kpi">
         <div class="label">公開待ちのコミット</div>
-        <div class="value">31 <small>件</small></div>
+        <div class="value">32 <small>件</small></div>
         <span class="status you">カタログを上げて push 待ち</span>
       </div>
       <div class="card kpi">
@@ -287,16 +287,24 @@
       <h2>公開までの残り</h2>
       <ol class="steps">
         <li class="current">
+          <b>GitHub でリポジトリの名前を変える</b><span class="status you">あなたの番</span>
+          <span class="sub">
+            Settings → Repository name を <code>japan-geodata-catalog</code> に。公開サイトは
+            <code>strorkis.github.io/japan-geodata-catalog/</code> に移る (CI がリポジトリ名から作る)。手元は
+            <code>git remote set-url origin git@github.com:Strorkis/japan-geodata-catalog.git</code>。R2 はそのまま
+          </span>
+        </li>
+        <li>
           <b>カタログを上げて push</b><span class="status you">あなたの番</span>
           <span class="sub">
             <a href="deploy.md">deploy.md</a>「2026-10-10 の分 その2」。items.parquet と JSON 全部 → push。データのファイルは変えていない。
             載るもの: Item の名前と年度・Overture の出典・AW3D30 を地形に・世界の背景地図・OSM の標準タイル (カタログだけ)・
-            地図を DuckDB で待たせない・地図エンジンの切り替え
+            地図を DuckDB で待たせない・地図エンジンの切り替え・新しい名前 (カタログの ID・ミラーの名乗り)
           </span>
         </li>
         <li>
           <b>公開を確かめる</b><span class="status you">あなたの番</span>
-          <span class="sub">実サイトで間引き・地理院・周辺検索・バーでの切り替えを触る</span>
+          <span class="sub">新しい URL の実サイトで間引き・地理院・周辺検索・バーでの切り替えを触る</span>
         </li>
       </ol>
     </section>
@@ -307,11 +315,7 @@
         <h2>次にやること</h2>
         <ol class="tasks">
           <li>
-            <b>名前を決める</b> <span class="status todo">次</span>
-            <span class="sub">分けるとパッケージの名前が要る。5つのエンジンが揃ったので、候補を出して選んでもらう</span>
-          </li>
-          <li>
-            <b>ライブラリに分ける</b>
+            <b>ライブラリに分ける</b> <span class="status todo">次</span>
             <span class="sub">
               地図に依らない core と、地図ライブラリごとの部品に分ける。Web サイトは日本のカタログビジュアライザーに。
               Rust の変換はビルド済みにせず cargo で使う (roadmap「全体方針」)
@@ -343,10 +347,6 @@
       <section class="card" aria-label="未決の問い">
         <h2>未決の問い</h2>
         <ul class="tasks">
-          <li>
-            <b>リポジトリの名前</b>
-            <span class="sub">duck-geocoder は実態から外れた。方針が文になったので、候補を出す時期</span>
-          </li>
           <li>
             <b>R2 に独自ドメインを付けるか</b>
             <span class="sub">r2.dev は読み込み1回ごとに約0.45秒。独自ドメインならキャッシュが効く (未計測・費用あり)</span>

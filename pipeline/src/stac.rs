@@ -56,8 +56,8 @@ const FILE_EXTENSION: &str = "https://stac-extensions.github.io/file/v2.1.0/sche
 const PARQUET_MEDIA_TYPE: &str = "application/vnd.apache.parquet";
 const JSON_MEDIA_TYPE: &str = "application/json";
 
-/// このカタログ自身のID。
-const CATALOG_ID: &str = "duck-geocoder";
+/// このカタログ自身のID (リポジトリの名前と同じ。docs/roadmap.md「名前について」)。
+const CATALOG_ID: &str = "japan-geodata-catalog";
 
 /// 書き出す1ファイル。
 pub struct Document {
@@ -182,6 +182,13 @@ struct SubCatalog {
     dir: &'static str,
     title: &'static str,
     description: &'static str,
+    /// **配布元のデータを変換して置いているか** (ミラー)。ID に `-mirror` を付け、説明でそう言う。
+    /// 配信をそのまま使う・案内だけの出所は写していないので付けない。
+    ///
+    /// Portolan の registry で、1つの出所を写したカタログが ID と題名に mirror を付けている流儀に倣った
+    /// (`st-louis-open-data-mirror` など)。このカタログは出所ごとにサブカタログを持つので、サブカタログに付ける。
+    /// **題名には付けない** — 題名は画面の見出しや吹き出しに出る (「PLATEAU (ミラー) › 建物」では読みにくい)。
+    mirror: bool,
 }
 
 /// **出所の名前はここにしか書かない。** UIの一覧の見出しはここから来る。
@@ -192,27 +199,37 @@ const SUB_CATALOGS: &[SubCatalog] = &[
     SubCatalog {
         dir: "plateau",
         title: "PLATEAU",
-        description: "国土交通省が整備している3D都市モデルです。",
+        description: "国土交通省が整備している3D都市モデルです。\
+                      このカタログに置いているデータは、配布元のデータを変換した非公式のミラーです。原典は配布元にあります。",
+        mirror: true,
     },
     SubCatalog {
         dir: "overture",
         title: "Overture Maps",
-        description: "Overture Maps Foundation が公開している地図データです。OpenStreetMap など、複数の出所をまとめたものです。",
+        description: "Overture Maps Foundation が公開している地図データです。OpenStreetMap など、複数の出所をまとめたものです。\
+                      このカタログに置いているデータは、配布元のデータを変換した非公式のミラーです。原典は配布元にあります。",
+        mirror: true,
     },
     SubCatalog {
         dir: "ksj",
         title: "国土数値情報",
-        description: "国土交通省が整備している国土数値情報です。",
+        description: "国土交通省が整備している国土数値情報です。\
+                      このカタログに置いているデータは、配布元のデータを変換した非公式のミラーです。原典は配布元にあります。",
+        mirror: true,
     },
     SubCatalog {
         dir: "estat",
         title: "国勢調査",
-        description: "総務省統計局の国勢調査を、地域メッシュごとに集計したものです。",
+        description: "総務省統計局の国勢調査を、地域メッシュごとに集計したものです。\
+                      このカタログに置いているデータは、配布元のデータを変換した非公式のミラーです。原典は配布元にあります。",
+        mirror: true,
     },
     SubCatalog {
         dir: "isj",
         title: "位置参照情報",
-        description: "国土交通省の位置参照情報です。住所の代表点を持っています。",
+        description: "国土交通省の位置参照情報です。住所の代表点を持っています。\
+                      このカタログに置いているデータは、配布元のデータを変換した非公式のミラーです。原典は配布元にあります。",
+        mirror: true,
     },
     // **UI に出る文章は丁寧語で書く** (利用者の指摘、2026-10-06)。内輪の言い方 (「うち」) もしない。
     SubCatalog {
@@ -220,28 +237,33 @@ const SUB_CATALOGS: &[SubCatalog] = &[
         title: "国土地理院",
         description: "国土地理院が公開している地図タイル・ベクトルタイル・標高タイルです。\
                       このカタログでは複製せず、公開元の配信をそのまま使っています。",
+        mirror: false,
     },
     SubCatalog {
         dir: "openfreemap",
         title: "OpenFreeMap",
         description: "OpenStreetMap のデータから作られた世界の背景地図です。このカタログでは複製せず、公開元の配信をそのまま使っています。",
+        mirror: false,
     },
     SubCatalog {
         dir: "osm",
         title: "OpenStreetMap",
         description: "OpenStreetMap 財団が配っている地図です。利用方針が厳しいため、このカタログでは描かず、\
                       規約を知らせるために載せています。",
+        mirror: false,
     },
     SubCatalog {
         dir: "mapterhorn",
         title: "Mapterhorn",
         description: "世界の標高タイルです。このカタログでは複製せず、公開元の配信をそのまま使っています。",
+        mirror: false,
     },
     SubCatalog {
         dir: "reearth",
         title: "Re:Earth",
         description: "Re:Earth が公開している標高タイルと 3D の建物 (3D Tiles) です。\
                       このカタログでは複製せず、公開元の配信をそのまま使っています。",
+        mirror: false,
     },
     // JAXA と NASA は配信を使っておらず (まだ描かない)、公開元への案内だけを載せている。
     SubCatalog {
@@ -249,11 +271,13 @@ const SUB_CATALOGS: &[SubCatalog] = &[
         title: "JAXA",
         description: "宇宙航空研究開発機構 (JAXA) の衛星データです。\
                       このカタログでは複製せず、公開元 (JAXA Earth API) への案内だけを載せています。",
+        mirror: false,
     },
     SubCatalog {
         dir: "nasa",
         title: "NASA",
         description: "米国航空宇宙局 (NASA) の衛星データです。このカタログでは複製せず、公開元への案内だけを載せています。",
+        mirror: false,
     },
 ];
 
@@ -968,7 +992,7 @@ pub fn build_japanese(
             body: json!({
                 "type": "Catalog",
                 "stac_version": STAC_VERSION,
-                "id": format!("{CATALOG_ID}-{}", sub.dir),
+                "id": format!("{CATALOG_ID}-{}{}", sub.dir, if sub.mirror { "-mirror" } else { "" }),
                 "title": sub.title,
                 "description": sub.description,
                 "links": sub_links,
@@ -982,7 +1006,7 @@ pub fn build_japanese(
             "type": "Catalog",
             "stac_version": STAC_VERSION,
             "id": CATALOG_ID,
-            "title": "duck-geocoder のデータ",
+            "title": "日本の地理データのカタログ",
             // 使う条件の要約 (`duck:terms`) は独自に規約を読んだもの。STAC Browser など、
             // カタログだけを見る人にも届くように、ルートの説明に書く。
             "description": "日本のオープンな地理空間データを GeoParquet にしたものです。ブラウザから DuckDB-WASM で直接読めます。\

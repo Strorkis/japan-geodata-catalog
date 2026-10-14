@@ -4148,7 +4148,7 @@ test('地理院のベクトルタイルをテーマごとに重ねられる', { 
 
   // テーマはカタログのダイアログの地図タイルに、出所 (国土地理院) の見出しの下で並ぶ。
   await page.locator('.layer-add-button[data-section="tile"]').click();
-  await expect(page.locator('#layer-catalog-dialog .catalog-group[data-group="duck-geocoder-gsi"]')).toBeVisible();
+  await expect(page.locator('#layer-catalog-dialog .catalog-group[data-group="japan-geodata-catalog-gsi"]')).toBeVisible();
   await expect(page.locator(`[data-catalog-layer^="${GSI_VECTOR}--"]`)).toHaveCount(9);
   await closeCatalog(page);
   // 入れるまでは読まない。
@@ -4292,7 +4292,7 @@ test('カタログを語で絞り込める (出所をまたいで、中の層に
   await tab('data').click();
   expect(await ids()).toEqual([LAYER.powerLines]);
   // 見出しは当たった行の出所だけ。
-  await expect(dialog.locator('[data-group="duck-geocoder-plateau"]')).toHaveCount(0);
+  await expect(dialog.locator('[data-group="japan-geodata-catalog-plateau-mirror"]')).toHaveCount(0);
 
   if (await hasGsiVector(page)) {
     // 「等高」は地形の中の「等高線」にだけ当たる。足すと等高線だけが出る。
