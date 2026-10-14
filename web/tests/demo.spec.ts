@@ -1543,6 +1543,9 @@ test.describe('地図のエンジン (Cesium)', () => {
     await expect(page).toHaveURL(/[?&]engine=navara/);
     await expect(page.locator('#navara')).toBeVisible();
     await expect(page.locator('#navara canvas')).toBeVisible();
+    // **ページが縦に伸びない** (伸びると、ホイールが地図の拡大ではなくページのスクロールになる)。
+    // Navara は canvas を渡さないと、画面いっぱいの入れ物を body に足す。
+    expect(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight)).toBe(true);
     // カメラは同じ場所を見ている (Navara の見え方を MapLibre の形に直したもの)。
     const navaraView = () =>
       page.evaluate(() => (window as unknown as { __navara?: { view: () => { lon: number; lat: number; zoom: number } } }).__navara?.view());
@@ -1558,6 +1561,8 @@ test.describe('地図のエンジン (Cesium)', () => {
     await expect.poll(() => tilesets.length).toBeGreaterThan(0);
     await expect(page.locator('#search-input')).toBeDisabled();
     await expect(page.locator('#terrain-engine-note')).toContainText('Re:Earth Terrain');
+    // 地形の欄の注記は**切らずに折り返す** (行の注記と同じ省略を受け継いでいて、続きを読めなかった)。
+    expect(await page.locator('#terrain-engine-note').evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
 
     // 戻ると同じ場所。
     await bar.locator('button[data-engine="maplibre"]').click();

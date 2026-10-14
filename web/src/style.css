@@ -2103,8 +2103,7 @@ a.lang-option {
 #navara {
   position: absolute;
   inset: 0;
-}
-#cesium[hidden],
+}#cesium[hidden],
 #navara[hidden] {
   display: none;
 }
@@ -2141,9 +2140,12 @@ a.lang-option {
 #cesium-hover[hidden] {
   display: none;
 }
+/* 地形の欄の注記は行の2段目ではないので、切らずに折り返す (行の注記の省略を受け継ぐと、続きを読む手段が無かった)。 */
 #terrain-engine-note {
   margin: 0.2rem 0 0;
   font-size: 0.78rem;
+  white-space: normal;
+  overflow: visible;
 }
 #terrain-engine-note[hidden] {
   display: none;

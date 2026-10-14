@@ -255,29 +255,17 @@
 
     <!-- ===== 確かめてほしいこと (確かめてもらったら消す) ===== -->
     <section class="card row" aria-label="確かめてほしいこと">
-      <h2>確かめてほしいこと — MapLibre + deck.gl / + Three.js / Navara <span class="status you">あなたの番</span></h2>
+      <h2>確かめてほしいこと — Navara の直し / Three.js の描け方 <span class="status you">あなたの番</span></h2>
       <p class="sub" style="margin: -0.3rem 0 0.5rem"><b>おかしかったら、その番号を教えてください。</b></p>
       <ol class="tasks">
         <li>
-          <code>cd web &amp;&amp; pnpm dev</code> → <code>http://localhost:5173/?lon=139.7671&amp;lat=35.6812&amp;zoom=16&amp;pitch=55&amp;engine=maplibre-deckgl</code>
-          → 建物が<b>青く</b> (deck.gl で) 描かれ、一覧と右下のパネルは建物の<b>上</b>に出る。建物にマウスを乗せると吹き出しが出る
+          <code>cd web &amp;&amp; pnpm dev</code> → <code>http://localhost:5173/?lon=139.7671&amp;lat=35.6812&amp;zoom=16&amp;pitch=55&amp;engine=navara</code>
+          → <b>縦のスクロールバーが出ず</b>、ホイールで地図が拡大・縮小する
         </li>
         <li>
-          地形の欄に「deck.gl で地形を描きます…」。富士山 <code>?lon=138.7274&amp;lat=35.3606&amp;zoom=12&amp;pitch=60&amp;engine=maplibre-deckgl</code>
-          で起伏が出て、淡色地図が貼られている (鉄道などほかの行は地形の下に隠れるのは分かっている制約)
-        </li>
-        <li>バーで MapLibre に戻る → いつもの建物と地形に戻る</li>
-        <li>
-          <code>?lon=139.7671&amp;lat=35.6812&amp;zoom=16&amp;pitch=55&amp;engine=maplibre-three</code> → 地図タイルの「＋ 追加」→
-          PLATEAU の「建物 (3D Tiles・公式配信)」を足す → <b>3D Tiles の建物が地面に乗っている</b> (浮かない・沈まない。高さの基準は自動で合わせている)。
-          地形の欄に「高さの基準…読めなかった」が出ていたらその旨も教えてください
-        </li>
-        <li>
-          4 の続きでバーの Navara → 同じ場所・同じ向きで、淡色地図・地形・PLATEAU の 3D Tiles が描かれ、<b>建物が地面に乗っている</b>。
-          ドラッグで動かしてからバーで MapLibre に戻る → 動かした先の場所になる
-        </li>
-        <li>
-          Navara からバーの Cesium へ<b>直接</b>替える → 同じ場所の Cesium になる (ヘッドレスでは重くて流せないので、ここだけ目で確かめてほしい)
+          <code>?lon=139.7671&amp;lat=35.6812&amp;zoom=16&amp;pitch=55&amp;engine=maplibre-three</code> で PLATEAU の「建物 (3D Tiles・公式配信)」を足し、
+          <b>屋根だけになっているところのスクリーンショット</b>をください。あわせて、地形の欄で地形を切ると変わるか、
+          一覧の「PLATEAU 建物」(DuckDB の行) を外すと変わるかも教えてください (原因の切り分け。ヘッドレスでは描かせられないため)
         </li>
       </ol>
     </section>

@@ -108,7 +108,13 @@ export async function createNavaraEngine(options: NavaraEngineOptions): Promise<
   const { container, quantizedMeshTerrains, onMoveEnd } = options;
   // 作るときに入れ物の大きさを読むので、見えている状態で作る。
   container.hidden = false;
-  const navara = new ThreeView<DefaultDescriptions>({ container });
+  // **画面 (canvas) は自分で作って渡す。** 渡さないと Navara が画面いっぱい (100vw × 100vh) の入れ物を body の末尾に足し、
+  // 中の canvas を container へ移したあとも空の入れ物が残って、ページが縦に2倍に伸びた (ホイールでページがスクロールした)。
+  const canvas = document.createElement('canvas');
+  canvas.style.width = '100%';
+  canvas.style.height = '100%';
+  canvas.style.display = 'block';
+  const navara = new ThreeView<DefaultDescriptions>({ container, canvas });
   navara.addPlugin(new DefaultPlugin()); // init の前に
   await navara.init();
   navara.addLight({ ambient: { intensity: 1.5 } });
