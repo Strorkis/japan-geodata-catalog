@@ -131,6 +131,30 @@ export function sliderSettings(
   return settings;
 }
 
+/** 選択肢から1つ選ぶもの (3D Tiles の LOD・テクスチャ)。並べ方はスライダーと同じ (見出しの下に入力)。 */
+export function selectField<T extends string>(
+  label: string,
+  options: { value: T; label: string }[],
+  value: T,
+  onChange: (value: T) => void,
+): HTMLElement {
+  const wrap = document.createElement('label');
+  wrap.className = 'layer-slider';
+  const text = document.createElement('span');
+  text.textContent = label;
+  const select = document.createElement('select');
+  for (const option of options) {
+    const el = document.createElement('option');
+    el.value = option.value;
+    el.textContent = option.label;
+    select.append(el);
+  }
+  select.value = value;
+  select.addEventListener('change', () => onChange(select.value as T));
+  wrap.append(text, select);
+  return wrap;
+}
+
 const SECTION_TITLES: Record<Section, string> = { data: m.sectionData, tile: m.sectionTile };
 
 /**

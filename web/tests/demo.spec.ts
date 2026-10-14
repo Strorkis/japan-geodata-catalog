@@ -1483,7 +1483,11 @@ test.describe('地図のエンジン (Cesium)', () => {
    * 外の 3D Tiles と高さの基準の格子 (PROJ の配信) は止める。格子が読めないときは補正なしで描き、そう言う。
    */
   test('MapLibre + Three.js では 3D Tiles の行を描き、高さの基準を読めなければそう言う', async ({ page }) => {
-    await page.route(CESIUM_EXTERNAL, (route) => route.abort());
+    const requested: string[] = [];
+    await page.route(CESIUM_EXTERNAL, (route) => {
+      requested.push(route.request().url());
+      return route.abort();
+    });
     await page.route('https://cdn.proj.org/**', (route) => route.abort());
     await page.evaluate(() => {
       (window as unknown as TestWindow).__map!.jumpTo({ center: [139.7671, 35.6812], zoom: 15, pitch: 45 });
@@ -1506,6 +1510,15 @@ test.describe('地図のエンジン (Cesium)', () => {
     await expect(page.locator('#terrain-engine-note')).toContainText('高さの基準');
     // 地図は MapLibre のまま (検索も使える)。
     await expect(page.locator('#search-input')).toBeEnabled();
+
+    // **PLATEAU は行の設定で LOD とテクスチャを選べ、選んだ組み合わせの tileset.json を読み直す** (テクスチャ付きの LOD2 は重く、
+    // 描き手のキャッシュが満杯になって低い建物が抜けた)。
+    await openLayerSettings(page, 'plateau-3dtiles');
+    const selects = row.locator('.layer-settings-slot select');
+    await selects.nth(0).selectOption('lod1');
+    await selects.nth(1).selectOption('notexture');
+    await expect.poll(() => requested.some((url) => url.includes('/all-bldg-lod1-notexture-latest/tileset.json'))).toBe(true);
+    await expect.poll(shown).toEqual(['plateau-3dtiles']);
 
     // 一覧で外すと描かなくなる。
     await page.locator('#layer-toggle-plateau-3dtiles').uncheck();

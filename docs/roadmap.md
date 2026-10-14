@@ -83,6 +83,18 @@ MapLibre・MapLibre + deck.gl・MapLibre + Three.js・Cesium・Navara の5つ (2
 - **参考: Mini Tokyo 3D** (`.reference/github.com/nagix/mini-tokyo-3d`、MIT) は Mapbox GL v3 + deck.gl 8.9 の `Tile3DLayer` で PLATEAU を描き、
   Three.js は自前の層。MapLibre 6 ではないので deck.gl の件の答えにはならないが、deck.gl でも 3D Tiles を描ける道の実例
 
+**PLATEAU の 3D Tiles が Three.js で抜ける件 (2026-10-14):**
+
+- 利用者のスクリーンショットで、東京駅の周りの低い建物が抜け、間引かれた欠片が残った (高い建物は出る。Cesium・Navara では全部出る)。
+  地形や DuckDB の建物を切っても変わらない。**描き手 (3d-tiles-renderer 0.5.3) のキャッシュの上限** (約430MB・8,000タイル) が疑わしい —
+  README に「満杯になると粗いタイルを出したまま細かくするのを止める」とある。満杯になったらコンソールに出すようにした (確かめは利用者のブラウザ)
+- **PLATEAU 配信サービスは LOD とテクスチャを URL で選べる** (`/datacatalog/3dtiles/<範囲>-<種類>-<LOD>[-interior][-<テクスチャ>]-<年>/tileset.json`。
+  [API の説明](https://docs.plateauview.mlit.go.jp/api/rest/operations/datacatalog3dtilesspectilesetjson/))。カタログの `all-bldg-maxlod2-latest` は
+  「LOD2 まで・テクスチャ優先」でいちばん重い組み合わせだった。**行の設定で LOD (1・2まで・3まで・4まで) とテクスチャ (あれば付ける・付けない) を選べる**ようにした
+  (`web/src/lib/plateau-tiles.ts`。カタログはそのまま、URL の spec を組み替える)
+- 利用者が取ってくれた配信の一覧 (`/datacatalog/plateau-datasets` の `composite_tilesets`、`.reference/tmp/`) では、全国版に建物のほか
+  橋梁・道路・植生・都市設備・地下街なども揃っている。**ほかの種類をカタログに足すのは TOBE**
+
 **Navara をざっと入れた (2026-10-13、`web/src/lib/engines/navara.ts`):**
 
 - `@navaramap/three` 0.2.1 (MIT OR Apache-2.0) + `three-default-plugin`。Cesium と同じく**入れ替える側**で、同じページに載せて隠すときは入れ物を隠すだけ

@@ -19,7 +19,8 @@ import { rangeForZoom, zoomForRange } from './zoom';
 /** 一覧の行のうち、Navara で描くもの。**上の行ほど上** (一覧の並び) で渡す。 */
 export type NavaraRow =
   | { kind: 'raster'; collection: Collection; opacity: number }
-  | { kind: '3d_tiles'; collection: Collection };
+  /** `url` は読む tileset.json (PLATEAU なら一覧で選んだ LOD・テクスチャの組み合わせ)。 */
+  | { kind: '3d_tiles'; collection: Collection; url: string };
 
 export interface NavaraTerrainChoice {
   enabled: boolean;
@@ -233,18 +234,19 @@ export async function createNavaraEngine(options: NavaraEngineOptions): Promise<
   };
 
   // ---- 3D Tiles (出しているものだけ層を置く。ソースは使い回す) ----
+  // 鍵は URL (LOD・テクスチャを替えると URL が変わり、別のタイルセットになる)。
   const tilesets = new Map<string, Layer>();
   const syncTilesets = (rows: Extract<NavaraRow, { kind: '3d_tiles' }>[]) => {
-    const wanted = new Set(rows.map((r) => r.collection.id));
-    for (const [id, layer] of tilesets) {
-      if (wanted.has(id)) continue;
+    const wanted = new Set(rows.map((r) => r.url));
+    for (const [url, layer] of tilesets) {
+      if (wanted.has(url)) continue;
       layer.delete();
-      tilesets.delete(id);
+      tilesets.delete(url);
     }
-    for (const { collection } of rows) {
-      if (tilesets.has(collection.id)) continue;
-      const source = sourceOf(collection.id, () => navara.addSource({ type: '3d-tiles', url: collection.tileLink!.href }));
-      tilesets.set(collection.id, navara.addLayer({ type: '3d-tiles', source }));
+    for (const { url } of rows) {
+      if (tilesets.has(url)) continue;
+      const source = sourceOf(url, () => navara.addSource({ type: '3d-tiles', url }));
+      tilesets.set(url, navara.addLayer({ type: '3d-tiles', source }));
     }
   };
 

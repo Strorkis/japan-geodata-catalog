@@ -105,7 +105,8 @@ const VECTOR_HALF_SPAN_DEG = 0.03;
 /** 一覧の行のうち、Cesium で描くもの。**上の行ほど上** (一覧の並び) で渡す。 */
 export type CesiumRow =
   | { kind: 'raster'; collection: Collection; opacity: number }
-  | { kind: '3d_tiles'; collection: Collection }
+  /** `url` は読む tileset.json (PLATEAU なら一覧で選んだ LOD・テクスチャの組み合わせ。lib/plateau-tiles.ts)。 */
+  | { kind: '3d_tiles'; collection: Collection; url: string }
   /** ベクトルタイル。出している層 (テーマをまたいで Collection ごとにまとめる) と、層ごとの色。 */
   | { kind: 'vector'; collection: Collection; layers: { layer: VectorLayerInfo; color: string }[] };
 
@@ -322,27 +323,39 @@ export function createCesiumEngine(options: CesiumEngineOptions): CesiumEngine {
   };
 
   // ---- 3D Tiles ----
+  // 鍵は「Collection ID と URL」 (LOD・テクスチャを替えると URL が変わり、別のタイルセットになる)。
   const tilesets = new Map<string, Promise<Cesium3DTileset | undefined>>();
+  const tilesetKey = (row: Extract<CesiumRow, { kind: '3d_tiles' }>) => `${row.collection.id}|${row.url}`;
   const syncTilesets = (rows: Extract<CesiumRow, { kind: '3d_tiles' }>[]) => {
-    const wanted = new Set(rows.map((r) => r.collection.id));
+    const wanted = new Set(rows.map(tilesetKey));
     for (const row of rows) {
-      if (tilesets.has(row.collection.id)) continue;
+      const key = tilesetKey(row);
+      if (tilesets.has(key)) continue;
       tilesets.set(
-        row.collection.id,
-        Cesium3DTileset.fromUrl(row.collection.tileLink!.href)
+        key,
+        Cesium3DTileset.fromUrl(row.url)
           .then((tileset) => viewer.scene.primitives.add(tileset) as Cesium3DTileset)
           .catch((e: unknown) => {
             console.error('[cesium] tileset failed', row.collection.id, e);
             onFailure(row.collection);
-            tilesets.delete(row.collection.id);
+            tilesets.delete(key);
             return undefined;
           }),
       );
     }
-    for (const [id, loading] of tilesets) {
+    // 替えて使わなくなった組み合わせは捨てる (残すとメモリを食う)。
+    for (const [key, loading] of tilesets) {
+      if (wanted.has(key) || !rows.some((row) => key.startsWith(`${row.collection.id}|`))) continue;
+      tilesets.delete(key);
+      void loading.then((tileset) => {
+        if (tileset) viewer.scene.primitives.remove(tileset);
+        viewer.scene.requestRender();
+      });
+    }
+    for (const [key, loading] of tilesets) {
       void loading.then((tileset) => {
         if (!tileset) return;
-        tileset.show = wanted.has(id);
+        tileset.show = wanted.has(key);
         viewer.scene.requestRender();
       });
     }

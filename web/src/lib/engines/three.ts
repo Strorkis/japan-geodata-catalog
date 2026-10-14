@@ -22,8 +22,8 @@ export interface ThreeEngine {
   attach: () => Promise<void>;
   /** 地図から外す (読んだタイルは残す)。 */
   detach: () => void;
-  /** 描く 3D Tiles を一覧に合わせる。 */
-  sync: (collections: Collection[]) => void;
+  /** 描く 3D Tiles を一覧に合わせる。`url` は読む tileset.json (PLATEAU なら選んだ LOD・テクスチャの組み合わせ)。 */
+  sync: (tilesets: { collection: Collection; url: string }[]) => void;
   /** 高さの基準 (ジオイド) を合わせられているか。読めなければ false (補正なしで描く)。 */
   datumApplied: () => boolean;
   /** E2E のための足がかり (読み込んで、出している 3D Tiles の Collection ID)。 */
@@ -41,8 +41,24 @@ export function createThreeEngine({ map, onFailure }: ThreeEngineOptions): Three
   let manager: ThreeDManager | undefined;
   let datum = false;
   let layer: ThreeLayer | undefined;
-  const assets = new Map<string, Promise<ThreeDTilesAsset | undefined>>();
+  /** 読んだタイルセット。鍵は Collection ID (1つの行に1つ。LOD・テクスチャを替えたら読み直す)。 */
+  const assets = new Map<string, { url: string; loading: Promise<ThreeDTilesAsset | undefined> }>();
   const wanted = new Set<string>();
+
+  /**
+   * **キャッシュが満杯になったら知らせる** (1つのタイルセットにつき1回)。描き手 (3d-tiles-renderer) のキャッシュの上限
+   * (約430MB・8,000タイル) は固い上限で、満杯になると粗いタイルのまま細かくするのを止める。テクスチャ付きの PLATEAU を
+   * 東京駅の周りで見ると、低い建物が抜け、間引かれた欠片が残った (2026-10-14、利用者のスクリーンショット)。
+   */
+  const warnWhenCacheFull = (asset: ThreeDTilesAsset, collection: Collection, url: string) => {
+    const tiles = asset.getTilesRenderer();
+    const check = () => {
+      if (!tiles.lruCache.isFull()) return;
+      tiles.removeEventListener('tiles-load-end', check);
+      console.warn('[three] tile cache full; coarse tiles stay for', collection.id, url);
+    };
+    tiles.addEventListener('tiles-load-end', check);
+  };
 
   /** 高さの基準の格子を読んで始める。**読めなければ補正なしで始め直す** (描けないよりよい)。 */
   const start = async () => {
@@ -61,7 +77,7 @@ export function createThreeEngine({ map, onFailure }: ThreeEngineOptions): Three
   };
 
   const applyVisibility = () => {
-    for (const [id, loading] of assets) {
+    for (const [id, { loading }] of assets) {
       void loading.then((asset) => {
         if (!asset) return;
         asset.getTilesRenderer().group.visible = wanted.has(id);
@@ -79,21 +95,28 @@ export function createThreeEngine({ map, onFailure }: ThreeEngineOptions): Three
     detach: () => {
       if (map.getLayer(LAYER_ID)) map.removeLayer(LAYER_ID);
     },
-    sync: (collections) => {
+    sync: (tilesets) => {
       wanted.clear();
-      for (const collection of collections) wanted.add(collection.id);
+      for (const { collection } of tilesets) wanted.add(collection.id);
       if (layer) {
-        for (const collection of collections) {
-          if (assets.has(collection.id)) continue;
-          assets.set(
-            collection.id,
-            layer.load3dTiles({ tilesetUrl: collection.tileLink!.href }).catch((e: unknown) => {
+        for (const { collection, url } of tilesets) {
+          const current = assets.get(collection.id);
+          if (current?.url === url) continue;
+          // 組み合わせを替えたら、前のものは捨てる (残すとキャッシュを食う)。
+          if (current) void current.loading.then((asset) => asset?.destroy());
+          const loading = layer
+            .load3dTiles({ tilesetUrl: url })
+            .then((asset) => {
+              warnWhenCacheFull(asset, collection, url);
+              return asset;
+            })
+            .catch((e: unknown) => {
               console.error('[three] tileset failed', collection.id, e);
               onFailure(collection);
-              assets.delete(collection.id);
+              if (assets.get(collection.id)?.url === url) assets.delete(collection.id);
               return undefined;
-            }),
-          );
+            });
+          assets.set(collection.id, { url, loading });
         }
       }
       applyVisibility();

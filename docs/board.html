@@ -240,7 +240,7 @@
     <section class="kpis" aria-label="数字">
       <div class="card kpi">
         <div class="label">公開待ちのコミット</div>
-        <div class="value">34 <small>件</small></div>
+        <div class="value">36 <small>件</small></div>
         <span class="status you">カタログを上げて push 待ち</span>
       </div>
       <div class="card kpi">
@@ -263,9 +263,12 @@
           → <b>縦のスクロールバーが出ず</b>、ホイールで地図が拡大・縮小する
         </li>
         <li>
-          <code>?lon=139.7671&amp;lat=35.6812&amp;zoom=16&amp;pitch=55&amp;engine=maplibre-three</code> で PLATEAU の「建物 (3D Tiles・公式配信)」を足し、
-          <b>屋根だけになっているところのスクリーンショット</b>をください。あわせて、地形の欄で地形を切ると変わるか、
-          一覧の「PLATEAU 建物」(DuckDB の行) を外すと変わるかも教えてください (原因の切り分け。ヘッドレスでは描かせられないため)
+          <code>?lon=139.7671&amp;lat=35.6812&amp;zoom=16&amp;pitch=55&amp;engine=maplibre-three</code> で PLATEAU の「建物 (3D Tiles・公式配信)」を足す →
+          開発者ツールのコンソールに <code>[three] tile cache full</code> が出るか見る (出れば、建物が抜けるのは描き手のキャッシュの上限のせい)
+        </li>
+        <li>
+          2 の続きで、その行の ⚙ から「詳しさ」を <b>LOD1</b>、「テクスチャ」を<b>付けない</b>にする → 低い建物も含めて<b>全部の建物が出る</b>か。
+          LOD2 まで・テクスチャ無しでも出るかも見てほしい (どこまでなら Three.js で描けるかの目安)
         </li>
       </ol>
     </section>

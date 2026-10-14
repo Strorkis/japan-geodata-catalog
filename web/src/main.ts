@@ -34,7 +34,7 @@ import { createMeshLayer } from './ui/layers/mesh';
 import { createRailwayLayer } from './ui/layers/railway';
 import { createRoadLayer } from './ui/layers/roads';
 import { createLineLayers } from './ui/layers/lines';
-import { LAYER_ANCHORS, createLayerList, sliderSettings, type Layer, type LayerList } from './ui/layer-list';
+import { LAYER_ANCHORS, createLayerList, selectField, sliderSettings, type Layer, type LayerList } from './ui/layer-list';
 import { renderCredits, renderTechCredits, renderTermsSummary } from './ui/credits';
 import { createStacViewer } from './ui/stac-viewer';
 import { createHover } from './ui/hover';
@@ -49,6 +49,7 @@ import type { ThreeEngine } from './lib/engines/three';
 // エンジンは**型だけ**。本体はバーで選んだときに読む (地図の起動を重くしない)。
 import type { CesiumEngine, CesiumRow, CesiumVectorHit } from './lib/engines/cesium';
 import type { NavaraEngine, NavaraRow } from './lib/engines/navara';
+import { plateauTilesChoice, plateauTilesetUrl, type PlateauTilesChoice } from './lib/plateau-tiles';
 import { hoverContent, vectorHover } from './ui/hover-rows';
 import { vectorThemeLook } from './lib/vector-looks';
 import type { View } from './lib/view-params';
@@ -514,7 +515,7 @@ async function main() {
       } else if (collection.kind === 'raster_tiles' && collection.tileLink) {
         rows.push({ kind: 'raster', collection, opacity: rasterOpacity.get(collection.id) ?? 1 });
       } else if (collection.kind === '3d_tiles' && collection.tileLink?.rel === '3d-tiles') {
-        rows.push({ kind: '3d_tiles', collection });
+        rows.push({ kind: '3d_tiles', collection, url: tilesetUrlOf(collection) });
       }
     }
     const selected = terrainCollections.find((c) => c.id === terrainSelect.value);
@@ -536,6 +537,51 @@ async function main() {
       terrainNote.hidden = false;
     }
   };
+  /** 3D Tiles の行で選んだ組み合わせ (Collection ID → PLATEAU の LOD・テクスチャ)。選んでいなければカタログの URL のまま。 */
+  const tilesChoices = new Map<string, PlateauTilesChoice>();
+  /** 3D Tiles の行が読む tileset.json。 */
+  const tilesetUrlOf = (collection: Collection) => {
+    const href = collection.tileLink!.href;
+    const choice = tilesChoices.get(collection.id);
+    return choice ? plateauTilesetUrl(href, choice) : href;
+  };
+  /**
+   * 3D Tiles の行の設定。**PLATEAU の配信なら LOD とテクスチャを選べる** (重さが大きく違う。lib/plateau-tiles.ts)。
+   * ほかの 3D Tiles には選ぶものが無いので空 (設定のボタンも出ない)。
+   */
+  const tilesSettings = (collection: Collection) => {
+    const settings = document.createElement('div');
+    const initial = collection.tileLink && plateauTilesChoice(collection.tileLink.href);
+    if (!initial) return settings;
+    const choose = (next: Partial<PlateauTilesChoice>) => {
+      tilesChoices.set(collection.id, { ...(tilesChoices.get(collection.id) ?? initial), ...next });
+      syncSwapped();
+      syncThree();
+    };
+    settings.append(
+      selectField(
+        m.tilesLod,
+        [
+          { value: 'lod1' as const, label: 'LOD1' },
+          { value: 'maxlod2' as const, label: m.tilesLodUpTo(2) },
+          { value: 'maxlod3' as const, label: m.tilesLodUpTo(3) },
+          { value: 'maxlod4' as const, label: m.tilesLodUpTo(4) },
+        ],
+        initial.lod,
+        (lod) => choose({ lod }),
+      ),
+      selectField(
+        m.tilesTexture,
+        [
+          { value: 'preferred' as const, label: m.tilesTexturePreferred },
+          { value: 'notexture' as const, label: m.tilesTextureNone },
+        ],
+        initial.texture,
+        (texture) => choose({ texture }),
+      ),
+    );
+    return settings;
+  };
   /** MapLibre + Three.js のときに重ねる Three.js (初めて選んだときに作る)。 */
   let three: ThreeEngine | undefined;
   /** 一覧で出している 3D Tiles を Three.js に写す。 */
@@ -545,7 +591,7 @@ async function main() {
       layerList
         .ordered('tile')
         .filter((layer) => layer.visible && layer.collections[0].kind === '3d_tiles' && layer.collections[0].tileLink)
-        .map((layer) => layer.collections[0]),
+        .map((layer) => ({ collection: layer.collections[0], url: tilesetUrlOf(layer.collections[0]) })),
     );
   };
   terrainToggle.addEventListener('change', syncSwapped);
@@ -773,7 +819,7 @@ async function main() {
         layers.push({
           ...tileBase,
           vintage: '3D Tiles',
-          settings: document.createElement('div'),
+          settings: tilesSettings(collection),
           refresh: () => {},
           mapLayerIds: () => [],
           unsupportedIn: NOT_3D_TILES,
