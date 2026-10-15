@@ -439,7 +439,7 @@ Overture の建物の出典を日本に実際に入っている出所に絞っ�
 COG は JAXA から直接読むので、R2 には何も足さない)。
 
 ```sh
-# 1. カタログ (items.parquet と JSON 全部。89ファイル)
+# 1. カタログ (items.parquet と JSON 全部。97ファイル = JSON 96 + items.parquet。2026-10-15 に数えた)
 rclone copy data/output "$R2" \
   --filter '+ /items.parquet' --filter '+ *.json' --filter '- **' -P
 
@@ -449,6 +449,12 @@ git push
 
 - 公開中のアプリは items.parquet の新しい列 (`title`・`duck:vintage`) を読まないだけで、壊れない
 - (10-11 追記) Re:Earth Terrain の JSON に `quantized-mesh` のリンクが増えた (3D のページの地形)。同じ「JSON 全部」に入っている
+- (10-15 追記) その後の分もカタログは同じ「JSON 全部」で済む (データのファイルは変えていない): OSM の標準タイル (カタログだけ)、
+  名前の変更 (カタログの ID が `japan-geodata-catalog`、変換して置いている出所のサブカタログの ID に `-mirror`)、PLATEAU の 3D Tiles の説明
+- (10-15 追記) **リポジトリの名前を変えたので、Pages の URL は `strorkis.github.io/japan-geodata-catalog/` に変わった。** 公開中のビルドは古いパス
+  (`/duck-geocoder/`) を焼き込んでいて、改名した時点から表示できない。この push で CI が新しい名前で組み直して直る。
+  R2 の CORS はホスト単位 (`https://strorkis.github.io`) なので変えなくてよい。バケットの名前 (`duck-geocoder`) は後で引っ越す (独自ドメインと一緒に決める)
+- push する前に、手元で本番ビルドの E2E を全件流した (結果はボード)
 
 ### 平置きだった頃の古いJSONを消す
 
