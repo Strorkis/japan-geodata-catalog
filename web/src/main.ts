@@ -50,6 +50,7 @@ import type { ThreeEngine } from './lib/engines/three';
 import type { CesiumEngine, CesiumRow, CesiumVectorHit } from './lib/engines/cesium';
 import type { NavaraEngine, NavaraRow } from './lib/engines/navara';
 import {
+  PLATEAU_TILES_DEFAULT,
   plateauTilesChoice,
   plateauTilesetUrl,
   textureSelectable,
@@ -557,8 +558,10 @@ async function main() {
    */
   const tilesSettings = (collection: Collection) => {
     const settings = document.createElement('div');
-    const initial = collection.tileLink && plateauTilesChoice(collection.tileLink.href);
-    if (!initial) return settings;
+    if (!collection.tileLink || !plateauTilesChoice(collection.tileLink.href)) return settings;
+    // 地図では軽い組み合わせから始める (カタログの URL はいちばん詳しい形のまま)。
+    const initial = PLATEAU_TILES_DEFAULT;
+    tilesChoices.set(collection.id, initial);
     const texture = selectField(
       m.tilesTexture,
       [

@@ -1513,10 +1513,13 @@ test.describe('地図のエンジン (Cesium)', () => {
 
     // **PLATEAU は行の設定で LOD とテクスチャを選べ、選んだ組み合わせの tileset.json を読み直す** (テクスチャ付きの LOD2 は重く、
     // 描き手のキャッシュが満杯になって低い建物が抜けた)。
+    // 既定は「LOD2 まで・テクスチャ無し」(どのエンジンでも)。テクスチャ付きは行の設定から選ぶ。
+    await expect.poll(() => requested.some((url) => url.includes('/all-bldg-maxlod2-notexture-latest/tileset.json'))).toBe(true);
     await openLayerSettings(page, 'plateau-3dtiles');
     const selects = row.locator('.layer-settings-slot select');
-    await selects.nth(1).selectOption('notexture');
-    await expect.poll(() => requested.some((url) => url.includes('/all-bldg-maxlod2-notexture-latest/tileset.json'))).toBe(true);
+    await expect(selects.nth(1)).toHaveValue('notexture');
+    await selects.nth(1).selectOption('preferred');
+    await expect.poll(() => requested.some((url) => url.includes('/all-bldg-maxlod2-latest/tileset.json'))).toBe(true);
     // LOD1 ではテクスチャを選べない (配信では LOD1 が「テクスチャあり」で登録されていて、notexture だと何も出なかった)。
     await selects.nth(0).selectOption('lod1');
     await expect(selects.nth(1)).toBeDisabled();
@@ -1583,7 +1586,8 @@ test.describe('地図のエンジン (Cesium)', () => {
     await expect(buildings).toContainText('Navara ではまだ描けません');
     await expect(page.locator('.layer-row[data-layer="plateau-3dtiles"]')).not.toHaveClass(/unsupported/);
     await expect(page.locator('.layer-row[data-layer="gsi-pale"]')).not.toHaveClass(/unsupported/);
-    await expect.poll(() => tilesets.length).toBeGreaterThan(0);
+    // 既定の組み合わせ (LOD2 まで・テクスチャ無し) は Navara でも同じ。
+    await expect.poll(() => tilesets.some((url) => url.includes('/all-bldg-maxlod2-notexture-latest/tileset.json'))).toBe(true);
     await expect(page.locator('#search-input')).toBeDisabled();
     await expect(page.locator('#terrain-engine-note')).toContainText('Re:Earth Terrain');
     // 地形の欄の注記は**切らずに折り返す** (行の注記と同じ省略を受け継いでいて、続きを読めなかった)。

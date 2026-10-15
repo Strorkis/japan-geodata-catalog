@@ -340,8 +340,8 @@ const EN: &[(&str, &str)] = &[
         "Buildings (3D Tiles, official distribution)",
     ),
     (
-        "PLATEAU 配信サービスが配っている建物の 3D Tiles です。全国の都市を1つの tileset.json に束ねたもので、既定では都市ごとに LOD2 までの細かいものを採り、テクスチャがあればテクスチャ付きになります。配信サービスは LOD とテクスチャの有無を選べ、地図では行の設定から選べます (テクスチャ付きは重いです)。MapLibre だけでは描けず、Three.js・Cesium・Navara で描けます。配信サービスは試験運用で、提供期間や品質は保証されていません。",
-        "Building 3D Tiles from the PLATEAU distribution service, with all cities bundled into one tileset.json. By default each city uses its most detailed data up to LOD2, textured where available. The service lets you choose the LOD and whether to use textures, and the map offers this in the layer's settings (textured data is heavy). MapLibre alone cannot draw them; Three.js, Cesium and Navara can. The service is a trial and its availability and quality are not guaranteed.",
+        "PLATEAU 配信サービスが配っている建物の 3D Tiles です。全国の都市を1つの tileset.json に束ねたもので、既定では都市ごとに LOD2 までの細かいものを採り、テクスチャがあればテクスチャ付きになります。配信サービスは LOD とテクスチャの有無を選べます。地図では軽い「LOD2 まで・テクスチャ無し」で始め、行の設定から選び直せます (テクスチャ付きは重いです)。MapLibre だけでは描けず、Three.js・Cesium・Navara で描けます。配信サービスは試験運用で、提供期間や品質は保証されていません。",
+        "Building 3D Tiles from the PLATEAU distribution service, with all cities bundled into one tileset.json. By default each city uses its most detailed data up to LOD2, textured where available. The service lets you choose the LOD and whether to use textures. The map starts with the lighter \"up to LOD2, no textures\" and lets you change it in the layer's settings (textured data is heavy). MapLibre alone cannot draw them; Three.js, Cesium and Navara can. The service is a trial and its availability and quality are not guaranteed.",
     ),
     (
         "行政区域 N03 (元データ)",

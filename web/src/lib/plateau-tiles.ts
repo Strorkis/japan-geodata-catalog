@@ -23,6 +23,14 @@ export interface PlateauTilesChoice {
 const SPEC = /\/datacatalog\/3dtiles\/([^/]+)\/tileset\.json$/;
 const LOD = /^(max)?lod\d$/;
 
+/**
+ * **地図で始める組み合わせ: LOD2 まで・テクスチャ無し** (利用者が決めた、2026-10-15)。どのエンジンでも同じ
+ * (行の設定はエンジンに依らない一覧の状態で、エンジンごとに既定が違うと切り替えたときに表示が変わる)。
+ * テクスチャ付きは Three.js で描き手のキャッシュが満杯になって建物が抜け、Cesium・Navara でも重い。カタログの URL
+ * (配信のいちばん詳しい形) はそのままで、行の設定からテクスチャ付きに戻せる。
+ */
+export const PLATEAU_TILES_DEFAULT: PlateauTilesChoice = { lod: 'maxlod2', texture: 'notexture' };
+
 /** spec を分ける。PLATEAU の組み立ての形でなければ undefined。 */
 function parse(href: string) {
   const match = SPEC.exec(href);

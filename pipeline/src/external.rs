@@ -696,7 +696,8 @@ pub const EXTERNAL_RASTERS: &[ExternalRaster] = &[
         // 配信サービスは LOD とテクスチャの組み合わせを URL で選べる (web/src/lib/plateau-tiles.ts)。カタログに載せるのは既定の組み合わせ。
         description: "PLATEAU 配信サービスが配っている建物の 3D Tiles です。全国の都市を1つの tileset.json に束ねたもので、\
                       既定では都市ごとに LOD2 までの細かいものを採り、テクスチャがあればテクスチャ付きになります。\
-                      配信サービスは LOD とテクスチャの有無を選べ、地図では行の設定から選べます (テクスチャ付きは重いです)。\
+                      配信サービスは LOD とテクスチャの有無を選べます。地図では軽い「LOD2 まで・テクスチャ無し」で始め、\
+                      行の設定から選び直せます (テクスチャ付きは重いです)。\
                       MapLibre だけでは描けず、Three.js・Cesium・Navara で描けます。配信サービスは試験運用で、提供期間や品質は保証されていません。",
         attribution: PLATEAU_TILES,
         via: "https://docs.plateauview.mlit.go.jp/datasets/3d-tiles/",
