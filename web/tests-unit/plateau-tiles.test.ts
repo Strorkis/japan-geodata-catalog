@@ -12,12 +12,19 @@ test('カタログの URL から、いまの組み合わせを読む', () => {
 
 test('LOD とテクスチャを替える (範囲・種類・年はそのまま)', () => {
   const href = `${API}/all-bldg-maxlod2-latest/tileset.json`;
-  assert.equal(plateauTilesetUrl(href, { lod: 'lod1', texture: 'notexture' }), `${API}/all-bldg-lod1-notexture-latest/tileset.json`);
+  assert.equal(plateauTilesetUrl(href, { lod: 'maxlod2', texture: 'notexture' }), `${API}/all-bldg-maxlod2-notexture-latest/tileset.json`);
   assert.equal(plateauTilesetUrl(href, { lod: 'maxlod3', texture: 'preferred' }), `${API}/all-bldg-maxlod3-latest/tileset.json`);
   // 屋内 (interior) は残す。
   assert.equal(
-    plateauTilesetUrl(`${API}/13101-bldg-lod3-interior-2025/tileset.json`, { lod: 'lod1', texture: 'notexture' }),
-    `${API}/13101-bldg-lod1-interior-notexture-2025/tileset.json`,
+    plateauTilesetUrl(`${API}/13101-bldg-lod3-interior-2025/tileset.json`, { lod: 'maxlod3', texture: 'notexture' }),
+    `${API}/13101-bldg-maxlod3-interior-notexture-2025/tileset.json`,
+  );
+});
+
+test('LOD1 にはテクスチャの指定を付けない (LOD1 は「テクスチャあり」で登録されていて、notexture だと何も出ない)', () => {
+  assert.equal(
+    plateauTilesetUrl(`${API}/all-bldg-maxlod2-latest/tileset.json`, { lod: 'lod1', texture: 'notexture' }),
+    `${API}/all-bldg-lod1-latest/tileset.json`,
   );
 });
 

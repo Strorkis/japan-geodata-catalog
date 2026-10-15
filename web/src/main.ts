@@ -49,7 +49,13 @@ import type { ThreeEngine } from './lib/engines/three';
 // エンジンは**型だけ**。本体はバーで選んだときに読む (地図の起動を重くしない)。
 import type { CesiumEngine, CesiumRow, CesiumVectorHit } from './lib/engines/cesium';
 import type { NavaraEngine, NavaraRow } from './lib/engines/navara';
-import { plateauTilesChoice, plateauTilesetUrl, type PlateauTilesChoice } from './lib/plateau-tiles';
+import {
+  plateauTilesChoice,
+  plateauTilesetUrl,
+  textureSelectable,
+  type PlateauLod,
+  type PlateauTilesChoice,
+} from './lib/plateau-tiles';
 import { hoverContent, vectorHover } from './ui/hover-rows';
 import { vectorThemeLook } from './lib/vector-looks';
 import type { View } from './lib/view-params';
@@ -553,11 +559,29 @@ async function main() {
     const settings = document.createElement('div');
     const initial = collection.tileLink && plateauTilesChoice(collection.tileLink.href);
     if (!initial) return settings;
+    const texture = selectField(
+      m.tilesTexture,
+      [
+        { value: 'preferred' as const, label: m.tilesTexturePreferred },
+        { value: 'notexture' as const, label: m.tilesTextureNone },
+      ],
+      initial.texture,
+      (texture) => choose({ texture }),
+    );
+    const textureSelect = texture.querySelector('select')!;
+    // LOD1 ではテクスチャを選べない (配信の登録の都合で、指定すると何も出ない。lib/plateau-tiles.ts)。
+    const reflectLod = (lod: PlateauLod) => {
+      textureSelect.disabled = !textureSelectable(lod);
+      textureSelect.title = textureSelect.disabled ? m.tilesTextureNotForLod1 : '';
+    };
     const choose = (next: Partial<PlateauTilesChoice>) => {
-      tilesChoices.set(collection.id, { ...(tilesChoices.get(collection.id) ?? initial), ...next });
+      const chosen = { ...(tilesChoices.get(collection.id) ?? initial), ...next };
+      tilesChoices.set(collection.id, chosen);
+      reflectLod(chosen.lod);
       syncSwapped();
       syncThree();
     };
+    reflectLod(initial.lod);
     settings.append(
       selectField(
         m.tilesLod,
@@ -570,15 +594,7 @@ async function main() {
         initial.lod,
         (lod) => choose({ lod }),
       ),
-      selectField(
-        m.tilesTexture,
-        [
-          { value: 'preferred' as const, label: m.tilesTexturePreferred },
-          { value: 'notexture' as const, label: m.tilesTextureNone },
-        ],
-        initial.texture,
-        (texture) => choose({ texture }),
-      ),
+      texture,
     );
     return settings;
   };

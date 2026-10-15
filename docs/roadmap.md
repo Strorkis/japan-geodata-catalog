@@ -92,6 +92,13 @@ MapLibre・MapLibre + deck.gl・MapLibre + Three.js・Cesium・Navara の5つ (2
   [API の説明](https://docs.plateauview.mlit.go.jp/api/rest/operations/datacatalog3dtilesspectilesetjson/))。カタログの `all-bldg-maxlod2-latest` は
   「LOD2 まで・テクスチャ優先」でいちばん重い組み合わせだった。**行の設定で LOD (1・2まで・3まで・4まで) とテクスチャ (あれば付ける・付けない) を選べる**ようにした
   (`web/src/lib/plateau-tiles.ts`。カタログはそのまま、URL の spec を組み替える)
+- **利用者のブラウザで確かめた (10-15):** 既定の組み合わせではコンソールに `[three] tile cache full` が出た (**原因はキャッシュの上限で確定**)。
+  「LOD2 まで・テクスチャ無し」と「LOD1」なら全部出る。あわせて出る `TilesRenderer: tiles versions at 1.1 or higher have limited support` は、
+  PLATEAU が 3D Tiles 1.1 なので出る描き手の注意書き (描けてはいる)
+- **LOD1 ではテクスチャを選ばせない。** 配信の一覧では LOD1 の建物はテクスチャが無いのにほとんど「テクスチャあり」で登録されていて
+  (448件。「無し」は3件)、`lod1-notexture` は何も出なかった
+- **Three.js では光を足し、テクスチャの無い面だけ光を受ける材質 (Lambert・面ごとの明るさ) に替える。** PLATEAU の glTF は光を受けない材質で、
+  補助のライブラリは光を置かないので、テクスチャ無しは真っ白で形が読めなかった。太陽の向きは日本の真ん中で決め打ち (見た目は利用者が確かめる)
 - 利用者が取ってくれた配信の一覧 (`/datacatalog/plateau-datasets` の `composite_tilesets`、`.reference/tmp/`) では、全国版に建物のほか
   橋梁・道路・植生・都市設備・地下街なども揃っている。**ほかの種類をカタログに足すのは TOBE**
 

@@ -50,13 +50,20 @@ export function plateauTilesChoice(href: string): PlateauTilesChoice | undefined
   return { lod, texture: spec.texture === 'notexture' ? 'notexture' : 'preferred' };
 }
 
+/**
+ * **LOD1 ではテクスチャを選べない。** 配信の一覧 (`/datacatalog/plateau-datasets`、2026-10-14) では、LOD1 の建物の 3D Tiles は
+ * 実際にはテクスチャが無いのに、ほとんどが「テクスチャあり」で登録されている (448件。「無し」は3件)。`lod1-notexture` を指定すると
+ * ほぼ全部が外れて、何も出なかった (利用者が見つけた)。
+ */
+export const textureSelectable = (lod: PlateauLod) => lod !== 'lod1';
+
 /** 選んだ組み合わせの URL。PLATEAU の組み立ての形でなければそのまま返す。 */
 export function plateauTilesetUrl(href: string, choice: PlateauTilesChoice): string {
   const spec = parse(href);
   if (!spec) return href;
   const parts = [spec.area, spec.type, choice.lod];
   if (spec.interior) parts.push('interior');
-  if (choice.texture === 'notexture') parts.push('notexture');
+  if (choice.texture === 'notexture' && textureSelectable(choice.lod)) parts.push('notexture');
   parts.push(spec.year);
   return `${spec.prefix}/datacatalog/3dtiles/${parts.join('-')}/tileset.json`;
 }

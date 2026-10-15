@@ -1515,9 +1515,12 @@ test.describe('地図のエンジン (Cesium)', () => {
     // 描き手のキャッシュが満杯になって低い建物が抜けた)。
     await openLayerSettings(page, 'plateau-3dtiles');
     const selects = row.locator('.layer-settings-slot select');
-    await selects.nth(0).selectOption('lod1');
     await selects.nth(1).selectOption('notexture');
-    await expect.poll(() => requested.some((url) => url.includes('/all-bldg-lod1-notexture-latest/tileset.json'))).toBe(true);
+    await expect.poll(() => requested.some((url) => url.includes('/all-bldg-maxlod2-notexture-latest/tileset.json'))).toBe(true);
+    // LOD1 ではテクスチャを選べない (配信では LOD1 が「テクスチャあり」で登録されていて、notexture だと何も出なかった)。
+    await selects.nth(0).selectOption('lod1');
+    await expect(selects.nth(1)).toBeDisabled();
+    await expect.poll(() => requested.some((url) => url.includes('/all-bldg-lod1-latest/tileset.json'))).toBe(true);
     await expect.poll(shown).toEqual(['plateau-3dtiles']);
 
     // 一覧で外すと描かなくなる。

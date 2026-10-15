@@ -12,10 +12,54 @@
  */
 import type { Map as MapLibreMap } from 'maplibre-gl';
 import { ThreeDManager, type ThreeDTilesAsset, type ThreeLayer } from 'maplibre-gl-three';
+import {
+  AmbientLight,
+  DirectionalLight,
+  MeshLambertMaterial,
+  type Mesh,
+  type MeshBasicMaterial,
+  type Object3D,
+  type Scene,
+} from 'three';
 import type { Collection } from '../stac';
 
 const LAYER_ID = 'three-3d-tiles';
 const BASE = `${import.meta.env.BASE_URL}three/`;
+
+/**
+ * **光を足す。** 補助のライブラリは場面に光を置かない。PLATEAU の glTF は光を受けない材質 (unlit) なので、テクスチャが無いと
+ * 屋根も壁も同じ白一色で形が読めなかった (2026-10-14、利用者)。場面の子は地心座標 (ECEF) で置くので、太陽の向きも ECEF で書く。
+ * 向きは日本の真ん中 (東経137°・北緯36°) の「上 + 南 + 少し西」(昼過ぎの太陽)。世界の 3D Tiles でも面ごとの明るさの差は出る。
+ */
+function addLights(scene: Scene) {
+  const [lon, lat] = [(137 * Math.PI) / 180, (36 * Math.PI) / 180];
+  const east = [-Math.sin(lon), Math.cos(lon), 0];
+  const north = [-Math.sin(lat) * Math.cos(lon), -Math.sin(lat) * Math.sin(lon), Math.cos(lat)];
+  const up = [Math.cos(lat) * Math.cos(lon), Math.cos(lat) * Math.sin(lon), Math.sin(lat)];
+  const sunward = [0, 1, 2].map((i) => up[i] - 0.6 * north[i] - 0.3 * east[i]);
+  const sun = new DirectionalLight(0xffffff, 1.8);
+  sun.position.set(sunward[0], sunward[1], sunward[2]);
+  scene.add(new AmbientLight(0xffffff, 1.2), sun, sun.target);
+}
+
+/** **テクスチャの無い面だけ**、光を受ける材質に替える (テクスチャは写真なので、陰影はもう写っている)。面ごとの明るさで形を出す。 */
+function shadeUntextured(model: Object3D) {
+  // `instanceof` ではなく three.js の印 (`isMesh` など) で見る (読み手と three.js の写しが別でも効くように)。
+  model.traverse((object) => {
+    const mesh = object as Mesh;
+    const plain = mesh.material as MeshBasicMaterial;
+    if (!mesh.isMesh || Array.isArray(mesh.material) || !plain.isMeshBasicMaterial || plain.map) return;
+    mesh.material = new MeshLambertMaterial({
+      color: plain.color,
+      // 頂点の法線を持たない形もあるので、面の向きから明るさを出す。
+      flatShading: true,
+      side: plain.side,
+      transparent: plain.transparent,
+      opacity: plain.opacity,
+    });
+    plain.dispose();
+  });
+}
 
 export interface ThreeEngine {
   /** 地図に重ねる (初回は高さの基準の格子を読む)。 */
@@ -89,7 +133,10 @@ export function createThreeEngine({ map, onFailure }: ThreeEngineOptions): Three
   return {
     attach: async () => {
       manager ??= await start();
-      layer ??= manager.createLayer({ id: LAYER_ID });
+      if (!layer) {
+        layer = manager.createLayer({ id: LAYER_ID });
+        addLights(layer.three.getScene());
+      }
       if (!map.getLayer(LAYER_ID)) map.addLayer(layer);
     },
     detach: () => {
@@ -108,6 +155,7 @@ export function createThreeEngine({ map, onFailure }: ThreeEngineOptions): Three
             .load3dTiles({ tilesetUrl: url })
             .then((asset) => {
               warnWhenCacheFull(asset, collection, url);
+              asset.getTilesRenderer().addEventListener('load-model', ({ scene }) => shadeUntextured(scene));
               return asset;
             })
             .catch((e: unknown) => {

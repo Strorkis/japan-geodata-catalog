@@ -21,6 +21,7 @@ const ja = {
   tilesTexture: 'テクスチャ',
   tilesTexturePreferred: 'あれば付ける',
   tilesTextureNone: '付けない (軽い)',
+  tilesTextureNotForLod1: 'LOD1 にはテクスチャがないので選べません',
   sourceData: '元データ',
   viewOnlyReference: 'このカタログからは配っていません。ⓘ から公開元へ辿れます',
   // ---- 地図のエンジン (ui/engine-bar.ts) ----
@@ -352,6 +353,7 @@ const en: Messages = {
   tilesTexture: 'Textures',
   tilesTexturePreferred: 'Use when available',
   tilesTextureNone: 'None (lighter)',
+  tilesTextureNotForLod1: 'LOD1 has no textures, so this cannot be chosen',
   sourceData: 'Source data',
   viewOnlyReference: 'Not distributed by this catalog. Follow ⓘ to the original publisher',
   engineBarLabel: 'Map engine',
