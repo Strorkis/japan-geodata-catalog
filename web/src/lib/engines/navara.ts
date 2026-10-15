@@ -225,8 +225,14 @@ export async function createNavaraEngine(options: NavaraEngineOptions): Promise<
     // **下の行から足す** (後に足したものが上 = 一覧の先頭)。
     for (const row of [...rows].reverse()) {
       const { collection } = row;
+      // **最小のズームも渡す。** 渡さないとズーム0から読みに行き、地理院の淡色地図 (ズーム2から) で 0/0/0.png が 404 になった。
       const source = sourceOf(collection.id, () =>
-        navara.addSource({ type: 'raster-tile', url: collection.tileLink!.href, maxZoom: collection.zoom?.[1] ?? 18 }),
+        navara.addSource({
+          type: 'raster-tile',
+          url: collection.tileLink!.href,
+          minZoom: collection.zoom?.[0] ?? 0,
+          maxZoom: collection.zoom?.[1] ?? 18,
+        }),
       );
       rasters.set(collection.id, navara.addLayer({ type: 'raster', source, raster: { opacity: row.opacity } }));
     }

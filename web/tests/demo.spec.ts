@@ -1542,8 +1542,13 @@ test.describe('地図のエンジン (Cesium)', () => {
    */
   test('バーで Navara に切り替えても同じ場所で、描けない行は灰色になり、3D Tiles を読みに行く', async ({ page }) => {
     const tilesets: string[] = [];
+    /** 淡色地図のタイルを読みに行ったズーム。 */
+    const paleZooms: number[] = [];
     await page.route(CESIUM_EXTERNAL, (route) => {
-      if (route.request().url().includes('plateauview')) tilesets.push(route.request().url());
+      const url = route.request().url();
+      if (url.includes('plateauview')) tilesets.push(url);
+      const pale = /\/xyz\/pale\/(\d+)\//.exec(url);
+      if (pale) paleZooms.push(Number(pale[1]));
       return route.abort();
     });
     await page.evaluate(() => {
@@ -1554,8 +1559,12 @@ test.describe('地図のエンジン (Cesium)', () => {
     await closeCatalog(page);
 
     const bar = page.locator('#engine-bar');
+    const paleBefore = paleZooms.length;
     await bar.locator('button[data-engine="navara"]').click();
     await expect(bar.locator('button[data-engine="navara"]')).toHaveAttribute('aria-pressed', 'true');
+    // **背景地図のズームの範囲を渡す** (淡色地図はズーム2から。渡さないと 0/0/0.png を読みに行って 404 になった)。
+    await expect.poll(() => paleZooms.length).toBeGreaterThan(paleBefore);
+    expect(Math.min(...paleZooms.slice(paleBefore))).toBeGreaterThanOrEqual(2);
     await expect(page).toHaveURL(/[?&]engine=navara/);
     await expect(page.locator('#navara')).toBeVisible();
     await expect(page.locator('#navara canvas')).toBeVisible();

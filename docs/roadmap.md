@@ -99,6 +99,10 @@ MapLibre・MapLibre + deck.gl・MapLibre + Three.js・Cesium・Navara の5つ (2
   (448件。「無し」は3件)、`lod1-notexture` は何も出なかった
 - **Three.js では光を足し、テクスチャの無い面だけ光を受ける材質 (Lambert・面ごとの明るさ) に替える。** PLATEAU の glTF は光を受けない材質で、
   補助のライブラリは光を置かないので、テクスチャ無しは真っ白で形が読めなかった。太陽の向きは日本の真ん中で決め打ち (見た目は利用者が確かめる)
+- LOD1 と陰影は利用者のブラウザで確かめた (10-15)。コンソールに `THREE.GLTFLoader: Unknown extension "CESIUM_RTC"` が出ることがある。
+  Three.js の道は補助のライブラリがこの拡張を登録しているので、Navara が同梱する glTF の読み手から出ているとみている (確かめていない)。
+  どのエンジンでも建物の位置は合っているので、害は無い
+- Navara の背景地図に最小のズームを渡していなかった。淡色地図 (ズーム2から) の 0/0/0.png を読みに行って 404 になっていた (利用者が見つけた。直した)
 - 利用者が取ってくれた配信の一覧 (`/datacatalog/plateau-datasets` の `composite_tilesets`、`.reference/tmp/`) では、全国版に建物のほか
   橋梁・道路・植生・都市設備・地下街なども揃っている。**ほかの種類をカタログに足すのは TOBE**
 
