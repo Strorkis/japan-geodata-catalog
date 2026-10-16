@@ -1565,6 +1565,12 @@ test.describe('地図のエンジン (Cesium)', { tag: '@engine' }, () => {
     await page.locator('[data-catalog-layer="plateau-3dtiles"] .catalog-add').click();
     await closeCatalog(page);
 
+    /** 読んだ WASM (Worker の分も) と、WASM として返ってきたか。 */
+    const wasm: { url: string; ok: boolean }[] = [];
+    page.on('response', (response) => {
+      if (!response.url().endsWith('.wasm')) return;
+      wasm.push({ url: response.url(), ok: response.ok() && response.headers()['content-type'] === 'application/wasm' });
+    });
     const bar = page.locator('#engine-bar');
     const paleBefore = paleZooms.length;
     await bar.locator('button[data-engine="navara"]').click();
@@ -1590,6 +1596,11 @@ test.describe('地図のエンジン (Cesium)', { tag: '@engine' }, () => {
     await expect(buildings).toContainText('Navara ではまだ描けません');
     await expect(page.locator('.layer-row[data-layer="plateau-3dtiles"]')).not.toHaveClass(/unsupported/);
     await expect(page.locator('.layer-row[data-layer="gsi-pale"]')).not.toHaveClass(/unsupported/);
+    // **読んだ WASM (Worker の分も) は、どれも WASM として返ってくる。** 本番ビルドでは Worker が自分の隣から読む WASM を
+    // 写し忘れて、404 の HTML を WASM として読んでいた。Draco の読み手は圧縮されたタイルが届いてから読むので
+    // (ここでは外の 3D Tiles を止めている)、写し忘れはビルドの時に見る (vite.config.ts の copyNavaraWorkerWasm)。
+    await expect.poll(() => wasm.some((w) => w.url.includes('navara_wasm_worker'))).toBe(true);
+    expect(wasm.filter((w) => !w.ok)).toEqual([]);
     // 既定の組み合わせ (LOD2 まで・テクスチャ無し) は Navara でも同じ。
     await expect.poll(() => tilesets.some((url) => url.includes('/all-bldg-maxlod2-notexture-latest/tileset.json'))).toBe(true);
     await expect(page.locator('#search-input')).toBeDisabled();
