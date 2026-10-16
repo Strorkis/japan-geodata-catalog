@@ -66,6 +66,9 @@ MapLibre・MapLibre + deck.gl・MapLibre + Three.js・Cesium・Navara の5つ (2
   `fflate` は直った版 (0.7.5) に固定した。`image-size`・`sprintf-js` は Node で画像を圧縮する道具 (`texture-compressor`) の依存で、
   **ブラウザに配る中身には入らない** (本番ビルドの出力で確かめた) ので、理由と外せる条件を添えて受け入れた (`sprintf-js` は直った版がまだ無い)。
   設定は `web/pnpm-workspace.yaml` (pnpm 11 は `package.json` の `pnpm` を読まない)
+  - **(10-16) 受け入れをやめ、依存から消した。** Dependabot は audit の受け入れを知らず、直せないまま失敗し続けた。
+    texture-compressor は @loaders.gl/textures が import せず Node の別のプロセスとして動かすだけなので、`web/.pnpmfile.cjs` で外した
+    (任意の peer なので overrides の `-` は効かなかった)。配る中身 (dist の JS・WASM) は外す前と同じだった
 
 **MapLibre + Three.js をざっと入れた (2026-10-13、`web/src/lib/engines/three.ts`):**
 
