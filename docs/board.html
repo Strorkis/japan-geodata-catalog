@@ -240,8 +240,8 @@
     <section class="kpis" aria-label="数字">
       <div class="card kpi">
         <div class="label">公開待ちのコミット</div>
-        <div class="value">40 <small>件</small></div>
-        <span class="status you">カタログを上げて push 待ち</span>
+        <div class="value">2 <small>件</small></div>
+        <span class="status you">push 待ち</span>
       </div>
       <div class="card kpi">
         <div class="label">R2 の配信データ (手元の data/output)</div>
@@ -258,12 +258,11 @@
       <h2>公開までの残り</h2>
       <ol class="steps">
         <li class="current">
-          <b>カタログを上げて push</b><span class="status you">あなたの番</span>
+          <b>テストの直しを push して、CI が通るか見る</b><span class="status you">あなたの番</span>
           <span class="sub">
-            <b>改名で Pages が表示できなくなっていて、この push で直る。</b>手元の本番ビルドで E2E 全件が通った (10-15、125件・2件は対象の行が一覧に無く飛ばし)。
-            <a href="deploy.md">deploy.md</a>「2026-10-10 の分 その2」。items.parquet と JSON 全部 (97ファイル) → push。データのファイルは変えていない。
-            載るもの: Item の名前と年度・Overture の出典・AW3D30 を地形に・世界の背景地図・OSM の標準タイル (カタログだけ)・
-            地図を DuckDB で待たせない・地図エンジンの切り替え・新しい名前 (カタログの ID・ミラーの名乗り)
+            カタログは上げてあり、40件は push 済み。CI (10-16) が地図のエンジンのテストで落ちたので、エンジンのテストをほかが終わってから
+            単独で流すように直した (手元で R2 の遅さを再現して6件通った)。<b>Pages は CI が通るまで表示できない</b> (改名で古いパスのまま)。
+            また落ちたら、実行のページの <code>playwright-trace</code> をもらえると追える
           </span>
         </li>
         <li>
