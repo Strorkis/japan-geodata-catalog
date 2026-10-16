@@ -77,5 +77,13 @@ export default defineConfig({
     // 書いているので固定する (Playwright の既定は en-US)。英語の画面は ?lang=en で確かめる。
     locale: 'ja-JP',
   },
+  // **地図のエンジンのテスト (`@engine`) は、ほかが全部終わってから単独で流す。** Cesium・Navara・Three.js をヘッドレスで描くと
+  // GPU が無いのでソフトウェアで描き、CPU とメモリを食う。CI (3並列) でほかのテストと同時に流したら、ブラウザが落ち
+  // (`session closed`)、隣のテストの建物の読み込みも時間切れになった (2026-10-16。手元の1並列では全件通っていた)。
+  // エンジンのテストは serial なので、1つの worker で順に流れる。
+  projects: [
+    { name: 'main', grepInvert: /@engine/ },
+    { name: 'engines', grep: /@engine/, dependencies: ['main'] },
+  ],
   webServer: remoteURL ? undefined : local,
 });

@@ -136,6 +136,9 @@ Portolanが求める `README.md` / `AGENTS.md` は**配信するデータの側*
   **worker数はコア数ではなく搭載メモリから決めている** (`web/playwright.config.ts`)。
   Rust側の `cargo test` も `-j 4` を付けること (既定の16並列で7.9GBを食い尽くした実績)。
   落ちたら `free -h` と `/proc/pressure/memory` を先に見る
+- **地図のエンジンのテスト (`@engine`) は、ほかが全部終わってから単独で流れる** (Playwright の project `engines` が `main` に依る)。
+  Cesium・Navara・Three.js はヘッドレスではソフトウェアで描くので重く、CI の3並列でほかと同時に流したらブラウザが落ちた。
+  **`-g` で絞るときは `--no-deps` を付ける** (付けないと、依っている `main` を全件流してから始まる)
 
 ## 状況のボード
 

@@ -1384,8 +1384,12 @@ function cesiumCenter(page: Page) {
  * Cesium をソフトウェアで描くので重い。同じ理由で**時間の上限を 120 秒に広げる** — ベクトルタイルのテストは
  * 一覧に2行足して Cesium を作るまでで、全件の中だと 60 秒を使い切った (単体では毎回通る)。
  */
-test.describe('地図のエンジン (Cesium)', () => {
-  test.describe.configure({ mode: 'serial', timeout: 120_000 });
+test.describe('地図のエンジン (Cesium)', { tag: '@engine' }, () => {
+  test.describe.configure({ mode: 'serial' });
+  // **時間の上限は 120 秒か、設定の上限 (R2 を読むときは 180 秒) の長い方。** 以前は 120 秒で決め打ちしていて、
+  // CI (R2 を読む) では設定の 180 秒より短くなり、Three.js のテストが途中で切れた (2026-10-16)。
+  // eslint-disable-next-line no-empty-pattern -- Playwright は第1引数を分割代入の形で書くことを求める
+  test.beforeEach(({}, testInfo) => testInfo.setTimeout(Math.max(testInfo.project.timeout, 120_000)));
 
   /**
    * **上のバーで地図のエンジンを切り替える。UI は同じで、描けない行は灰色。** 1ページのまま入れ替えるので、
