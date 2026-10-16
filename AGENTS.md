@@ -167,8 +167,10 @@ cd pipeline && cargo fmt && cargo clippy --all-targets -- -D warnings && cargo t
 cd web && pnpm exec tsc --noEmit && pnpm test && pnpm test:dist
 ```
 
-CIも同じものを回す (`.github/workflows/`)。Web側の検証はデプロイの手前に置いてあるので、
-落ちれば公開されない。
+**Web の E2E は CI では流さない** (2026-10-16、利用者の判断)。CI のランナーは GPU が無く、地図をソフトウェアで描いて
+時間切れになり、公開が止まったため。**push の前に手元で `pnpm test:dist` を全件流す** (1回30分前後)。
+CI は型・単体テスト・ビルドと、R2 の CORS と Range の確認 (手元では見えない) だけを回す。落ちれば公開されない
+(docs/deploy.md「テスト」)。
 
 コミットメッセージはConventional Commits (`feat:` `fix:` `perf:` `refactor:` `docs:` `test:`)。
 

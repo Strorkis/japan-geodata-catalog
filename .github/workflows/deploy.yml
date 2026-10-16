@@ -7,9 +7,10 @@ name: Deploy to GitHub Pages
 # dist/duckdb/ にコピーされ (web/vite.config.ts の copy-duckdb-runtime)、
 # Pagesのアーティファクトとしてアップロードされる。
 #
-# デプロイ前に本番ビルドに対してE2Eを流す。MapLibreのワーカーがビルド成果物に
-# 含まれず、公開してからGeoJSONが一切描画されない状態になったことがあり、
-# 開発サーバーでは再現しなかったため。
+# **E2E は CI では流さない** (2026-10-16、利用者の判断)。本番ビルドの E2E は push の前に手元で全件流す
+# (AGENTS.md)。CI のランナーには GPU が無く、地図をソフトウェアで描くので、3並列だとどの手順も数秒かかって
+# 時間切れになり、そのせいで公開が止まった。GPU の弱い機械で描けるかを確かめていたわけでもない。
+# **CI でしか確かめられないのは R2 の配信の設定 (CORS・Range) だけ**なので、それは curl で見る (下)。
 
 on:
   push:
@@ -66,9 +67,7 @@ jobs:
       # 画面も地図も要らない部品の単体テスト (WKB の読み取りなど)。Node が TypeScript をそのまま読む。
       - run: pnpm test:unit
 
-      # 未設定のままだとデータのURLが空でビルドされ、E2Eは「データが無い」と
-      # 判断して全件スキップする。テストが素通りしたまま壊れたものが公開されるので、
-      # ここで止める。
+      # 未設定のままだとデータのURLが空でビルドされ、公開したアプリが何も読めない。ここで止める。
       - name: データの配信先が設定されているか確認
         run: |
           test -n "${{ vars.DATA_BASE_URL }}" || {
@@ -76,16 +75,27 @@ jobs:
             exit 1
           }
 
-      - run: pnpm exec playwright install --with-deps chromium
+      # **R2 の配信の設定を確かめる** (ブラウザは要らない)。DuckDB-WASM は `Range: bytes=0-0` で部分取得できるかを
+      # 確かめ、公開サイトのオリジンから Content-Range を読む。どれかが欠けると、全件ダウンロードに落ちるか読めなくなる
+      # (docs/duckdb-wasm-range-requests.md)。カタログ (JSON) と、DuckDB が読む GeoParquet (items.parquet) を1バイトずつ読む。
+      - name: R2 の CORS と Range を確かめる
+        run: |
+          # 公開サイトのオリジン。ホスト名は小文字 (R2 の AllowedOrigins も小文字で書いてある)。
+          owner='${{ github.repository_owner }}'
+          origin="https://${owner,,}.github.io"
+          for file in catalog.json items.parquet; do
+            headers=$(curl -sS -D - -o /dev/null \
+              -H "Origin: $origin" -H 'Range: bytes=0-0' \
+              "${{ vars.DATA_BASE_URL }}/$file" | tr -d '\r')
+            echo "== $file"; echo "$headers"
+            echo "$headers" | grep -qiE '^HTTP/[0-9.]+ 206' || { echo "$file: 206 (部分取得) が返らない" >&2; exit 1; }
+            echo "$headers" | grep -qiE '^content-range: bytes 0-0/' || { echo "$file: Content-Range が無い" >&2; exit 1; }
+            echo "$headers" | grep -qiE '^access-control-allow-origin: ' || { echo "$file: CORS で許されていない" >&2; exit 1; }
+            echo "$headers" | grep -qiE '^access-control-expose-headers: .*content-range' || {
+              echo "$file: Content-Range がブラウザに見えない (Access-Control-Expose-Headers)" >&2; exit 1; }
+          done
 
-      # ビルドしてから、その成果物に対してE2Eを流す (test:dist が両方を行う)。
-      # ここを通ったものだけをアップロードするので、テストが落ちればデプロイされない。
-      #
-      # データは公開中のオブジェクトストレージから読む。配信側のCORSとRangeの設定も
-      # 一緒に検証されるが、そのぶん初期化に往復の遅延が乗るので5分ほどかかる。
-      # オブジェクトストレージ側で localhost:4173 (vite preview) を
-      # AllowedOrigins に含めておくこと。
-      - run: pnpm test:dist
+      - run: pnpm build
         env:
           # リポジトリ名のサブパスで配信されるため。
           VITE_BASE_PATH: /${{ github.event.repository.name }}/
@@ -93,14 +103,6 @@ jobs:
           VITE_DATA_BASE_URL: ${{ vars.DATA_BASE_URL }}
           # ⓘ のカードから開く STAC Browser の置き場所 (下で dist/catalog/ に入れる)。
           VITE_STAC_BROWSER_URL: /${{ github.event.repository.name }}/catalog/
-
-      # ヘッドレスでの失敗はログだけでは追いにくいので、トレースを残す。
-      - uses: actions/upload-artifact@v7
-        if: failure()
-        with:
-          name: playwright-trace
-          path: web/test-results/
-          retention-days: 7
 
       # カタログを地図ではなくページで辿る閲覧画面 (STAC Browser) を /catalog/ に置く。
       # 版を固定して取ってきて、うちの設定とパッチでビルドする (stac-browser/build.sh)。

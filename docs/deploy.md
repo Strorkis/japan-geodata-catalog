@@ -91,9 +91,14 @@ VITE_BASE_PATH=/japan-geodata-catalog/ pnpm test:dist
 DATA_LATENCY_MS=450 DATA_BANDWIDTH_MBPS=16 pnpm test:dist
 ```
 
-**CI の失敗は注釈で読める。** CI では Playwright が失敗を GitHub の注釈にも書くので、認証なしで
-`https://api.github.com/repos/<owner>/<repo>/check-runs/<job id>/annotations` から読める
-(ジョブのログは認証が要る)。
+**E2E は CI では流さない。push の前に手元で `pnpm test:dist` を全件流す** (2026-10-16、利用者の判断)。
+CI のランナーには GPU が無く地図をソフトウェアで描くので、3並列だとどの手順も数秒かかって時間切れになり、
+3回続けて公開が止まった (地図のエンジンを足したあと)。CI は型・単体テスト・ビルドと、
+**R2 の CORS と Range の確認 (curl で1バイト読む)** だけを回す。R2 の配信の設定は手元のテストでは見えない
+(手元のデータを読む) ので、ここだけは CI に残した。
+
+**CI の失敗は注釈で読める。** 認証なしで `https://api.github.com/repos/<owner>/<repo>/check-runs/<job id>/annotations`
+から読める (ジョブのログは認証が要る)。
 
 ## 0. 公開前に権利を確かめる (2026-10-05 に通しで見た)
 

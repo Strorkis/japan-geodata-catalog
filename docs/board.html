@@ -240,7 +240,7 @@
     <section class="kpis" aria-label="数字">
       <div class="card kpi">
         <div class="label">公開待ちのコミット</div>
-        <div class="value">2 <small>件</small></div>
+        <div class="value">3 <small>件</small></div>
         <span class="status you">push 待ち</span>
       </div>
       <div class="card kpi">
@@ -258,11 +258,11 @@
       <h2>公開までの残り</h2>
       <ol class="steps">
         <li class="current">
-          <b>テストの直しを push して、CI が通るか見る</b><span class="status you">あなたの番</span>
+          <b>push して、CI が通るか見る</b><span class="status you">あなたの番</span>
           <span class="sub">
-            カタログは上げてあり、40件は push 済み。CI (10-16) が地図のエンジンのテストで落ちたので、エンジンのテストをほかが終わってから
-            単独で流すように直した (手元で R2 の遅さを再現して6件通った)。<b>Pages は CI が通るまで表示できない</b> (改名で古いパスのまま)。
-            また落ちたら、実行のページの <code>playwright-trace</code> をもらえると追える
+            CI が E2E の時間切れで続けて落ちたので、<b>CI では E2E を流さない</b>ことにした (GPU の無いランナーで地図をソフトウェアで描き、
+            どの手順も遅かった)。CI は型・単体テスト・ビルドと、R2 の CORS と Range を curl で見るだけ。E2E は push 前に手元で全件。
+            <b>Pages は CI が通るまで表示できない</b> (改名で古いパスのまま)
           </span>
         </li>
         <li>
