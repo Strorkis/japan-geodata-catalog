@@ -802,12 +802,15 @@ test('使うときの条件が一覧表とバッジで出る', async ({ page }) 
   test.skip(!(await hasPlateau(page)), 'PLATEAUの建物データが無い');
   const collection = (await bundledCollection<{
     'duck:terms': { commercial: string; share_alike: boolean };
+    'duck:attribution': string;
   }>(page, LAYER.plateauBuildings))!;
   expect(collection['duck:terms'].commercial).toBe('allowed');
   await openLayerDetails(page, LAYER.plateauBuildings);
   const card = page.locator(`.collection-card[data-collection="${LAYER.plateauBuildings}"]`);
   await expect(card.locator('.terms-badge', { hasText: '商用可' })).toBeVisible();
   await expect(card.locator('.terms-badge', { hasText: '継承あり' })).toHaveCount(0);
+  // **出典の表示そのものもカードに出る** (以前は「出典表示が必要」「加工したら明記」のバッジだけで、文言が無かった)。
+  await expect(card.locator('.collection-facts')).toContainText(collection['duck:attribution']);
 });
 
 test('出典に配布元へのリンクが出る', async ({ page }) => {
