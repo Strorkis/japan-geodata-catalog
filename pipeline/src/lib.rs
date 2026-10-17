@@ -95,7 +95,7 @@ pub fn read_zip_entry(zip_path: &Path, matches: impl Fn(&str) -> bool) -> Result
 
     let mut matching_names = Vec::new();
     for i in 0..archive.len() {
-        let name = archive.by_index(i)?.name().to_string();
+        let name = archive.by_index(i)?.name()?.into_owned();
         if matches(&name) {
             matching_names.push(name);
         }

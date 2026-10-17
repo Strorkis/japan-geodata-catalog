@@ -102,10 +102,14 @@ fn survey(city: &City) -> Result<Row> {
 
     // **`file_names()` を使うこと。** `by_index_raw` は1件ごとにローカルヘッダを
     // 読みに行くので、5万を超えるエントリでファイル全体を引きずる。
+    // zip 9 から名前は読み違えうるもの (Result) になった。
     let names: Vec<String> = archive
         .file_names()
+        .collect::<Result<Vec<_>, _>>()
+        .with_context(|| format!("zipのエントリ名が読めません: {}", city.url))?
+        .into_iter()
         .filter(|name| name.starts_with("udx/bldg/") && name.ends_with(".gml"))
-        .map(str::to_string)
+        .map(|name| name.into_owned())
         .collect();
 
     // 大きさはローカルヘッダに入っている。データ本体は読まずに捨てる。

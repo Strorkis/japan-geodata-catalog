@@ -23,4 +23,19 @@ ignore = [
     # pipeline/Cargo.toml の rev を更新してこの2行を消す。
     "RUSTSEC-2026-0194",
     "RUSTSEC-2026-0195",
+    # zip 4.6.1 の展開まわり 3件 (展開するときに SUID/SGID を残す / 外を指すシンボリックリンクを作る /
+    # シンボリックリンク越しに権限を書く)。修正は 9.0.0。2026-10-17 に見た。
+    #
+    # 受け入れる理由:
+    # - **こちらの直接依存の zip は 9.0.4 に上げた** (pipeline・crates/remote-zip)。残っているのは
+    #   nusamai-plateau が `zip = "4.6.1"` に固定している分だけ
+    # - 3件とも zip を**ディスクへ展開する** (`ZipArchive::extract`・`ZipStreamReader::extract`) ときの問題。
+    #   nusamai-plateau はコードリストを zip の中から名前で1件読むだけ (`by_name` → `read_to_end`、
+    #   codelist/resolver.rs) で、展開しない。こちらも展開しない
+    # - 動くのは手元のCLIのみ。公開しているサイトにRustのコードは入っていない
+    #
+    # 外せる条件: nusamai-plateau が zip 9 以降に上げたら、pipeline/Cargo.toml の rev を更新してこの3行を消す。
+    "RUSTSEC-2026-0367",
+    "RUSTSEC-2026-0368",
+    "RUSTSEC-2026-0369",
 ]

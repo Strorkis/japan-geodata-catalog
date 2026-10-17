@@ -191,6 +191,8 @@ pub fn parse_archive(source: impl Read + Seek, label: &str) -> Result<Vec<Row>> 
     let mut codelist_names = Vec::new();
     let mut building_names = Vec::new();
     for name in archive.file_names() {
+        // zip 9 から名前は読み違えうるもの (Result) になった。
+        let name = name.with_context(|| format!("zipのエントリ名が読めません: {label}"))?;
         if name.starts_with("codelists/") && name.ends_with(".xml") {
             codelist_names.push(name.to_string());
         } else if name.starts_with("udx/bldg/") && name.ends_with(".gml") {

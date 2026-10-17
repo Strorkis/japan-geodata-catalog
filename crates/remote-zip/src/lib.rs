@@ -42,7 +42,8 @@ pub fn list(source: impl Read + Seek, label: &str) -> Result<Vec<Entry>> {
         .map(|i| {
             let entry = archive.by_index_raw(i)?;
             Ok(Entry {
-                name: entry.name().to_string(),
+                // zip 9 から名前は読み違えうるもの (Result) になった。
+                name: entry.name()?.into_owned(),
                 size: entry.size(),
                 compressed_size: entry.compressed_size(),
             })
@@ -67,7 +68,7 @@ pub fn for_each_entry(
     // 名前を先に集める。読み出し中は archive を可変で借りるため、
     // 反復しながら by_name を呼べない。
     let mut names: Vec<String> = (0..archive.len())
-        .map(|i| Ok(archive.by_index(i)?.name().to_string()))
+        .map(|i| Ok(archive.by_index(i)?.name()?.into_owned()))
         .collect::<Result<Vec<_>>>()?
         .into_iter()
         .filter(|name| matches(name))
