@@ -240,7 +240,7 @@
     <section class="kpis" aria-label="数字">
       <div class="card kpi">
         <div class="label">公開待ちのコミット</div>
-        <div class="value">4 <small>件</small></div>
+        <div class="value">2 <small>件</small></div>
         <span class="status you">push 待ち</span>
       </div>
       <div class="card kpi">
@@ -258,11 +258,10 @@
       <h2>公開までの残り</h2>
       <ol class="steps">
         <li class="current">
-          <b>カタログ (JSON) を上げてから push</b><span class="status you">あなたの番</span>
+          <b>push</b><span class="status you">あなたの番</span>
           <span class="sub">
-            出典の1行に加工した者 (japan-geodata-catalog) を足し、何をしたか (<code>processing:lineage</code>) を持たせたので、カタログが変わった。
-            <a href="deploy.md">deploy.md</a>「2026-10-10 の分 その2」と同じく items.parquet と JSON 全部 (97ファイル) → push。データのファイルは変えていない。
-            載るもの: Navara で PLATEAU が出ない件の直し・ⓘ のカードに出典と加工の内容・zip の脆弱性の直し。push 前の全件 E2E は私が流す
+            Navara の出典 (右下の ⓘ) が、Navara を隠したあとも MapLibre の ⓘ に重なって残る不具合の直し。カタログは変わっていない (上げ直し不要)。
+            手元の本番ビルドで E2E 全件が通った (10-17、125件)
           </span>
         </li>
         <li>
