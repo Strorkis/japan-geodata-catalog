@@ -25,6 +25,8 @@ pub struct DatasetEntry {
     pub description: &'static str,
     /// 出典・ライセンス。
     pub attribution: Attribution,
+    /// 何をしたか (STAC の `processing:lineage`)。[`Description::lineage`] から。
+    pub lineage: &'static str,
     /// ジオメトリの種類 (Point / MultiPolygon など)。UIの表示方法がこれで決まる。
     pub geometry_types: Vec<String>,
     /// 収録範囲 [xmin, ymin, xmax, ymax] (WGS84)。
@@ -426,14 +428,32 @@ const PDL1: Terms = Terms {
     share_alike: false,
 };
 
+/// **加工した者の名前** (出典の「〜をもとに○○作成」の○○と、STAC の providers の processor)。
+/// 利用者以外も触りうるので、人ではなくリポジトリの名前にした (2026-10-17、利用者)。
+macro_rules! creator {
+    () => {
+        "japan-geodata-catalog"
+    };
+}
+pub const CREATOR: &str = creator!();
+/// 加工した者の連絡先 (リポジトリ)。
+pub const CREATOR_URL: &str = "https://github.com/Strorkis/japan-geodata-catalog";
+
 /// 国土交通省のコンテンツ。
 ///
 /// 利用約款の記載例は「コンテンツ名」「（国土交通省）」「当該ページのURL」に加え、
 /// 加工した場合は加工した旨を求めている。このパイプラインは座標系を変換し、
-/// 行を空間的に並べ替えているので、いずれも「もとに作成」にあたる。
+/// 行を空間的に並べ替えているので、いずれも加工にあたる。
+/// **記載例は「「国土数値情報（○○データ）」（国土交通省）（URL）をもとに○○株式会社作成」**
+/// (加工した者の名前まで書く。2026-10-17 に読み直した)。以前は「をもとに作成」で、作った者が抜けていた。
+/// 何をしたかは STAC の `processing:lineage` に書き、地図の右下にはこの1行を出す。
 /// <https://nlftp.mlit.go.jp/ksj/other/agreement.html>
 const MLIT_KSJ: Attribution = Attribution {
-    text: "「国土数値情報（行政区域データ）」（国土交通省）をもとに作成",
+    text: concat!(
+        "「国土数値情報（行政区域データ）」（国土交通省）をもとに ",
+        creator!(),
+        " 作成"
+    ),
     url: "https://nlftp.mlit.go.jp/ksj/",
     license: "other",
     provider: "国土交通省",
@@ -457,15 +477,24 @@ const ISJ_TERMS: Terms = Terms {
     note_modification: false,
     share_alike: false,
 };
+// 加工責任者を「可能な限り併記」とあるので、加工した者の名前を添える (何をしたかは `processing:lineage`)。
 const MLIT_ISJ_OAZA: Attribution = Attribution {
-    text: "大字・町丁目位置参照情報　国土交通省 (座標系を変換して加工)",
+    text: concat!(
+        "大字・町丁目位置参照情報　国土交通省 (",
+        creator!(),
+        " が加工)"
+    ),
     url: "https://nlftp.mlit.go.jp/isj/",
     license: "other",
     provider: "国土交通省",
     terms: ISJ_TERMS,
 };
 const MLIT_ISJ_BLOCK: Attribution = Attribution {
-    text: "街区レベル位置参照情報　国土交通省 (座標系を変換して加工)",
+    text: concat!(
+        "街区レベル位置参照情報　国土交通省 (",
+        creator!(),
+        " が加工)"
+    ),
     url: "https://nlftp.mlit.go.jp/isj/",
     license: "other",
     provider: "国土交通省",
@@ -477,7 +506,11 @@ const MLIT_ISJ_BLOCK: Attribution = Attribution {
 /// 出所ごとに条件が違うので、行政区域とは別の出典にしてある。
 /// <https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N02-2022.html>
 const MLIT_KSJ_RAILWAY: Attribution = Attribution {
-    text: "「国土数値情報（鉄道データ）」（国土交通省）をもとに作成",
+    text: concat!(
+        "「国土数値情報（鉄道データ）」（国土交通省）をもとに ",
+        creator!(),
+        " 作成"
+    ),
     url: "https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N02-2022.html",
     license: "other",
     provider: "国土交通省",
@@ -532,10 +565,14 @@ const OVERTURE_BASE: Attribution = OVERTURE;
 
 /// PLATEAU (3D都市モデル) は政府標準利用規約に準じたPDL1.0。
 /// 加工した場合はその旨を示すことを求めているので、他の国土交通省コンテンツと
-/// 同じく「をもとに作成」の形にする。
+/// 同じく「をもとに○○作成」の形にする。
 /// <https://www.mlit.go.jp/plateau/site-policy/>
 const MLIT_PLATEAU: Attribution = Attribution {
-    text: "「3D都市モデル（Project PLATEAU）」（国土交通省）をもとに作成",
+    text: concat!(
+        "「3D都市モデル（Project PLATEAU）」（国土交通省）をもとに ",
+        creator!(),
+        " 作成"
+    ),
     url: "https://www.mlit.go.jp/plateau/",
     // PDL1.0だが CC BY 4.0 での利用も認められている。SPDXに当てはまる方を出す。
     license: "CC-BY-4.0",
@@ -555,7 +592,11 @@ const MLIT_PLATEAU: Attribution = Attribution {
 /// 統計の数値だけを使っていることになる。
 /// <https://www.e-stat.go.jp/terms-of-use>
 const ESTAT_MESH: Attribution = Attribution {
-    text: "「令和2年国勢調査 地域メッシュ統計」（総務省統計局）をもとに作成",
+    text: concat!(
+        "「令和2年国勢調査 地域メッシュ統計」（総務省統計局）をもとに ",
+        creator!(),
+        " 作成"
+    ),
     url: "https://www.e-stat.go.jp/gis",
     license: "other",
     provider: "総務省統計局",
@@ -599,6 +640,11 @@ struct Description {
     /// 出典表示のリンク先 ([`Attribution::url`]) とは別物。Overtureでは
     /// 出典表示がガイドページを指すのに対し、配布元はデータのページになる。
     via: &'static str,
+    /// **何をしたか (加工の内容)。** STAC の processing 拡張の `processing:lineage` に書く。
+    /// 規約 (PDL1.0 など) は加工したことの表示を求めていて、その1行は出典 ([`Attribution::text`]) が持つ
+    /// (「〜をもとに japan-geodata-catalog 作成」)。ここは中身の説明で、ⓘ のカードと出典の画面に出す。
+    /// 丁寧語で書き、英語の訳を stac_i18n.rs に足す。
+    lineage: &'static str,
 }
 
 /// ファイル名の接頭辞と、そのデータセットの素性。
@@ -611,6 +657,7 @@ const DESCRIPTIONS: &[(&str, Description)] = &[
         Description {
             kind: DatasetKind::AdminNames,
             collection: "ksj-admin-names",
+            lineage: "国土数値情報の行政区域データから市区町村の名前を取り出し、GeoParquet にしました。",
             title: "行政区域の名称",
             description: "市区町村の名前の一覧です。地名の検索に使っています。",
             attribution: MLIT_KSJ,
@@ -624,6 +671,7 @@ const DESCRIPTIONS: &[(&str, Description)] = &[
         Description {
             kind: DatasetKind::Admin,
             collection: "ksj-admin",
+            lineage: "国土数値情報の行政区域データを、座標系を WGS84 に変えて GeoParquet にしました。行は場所ごとに並べ替えています。",
             title: "行政区域",
             description: "市区町村の境界です。地図で指した場所の市区町村を調べるのに使っています。",
             attribution: MLIT_KSJ,
@@ -637,6 +685,7 @@ const DESCRIPTIONS: &[(&str, Description)] = &[
         Description {
             kind: DatasetKind::RailwayStation,
             collection: "ksj-railway-stations",
+            lineage: "国土数値情報の鉄道データから駅を取り出し、座標系を WGS84 に変えて GeoParquet にしました。行は場所ごとに並べ替えています。",
             title: "鉄道駅",
             // 原典がホームの延長を線で持っているので、点に潰さず線のまま配っている。
             description: "鉄道の駅です。ホームの範囲を線で表しています。",
@@ -651,6 +700,7 @@ const DESCRIPTIONS: &[(&str, Description)] = &[
         Description {
             kind: DatasetKind::Railway,
             collection: "ksj-railway",
+            lineage: "国土数値情報の鉄道データから路線を取り出し、鉄道の種類と事業者の種類のコードに名前を添えて、座標系を WGS84 に変えて GeoParquet にしました。行は場所ごとに並べ替えています。",
             title: "鉄道路線",
             // 鉄道区分と事業者種別はコードを名前に解決したうえで、原典のコードも併せて持つ。
             description: "鉄道の路線です。路線名・事業者・鉄道の種類を持っています。",
@@ -665,6 +715,7 @@ const DESCRIPTIONS: &[(&str, Description)] = &[
         Description {
             kind: DatasetKind::AdminNames,
             collection: "overture-admin-names",
+            lineage: "Overture Maps の行政区域 (divisions) から日本の市区町村の名前を取り出し、GeoParquet にしました。",
             title: "行政区域の名称",
             description: "市区町村の名前の一覧です。地名の検索に使っています。",
             attribution: OVERTURE_DIVISIONS,
@@ -679,6 +730,7 @@ const DESCRIPTIONS: &[(&str, Description)] = &[
         Description {
             kind: DatasetKind::Admin,
             collection: "overture-admin",
+            lineage: "Overture Maps の行政区域 (divisions) から日本の市区町村の境界を取り出し、海にかかる部分を削って GeoParquet にしました。行は場所ごとに並べ替えています。",
             title: "行政区域",
             description: "市区町村の境界です。地図で指した場所の市区町村を調べるのに使っています。",
             attribution: OVERTURE_DIVISIONS,
@@ -693,6 +745,7 @@ const DESCRIPTIONS: &[(&str, Description)] = &[
         Description {
             kind: DatasetKind::Buildings,
             collection: "overture-buildings",
+            lineage: "Overture Maps の建物から日本の範囲を切り出し、場所ごと (QuadKey) にファイルを分けて GeoParquet にしました。",
             title: "建物",
             description: "建物の形です。高さや種別が入っていないものが多くあります。",
             attribution: OVERTURE_BUILDINGS,
@@ -707,6 +760,7 @@ const DESCRIPTIONS: &[(&str, Description)] = &[
         Description {
             kind: DatasetKind::RoadRoute,
             collection: "overture-road-routes",
+            lineage: "Overture Maps の道路から日本の路線名の一覧を取り出し、GeoParquet にしました。",
             title: "道路の路線",
             description: "道路の路線名 (「国道13号」など) の一覧です。路線名での検索に使っています。",
             attribution: OVERTURE_TRANSPORTATION,
@@ -720,6 +774,7 @@ const DESCRIPTIONS: &[(&str, Description)] = &[
         Description {
             kind: DatasetKind::Road,
             collection: "overture-roads",
+            lineage: "Overture Maps の道路から日本の高速道路・国道・都道府県道を取り出し、GeoParquet にしました。行は場所ごとに並べ替えています。",
             title: "道路",
             // 1つの区間が複数の路線に属することがあるので、路線名と系統はリストで持つ。
             description: "高速道路・国道・都道府県道です。路線名を持っています。",
@@ -735,6 +790,7 @@ const DESCRIPTIONS: &[(&str, Description)] = &[
         Description {
             kind: DatasetKind::PowerLine,
             collection: "overture-power-lines",
+            lineage: "Overture Maps の base (infrastructure) から日本の送電線と、地中・海底の電力線を取り出し、GeoParquet にしました。",
             title: "送電線",
             // power_line (送電線) と cable (地中・海底線)。配電線 (minor_line) は入れない。
             description: "送電線と、地中・海底の電力線です。線の名前を持つものもあります。",
@@ -750,6 +806,7 @@ const DESCRIPTIONS: &[(&str, Description)] = &[
         Description {
             kind: DatasetKind::Waterway,
             collection: "overture-waterways",
+            lineage: "Overture Maps の base (water) から日本の川と運河の線を取り出し、GeoParquet にしました。",
             title: "川",
             // river と canal の線だけ。小川・用水路と、川幅を持つ面は入れない。
             description: "川と運河の流れの線です。元は OpenStreetMap で、国のデータではありません。",
@@ -765,6 +822,7 @@ const DESCRIPTIONS: &[(&str, Description)] = &[
         Description {
             kind: DatasetKind::BuildingCoverage,
             collection: "plateau-buildings-coverage",
+            lineage: "このカタログの PLATEAU の建物を、1km四方の地域メッシュごとに数えて GeoParquet にしました。",
             // 出所は親のサブカタログ (`plateau/catalog.json`) が言うので、題名には書かない。
             title: "建物の整備範囲",
             // 建物が実際にある場所を数えているので、市区町村の境界とは一致しない
@@ -783,6 +841,7 @@ const DESCRIPTIONS: &[(&str, Description)] = &[
         Description {
             kind: DatasetKind::PlateauBuildings,
             collection: "plateau-buildings",
+            lineage: "CityGML の建築物モデルから、建物ごとに LOD0 の屋根の外周線 (平面の形) と属性 (高さ・用途・階数など。用途はコードリストで名前に直しています) を取り出し、座標系を WGS84 に変えて GeoParquet にしました。行は場所ごとに並べ替え、引いた表示のための段の列を足しています。",
             // Overtureの「建物」とは親のサブカタログで見分ける。
             title: "建物",
             // 都市ごとに1ファイル (PLATEAUの配布単位に合わせてある)。
@@ -801,6 +860,7 @@ const DESCRIPTIONS: &[(&str, Description)] = &[
         Description {
             kind: DatasetKind::PopulationMesh,
             collection: "estat-mesh-pop-1km",
+            lineage: "地域メッシュ統計 (125m) の人口と世帯数を1km四方のメッシュに足し合わせ、形をメッシュコードから計算して GeoParquet にしました。",
             title: "人口メッシュ (1km)",
             // 全国で1ファイル。引いた表示で125mを読むと転送量が跳ね上がるため、
             // 俯瞰用に別に持つ。人口・世帯数は合計、密度は中の125mの最大値。
@@ -816,6 +876,7 @@ const DESCRIPTIONS: &[(&str, Description)] = &[
         Description {
             kind: DatasetKind::PopulationMesh,
             collection: "estat-mesh-pop",
+            lineage: "地域メッシュ統計 (125m) の人口と世帯数に、メッシュコードから計算した形と、面積で割った人口密度を足して GeoParquet にしました。",
             title: "人口メッシュ",
             // ジオメトリはメッシュコードから計算したもの。都道府県ごとに1ファイル。
             description: "令和2年国勢調査の人口と世帯数を、125m四方のメッシュで集計したものです。",
@@ -830,6 +891,7 @@ const DESCRIPTIONS: &[(&str, Description)] = &[
         Description {
             kind: DatasetKind::Oaza,
             collection: "isj-oaza",
+            lineage: "位置参照情報の代表点を、座標系を WGS84 に変えて GeoParquet にしました。",
             title: "大字・町丁目",
             description: "町名・丁目の代表点です。住所の検索に使っています。",
             attribution: MLIT_ISJ_OAZA,
@@ -843,6 +905,7 @@ const DESCRIPTIONS: &[(&str, Description)] = &[
         Description {
             kind: DatasetKind::Block,
             collection: "isj-block",
+            lineage: "位置参照情報の代表点を、座標系を WGS84 に変えて GeoParquet にしました。",
             title: "街区",
             // 検索にはまだ使っていない (2026-10-06 に確かめた)。以前は「住所検索に使う」と書いていた。
             description: "街区 (「〜番」) の代表点です。いまは検索には使っていません。",
@@ -1069,6 +1132,7 @@ pub fn describe_parquet(path: &Path, base: &Path) -> Result<DatasetEntry> {
         title: described.title,
         description: described.description,
         attribution: described.attribution,
+        lineage: described.lineage,
         geometry_types,
         bbox,
         row_count,
@@ -1380,7 +1444,7 @@ mod tests {
 
     // 国土数値情報の利用約款は、出典に「コンテンツ名」「（国土交通省）」「当該ページのURL」を、
     // 加工した場合はその旨を求めている。座標系変換と空間的な並べ替えをしているので、
-    // どれも加工にあたる。
+    // どれも加工にあたる。記載例は「〜をもとに○○株式会社作成」で、**加工した者の名前まで書く**。
     #[test]
     fn mlit_attributions_follow_the_required_form() {
         for Attribution { text, url, .. } in [MLIT_KSJ, MLIT_KSJ_RAILWAY] {
@@ -1389,8 +1453,8 @@ mod tests {
                 "作成者の表示が無い: {text}"
             );
             assert!(
-                text.contains("もとに作成"),
-                "加工した旨の記載が無い: {text}"
+                text.contains(&format!("をもとに {CREATOR} 作成")),
+                "加工した旨 (加工した者の名前) の記載が無い: {text}"
             );
             assert!(
                 url.contains("nlftp.mlit.go.jp"),
@@ -1412,6 +1476,25 @@ mod tests {
                 attribution.terms.url,
                 "https://nlftp.mlit.go.jp/isj/agreement.html"
             );
+        }
+    }
+
+    /// **加工の表示。** 配っている全データに「何をしたか」(`processing:lineage`) があり、規約が加工した旨の表示を
+    /// 求めるもの (`note_modification`) は、出典の1行に加工した者の名前が入っていること (地図の右下に出るのはこの1行)。
+    #[test]
+    fn every_dataset_states_how_it_was_processed() {
+        for (prefix, described) in DESCRIPTIONS {
+            assert!(
+                described.lineage.ends_with("。"),
+                "{prefix}: 何をしたかの説明が無い (丁寧語で書く)"
+            );
+            if described.attribution.terms.note_modification {
+                assert!(
+                    described.attribution.text.contains(CREATOR),
+                    "{prefix}: 加工した者の名前が出典に無い: {}",
+                    described.attribution.text
+                );
+            }
         }
     }
 

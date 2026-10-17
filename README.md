@@ -82,14 +82,17 @@ PLATEAU・国土数値情報・国勢調査・位置参照情報から作った�
 
 | データ | 出典表示 |
 | --- | --- |
-| 建物・整備範囲 (PLATEAU) | 「3D都市モデル（Project PLATEAU）」（国土交通省）をもとに作成 |
+| 建物・整備範囲 (PLATEAU) | 「3D都市モデル（Project PLATEAU）」（国土交通省）をもとに japan-geodata-catalog 作成 |
 | 建物 (Overture) | Overture Maps / © OpenStreetMap contributors (ODbL 1.0) · Microsoft Global ML Building Footprints (ODbL) · East Asian building data by Qian Shi et al. (CC BY 4.0) |
 | 行政区域 (Overture) | Overture Maps / © OpenStreetMap contributors (ODbL 1.0) · geoBoundaries, Esri Community Maps contributors (CC BY 4.0) |
 | 道路 (Overture) | Overture Maps / © OpenStreetMap contributors (ODbL 1.0) · TomTom |
 | 送電線・川 (Overture) | Overture Maps / © OpenStreetMap contributors (ODbL 1.0) |
-| 鉄道路線・駅 | 「国土数値情報（鉄道データ）」（国土交通省）をもとに作成 |
-| 人口メッシュ | 「令和2年国勢調査 地域メッシュ統計」（総務省統計局）をもとに作成 |
-| 大字・町丁目 / 街区 | 大字・町丁目位置参照情報　国土交通省 / 街区レベル位置参照情報　国土交通省 (座標系を変換して加工) |
+| 鉄道路線・駅 | 「国土数値情報（鉄道データ）」（国土交通省）をもとに japan-geodata-catalog 作成 |
+| 人口メッシュ | 「令和2年国勢調査 地域メッシュ統計」（総務省統計局）をもとに japan-geodata-catalog 作成 |
+| 大字・町丁目 / 街区 | 大字・町丁目位置参照情報　国土交通省 / 街区レベル位置参照情報　国土交通省 (japan-geodata-catalog が加工) |
+
+**何をしたか** (加工の内容) は、各 Collection の `processing:lineage` (STAC の processing 拡張) にあり、
+画面では ⓘ のカードと「出典」に出る。加工した者は `providers` の `processor` (japan-geodata-catalog)。
 
 **公開元を指すだけのもの** (複製しない。地図タイル・標高・3D Tiles は公開元から直接読む。
 元データは配らずに出所と条件だけ載せる): 国土地理院の地図タイル・ベクトルタイル・標高タイル、

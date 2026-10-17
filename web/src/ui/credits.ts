@@ -38,13 +38,15 @@ interface Credit {
   terms: Terms | undefined;
   /** サブカタログの題名 (PLATEAU など)。出所の一覧表の見出しに使う。 */
   group: string | undefined;
+  /** データごとの「何をしたか」(加工の内容)。同じ出典でもデータで違う (建物と整備範囲)。 */
+  lineages: { title: string; lineage: string }[];
 }
 
 /**
  * 出典の文言に、**それが何のデータの出典なのか**を添える。
  *
  * 出典だけを並べると、どれがどのデータのものか読み取れない
- * (「（国土交通省）をもとに作成」が2つ並ぶ)。カタログの `title` を前置きして、
+ * (「（国土交通省）をもとに japan-geodata-catalog 作成」が2つ並ぶ)。カタログの `title` を前置きして、
  * 「建物 (PLATEAU): 「3D都市モデル…」」の形にする。
  *
  * 同じ出典を使うCollectionはまとめる (大字・町丁目と街区は同じ位置参照情報)。
@@ -60,9 +62,11 @@ function groupCredits(collections: Collection[]): Credit[] {
       // 同じ出典なら同じ規約 (出典と規約はパイプラインで1つの組として持っている)。
       terms: collection.terms,
       group: collection.group?.title,
+      lineages: [],
     };
     // 同じ出典で細かさ違いのCollectionが並ぶことがある (人口メッシュの125mと1km)。
     if (!entry.titles.includes(collection.title)) entry.titles.push(collection.title);
+    if (collection.lineage) entry.lineages.push({ title: collection.title, lineage: collection.lineage });
     // 同じ出典でも配布元のページが分かれることがある (Overtureの区域と建物)。
     if (collection.via && !entry.via.includes(collection.via)) entry.via.push(collection.via);
     // 版。**分からないものは足さない** (「不明」と書くより、出さない方が誤解が少ない)。
@@ -164,7 +168,7 @@ export function renderTermsSummary(container: HTMLElement, collections: Collecti
  */
 export function renderCredits(container: HTMLElement, collections: Collection[]): void {
   container.replaceChildren();
-  for (const { titles, group, attribution, url, via, vintages, terms } of groupCredits(collections)) {
+  for (const { titles, group, attribution, url, via, vintages, terms, lineages } of groupCredits(collections)) {
     const term = document.createElement('dt');
     // 上の早見表と同じ書き方 (「出所: データ」) にして、表の行と突き合わせられるようにする。
     term.textContent = group ? `${group}: ${titles.join('・')}` : titles.join('・');
@@ -179,6 +183,13 @@ export function renderCredits(container: HTMLElement, collections: Collection[])
 
     const detail = document.createElement('dd');
     detail.append(externalLink(url, attribution));
+    // **何をしたか** (加工の内容)。出典の1行は「加工した旨」だけなので、中身はデータごとにここで言う。
+    for (const { title, lineage } of lineages) {
+      const line = document.createElement('div');
+      line.className = 'lineage';
+      line.textContent = lineages.length > 1 ? `${m.factLineage} (${title}): ${lineage}` : `${m.factLineage}: ${lineage}`;
+      detail.append(line);
+    }
     // 使うときの条件。バッジと規約の本文へのリンク (要約なので、本文が正本)。
     if (terms) {
       const line = document.createElement('div');

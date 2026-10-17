@@ -53,6 +53,71 @@ const EN: &[(&str, &str)] = &[
         "Background maps of the whole world made from OpenStreetMap data. This catalogue does not copy them; it uses the publisher's own service.",
     ),
     ("世界の地図 (明るい色)", "World map (light)"),
+    // ---- 何をしたか (processing:lineage。catalog.rs の Description::lineage) ----
+    (
+        "国土数値情報の行政区域データから市区町村の名前を取り出し、GeoParquet にしました。",
+        "Municipality names taken from the National Land Numerical Information administrative areas and written as GeoParquet.",
+    ),
+    (
+        "国土数値情報の行政区域データを、座標系を WGS84 に変えて GeoParquet にしました。行は場所ごとに並べ替えています。",
+        "The National Land Numerical Information administrative areas, reprojected to WGS84 and written as GeoParquet. Rows are sorted by location.",
+    ),
+    (
+        "国土数値情報の鉄道データから駅を取り出し、座標系を WGS84 に変えて GeoParquet にしました。行は場所ごとに並べ替えています。",
+        "Stations taken from the National Land Numerical Information railway data, reprojected to WGS84 and written as GeoParquet. Rows are sorted by location.",
+    ),
+    (
+        "国土数値情報の鉄道データから路線を取り出し、鉄道の種類と事業者の種類のコードに名前を添えて、座標系を WGS84 に変えて GeoParquet にしました。行は場所ごとに並べ替えています。",
+        "Lines taken from the National Land Numerical Information railway data, with names added to the railway class and operator type codes, reprojected to WGS84 and written as GeoParquet. Rows are sorted by location.",
+    ),
+    (
+        "Overture Maps の行政区域 (divisions) から日本の市区町村の名前を取り出し、GeoParquet にしました。",
+        "Names of Japanese municipalities taken from Overture Maps divisions and written as GeoParquet.",
+    ),
+    (
+        "Overture Maps の行政区域 (divisions) から日本の市区町村の境界を取り出し、海にかかる部分を削って GeoParquet にしました。行は場所ごとに並べ替えています。",
+        "Boundaries of Japanese municipalities taken from Overture Maps divisions, with the parts over the sea removed, and written as GeoParquet. Rows are sorted by location.",
+    ),
+    (
+        "Overture Maps の建物から日本の範囲を切り出し、場所ごと (QuadKey) にファイルを分けて GeoParquet にしました。",
+        "Overture Maps buildings clipped to Japan and written as GeoParquet, split into files by location (QuadKey).",
+    ),
+    (
+        "Overture Maps の道路から日本の路線名の一覧を取り出し、GeoParquet にしました。",
+        "The list of Japanese route names taken from Overture Maps roads and written as GeoParquet.",
+    ),
+    (
+        "Overture Maps の道路から日本の高速道路・国道・都道府県道を取り出し、GeoParquet にしました。行は場所ごとに並べ替えています。",
+        "Japanese expressways, national roads and prefectural roads taken from Overture Maps roads and written as GeoParquet. Rows are sorted by location.",
+    ),
+    (
+        "Overture Maps の base (infrastructure) から日本の送電線と、地中・海底の電力線を取り出し、GeoParquet にしました。",
+        "Japanese power lines and underground or submarine cables taken from Overture Maps base (infrastructure) and written as GeoParquet.",
+    ),
+    (
+        "Overture Maps の base (water) から日本の川と運河の線を取り出し、GeoParquet にしました。",
+        "Lines of Japanese rivers and canals taken from Overture Maps base (water) and written as GeoParquet.",
+    ),
+    (
+        "このカタログの PLATEAU の建物を、1km四方の地域メッシュごとに数えて GeoParquet にしました。",
+        "This catalogue's PLATEAU buildings counted per 1 km grid square and written as GeoParquet.",
+    ),
+    (
+        "CityGML の建築物モデルから、建物ごとに LOD0 の屋根の外周線 (平面の形) と属性 (高さ・用途・階数など。用途はコードリストで名前に直しています) を取り出し、座標系を WGS84 に変えて GeoParquet にしました。行は場所ごとに並べ替え、引いた表示のための段の列を足しています。",
+        "For each building in the CityGML building models, the LOD0 roof outline (the footprint) and attributes (height, usage, number of storeys and so on; usage codes resolved to names with the code lists) were taken, reprojected to WGS84 and written as GeoParquet. Rows are sorted by location, and a tier column for zoomed-out views is added.",
+    ),
+    (
+        "地域メッシュ統計 (125m) の人口と世帯数を1km四方のメッシュに足し合わせ、形をメッシュコードから計算して GeoParquet にしました。",
+        "Population and households from the grid square statistics (125 m) summed into 1 km grid squares, with shapes computed from the grid codes, and written as GeoParquet.",
+    ),
+    (
+        "地域メッシュ統計 (125m) の人口と世帯数に、メッシュコードから計算した形と、面積で割った人口密度を足して GeoParquet にしました。",
+        "Population and households from the grid square statistics (125 m), with shapes computed from the grid codes and population density (divided by area) added, written as GeoParquet.",
+    ),
+    (
+        "位置参照情報の代表点を、座標系を WGS84 に変えて GeoParquet にしました。",
+        "The representative points of the location reference information, reprojected to WGS84 and written as GeoParquet.",
+    ),
     (
         "OpenStreetMap 財団が配っている地図です。利用方針が厳しいため、このカタログでは描かず、規約を知らせるために載せています。",
         "Maps served by the OpenStreetMap Foundation. Their usage policy is strict, so this catalogue does not draw them; they are listed to make the terms known.",
@@ -466,7 +531,7 @@ fn translate(value: &mut Value, table: &BTreeMap<&str, &str>, at: &str) -> Resul
                 }
                 let translatable = matches!(
                     key.as_str(),
-                    "title" | "description" | "name" | "duck:vintage"
+                    "title" | "description" | "name" | "duck:vintage" | "processing:lineage"
                 );
                 match child {
                     Value::String(text) if translatable && has_japanese(text) => {

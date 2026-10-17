@@ -411,7 +411,8 @@ body,
   font-weight: normal;
 }
 
-/* 配布元。ここにあるのは変換した複製なので、原典へ辿れるようにする。 */
+/* 加工の内容と配布元。ここにあるのは変換した複製なので、何をしたかを言い、原典へ辿れるようにする。 */
+#credits .lineage,
 #credits .via {
   margin-top: 0.1rem;
   color: #777;

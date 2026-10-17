@@ -448,6 +448,8 @@ export function createCollectionCards(options: CollectionCardOptions): Collectio
     // **出典の表示そのもの** (使う条件の「出典表示が必要」「加工したら明記」の中身)。以前は条件のバッジだけで文言が無く、
     // どう書けばよいか・このカタログがどう書いているかがカードから分からなかった (2026-10-17、利用者の指摘)。
     if (collection.attribution) fact(m.factAttribution, externalLink(collection.attributionUrl, collection.attribution));
+    // 何をしたか (加工の内容)。出典の1行が「加工した旨」を言い、こちらがその中身。
+    if (collection.lineage) fact(m.factLineage, collection.lineage);
     if (collection.provider) fact(m.factProvider, collection.provider);
     if (collection.vintage) fact(m.factVintage, collection.vintage);
     if (collection.kind === 'vector_tiles') {

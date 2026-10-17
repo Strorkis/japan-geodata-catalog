@@ -258,11 +258,11 @@
       <h2>公開までの残り</h2>
       <ol class="steps">
         <li class="current">
-          <b>push して、CI が通るか見る</b><span class="status you">あなたの番</span>
+          <b>カタログ (JSON) を上げてから push</b><span class="status you">あなたの番</span>
           <span class="sub">
-            CI が E2E の時間切れで続けて落ちたので、<b>CI では E2E を流さない</b>ことにした (GPU の無いランナーで地図をソフトウェアで描き、
-            どの手順も遅かった)。CI は型・単体テスト・ビルドと、R2 の CORS と Range を curl で見るだけ。E2E は push 前に手元で全件。
-            <b>Pages は CI が通るまで表示できない</b> (改名で古いパスのまま)
+            出典の1行に加工した者 (japan-geodata-catalog) を足し、何をしたか (<code>processing:lineage</code>) を持たせたので、カタログが変わった。
+            <a href="deploy.md">deploy.md</a>「2026-10-10 の分 その2」と同じく items.parquet と JSON 全部 (97ファイル) → push。データのファイルは変えていない。
+            載るもの: Navara で PLATEAU が出ない件の直し・ⓘ のカードに出典と加工の内容・zip の脆弱性の直し。push 前の全件 E2E は私が流す
           </span>
         </li>
         <li>

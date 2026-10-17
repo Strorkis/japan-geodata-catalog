@@ -682,8 +682,9 @@ test('出典は既定でたたまれていて、押すと全文が出る', async
   await expect(attribution).not.toHaveClass(/maplibregl-compact-show/);
 
   await page.locator('.maplibregl-ctrl-attrib-button').click();
-  // 出典は義務なので、法令・約款が求める文言がそのまま出ていること。
-  await expect(attribution).toContainText('（国土交通省）をもとに作成');
+  // 出典は義務なので、法令・約款が求める文言がそのまま出ていること。**加工した旨 (加工した者の名前) も
+  // 地図の右下に出る** (PDL1.0 の記載例「〜をもとに○○作成」。何をしたかはカードと出典の画面)。
+  await expect(attribution).toContainText('（国土交通省）をもとに japan-geodata-catalog 作成');
   await expect(attribution).toContainText('ODbL');
   await expect(attribution).toContainText('国土地理院');
   // 何のデータの出典なのかが分かること。出典だけ並べても読み取れない。
@@ -803,6 +804,7 @@ test('使うときの条件が一覧表とバッジで出る', async ({ page }) 
   const collection = (await bundledCollection<{
     'duck:terms': { commercial: string; share_alike: boolean };
     'duck:attribution': string;
+    'processing:lineage': string;
   }>(page, LAYER.plateauBuildings))!;
   expect(collection['duck:terms'].commercial).toBe('allowed');
   await openLayerDetails(page, LAYER.plateauBuildings);
@@ -811,6 +813,9 @@ test('使うときの条件が一覧表とバッジで出る', async ({ page }) 
   await expect(card.locator('.terms-badge', { hasText: '継承あり' })).toHaveCount(0);
   // **出典の表示そのものもカードに出る** (以前は「出典表示が必要」「加工したら明記」のバッジだけで、文言が無かった)。
   await expect(card.locator('.collection-facts')).toContainText(collection['duck:attribution']);
+  // **加工した旨** (規約が求める) は出典の1行に、加工した者の名前と一緒にある。何をしたかはカードにも出る。
+  expect(collection['duck:attribution']).toContain('をもとに japan-geodata-catalog 作成');
+  await expect(card.locator('.collection-facts')).toContainText(collection['processing:lineage']);
 });
 
 test('出典に配布元へのリンクが出る', async ({ page }) => {
@@ -827,6 +832,10 @@ test('出典に配布元へのリンクが出る', async ({ page }) => {
   expect(hrefs.some((href) => href.includes('nlftp.mlit.go.jp'))).toBe(true);
   // Overtureは出典がガイドページ (docs.../attribution/) なので、そこと違うこと。
   expect(hrefs.some((href) => href.includes('overturemaps.org/guides/'))).toBe(true);
+  // **何をしたか (加工の内容) も出る。** PLATEAU は建物と整備範囲で中身が違うので、データごとに分けて言う。
+  const plateau = page.locator('#credits dd', { hasText: '3D都市モデル' }).filter({ hasText: 'japan-geodata-catalog' });
+  await expect(plateau.locator('.lineage')).toHaveCount(2);
+  await expect(plateau.locator('.lineage').first()).toContainText('加工の内容');
 });
 
 // 初見で何から触ればいいか分かるよう、**できること自体は隠さない**。

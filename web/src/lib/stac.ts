@@ -154,6 +154,8 @@ export interface StacCollection {
   /** 地図に出す出典の文言。**表示義務があるので縮めない。** */
   'duck:attribution': string;
   'duck:attribution_url': string;
+  /** 何をしたか (加工の内容。STAC の processing 拡張)。変換して置いているものにだけ付く。 */
+  'processing:lineage'?: string;
   /** 地域メッシュの細かさ (メッシュコードの桁数)。メッシュ以外には無い。 */
   'duck:mesh_digits'?: number;
   /**
@@ -323,6 +325,11 @@ export interface Collection {
   itemsPath: string | undefined;
   attribution: string;
   attributionUrl: string;
+  /**
+   * **何をしたか** (加工の内容)。規約が求める「加工した旨」の1行は `attribution` にあり、地図の右下に出る。
+   * これはその中身の説明で、ⓘ のカードと出典の画面に出す。配信をそのまま使うものには無い。
+   */
+  lineage: string | undefined;
   /**
    * 配布元。**ここにあるのは変換した複製で、原典は配布元にある。**
    * 実物が欲しくなった人が辿れるようにする (STACの `rel: "via"`)。
@@ -552,6 +559,7 @@ function toCollection(
     itemsPath,
     attribution: document['duck:attribution'],
     attributionUrl: document['duck:attribution_url'],
+    lineage: document['processing:lineage'],
     via: document.links.find((link) => link.rel === 'via')?.href,
     meshDigits: document['duck:mesh_digits'],
     coarseLodToleranceM: document['duck:coarse_lod_tolerance_m'],

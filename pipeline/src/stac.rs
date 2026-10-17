@@ -53,6 +53,9 @@ const STAC_VERSION: &str = "1.1.0";
 const TABLE_EXTENSION: &str = "https://stac-extensions.github.io/table/v1.2.0/schema.json";
 /// `file:size` の出どころ。
 const FILE_EXTENSION: &str = "https://stac-extensions.github.io/file/v2.1.0/schema.json";
+/// `processing:lineage` (何をしたか) の出どころ。
+const PROCESSING_EXTENSION: &str =
+    "https://stac-extensions.github.io/processing/v1.2.0/schema.json";
 const PARQUET_MEDIA_TYPE: &str = "application/vnd.apache.parquet";
 const JSON_MEDIA_TYPE: &str = "application/json";
 
@@ -453,7 +456,7 @@ fn collection(
     let mut body = json!({
         "type": "Collection",
         "stac_version": STAC_VERSION,
-        "stac_extensions": [TABLE_EXTENSION],
+        "stac_extensions": [TABLE_EXTENSION, PROCESSING_EXTENSION],
         "id": id,
         "title": first.title,
         "description": first.description,
@@ -465,12 +468,24 @@ fn collection(
         // providers[].name は組織名なので、そちらとは別に要る。
         "duck:attribution": first.attribution.text,
         "duck:attribution_url": first.attribution.url,
+        // **何をしたか** (加工の内容)。規約が求める「加工した旨」の1行は出典 (`duck:attribution`) にあり、
+        // 地図の右下に出す。こちらは中身の説明で、ⓘ のカードと出典の画面に出す。
+        "processing:lineage": first.lineage,
         "duck:kind": duck_kind(first.kind),
-        "providers": [{
-            "name": first.attribution.provider,
-            "roles": ["producer", "licensor"],
-            "url": first.attribution.url,
-        }],
+        // 作った者 (producer) と、変換して置いている者 (processor・host)。Portolan は producer と host が
+        // 違えばミラーとみなす (サブカタログの `-mirror` と同じこと)。
+        "providers": [
+            {
+                "name": first.attribution.provider,
+                "roles": ["producer", "licensor"],
+                "url": first.attribution.url,
+            },
+            {
+                "name": crate::catalog::CREATOR,
+                "roles": ["processor", "host"],
+                "url": crate::catalog::CREATOR_URL,
+            },
+        ],
         "extent": {
             "spatial": { "bbox": extent_boxes },
             // 元データの時点を読んでいないので、期間は開いたままにする。
@@ -592,7 +607,12 @@ fn collection(
                 "title": TILES_TITLE,
                 "pmtiles:layers": layers,
             }));
-        body["stac_extensions"] = json!([TABLE_EXTENSION, FILE_EXTENSION, WEB_MAP_LINKS_EXTENSION]);
+        body["stac_extensions"] = json!([
+            TABLE_EXTENSION,
+            PROCESSING_EXTENSION,
+            FILE_EXTENSION,
+            WEB_MAP_LINKS_EXTENSION
+        ]);
     }
     Ok(body)
 }
@@ -1356,6 +1376,7 @@ mod tests {
             title: "人口メッシュ",
             description: "説明",
             attribution: attribution(),
+            lineage: "加工の説明",
             geometry_types: vec!["Polygon".to_string()],
             bbox,
             row_count: 10,
