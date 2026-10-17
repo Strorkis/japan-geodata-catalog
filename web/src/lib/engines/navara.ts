@@ -118,6 +118,12 @@ export async function createNavaraEngine(options: NavaraEngineOptions): Promise<
   const navara = new ThreeView<DefaultDescriptions>({ container, canvas });
   navara.addPlugin(new DefaultPlugin()); // init の前に
   await navara.init();
+  // **出典の部品 (右下の ⓘ とロゴの枠) を入れ物の中へ移す。** Navara はこれを body の末尾に置くので、Navara を隠したあとも
+  // MapLibre の出典 (右下の ⓘ) に重なって出たままになった (2026-10-17、利用者が見つけた)。入れ物の中なら一緒に隠れる。
+  // Navara の間は地図 (MapLibre) が隠れて MapLibre の出典も見えないので、こちらが出典の表示を担う。
+  for (const part of document.querySelectorAll('body > .navara-attr-dock, body > .navara-attr-logoframe')) {
+    container.append(part);
+  }
   navara.addLight({ ambient: { intensity: 1.5 } });
   navara.addLight({ sun: {} });
 

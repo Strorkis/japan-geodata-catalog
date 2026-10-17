@@ -1595,6 +1595,8 @@ test.describe('地図のエンジン (Cesium)', { tag: '@engine' }, () => {
     await expect(page.locator('#navara canvas')).toBeVisible();
     // **ページが縦に伸びない** (伸びると、ホイールが地図の拡大ではなくページのスクロールになる)。
     // Navara は canvas を渡さないと、画面いっぱいの入れ物を body に足す。
+    // **Navara の出典 (右下の ⓘ) は Navara の間だけ出る** (Navara は body に置くので、入れ物へ移している)。
+    await expect(page.locator('#navara .navara-attr-toggle')).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight)).toBe(true);
     // カメラは同じ場所を見ている (Navara の見え方を MapLibre の形に直したもの)。
     const navaraView = () =>
@@ -1623,6 +1625,9 @@ test.describe('地図のエンジン (Cesium)', { tag: '@engine' }, () => {
     // 戻ると同じ場所。
     await bar.locator('button[data-engine="maplibre"]').click();
     await expect(page.locator('#navara')).toBeHidden();
+    // 戻ったら Navara の出典は消え、MapLibre の出典 (右下の ⓘ) に重ならない。
+    await expect(page.locator('.navara-attr-toggle')).toBeHidden();
+    await expect(page.locator('.maplibregl-ctrl-attrib')).toBeVisible();
     await expect(page.locator('#search-input')).toBeEnabled();
     const back = await page.evaluate(() => {
       const map = (window as unknown as TestWindow).__map!;
