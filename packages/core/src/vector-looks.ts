@@ -1,5 +1,5 @@
 /**
- * ベクトルタイルのテーマごとの色。MapLibre (tiles.ts) と Cesium (lib/engines/cesium.ts へ main.ts が渡す) で共用する。
+ * ベクトルタイルのテーマごとの色。MapLibre (tiles.ts) と Cesium (packages/cesium へ main.ts が渡す) で共用する。
  * MapLibre を読み込まないよう、色の表だけをここに分けた。
  */
 

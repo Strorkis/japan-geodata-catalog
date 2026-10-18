@@ -44,12 +44,14 @@ import { createNearbyPanel } from './ui/nearby-panel';
 import { createCollectionCards } from './ui/collection-card';
 import { createSearchBox } from './ui/search-box';
 import { createTerrainRow } from './ui/terrain-row';
-import { createEngineBar, engineFromUrl, engineLabel, usesMapLibre, type EngineId } from './ui/engine-bar';
-import type { DeckEngine } from './lib/engines/deckgl';
-import type { ThreeEngine } from './lib/engines/three';
-// エンジンは**型だけ**。本体はバーで選んだときに読む (地図の起動を重くしない)。
-import type { CesiumEngine, CesiumRow, CesiumVectorHit } from './lib/engines/cesium';
-import type { NavaraEngine, NavaraRow } from './lib/engines/navara';
+import { createEngineBar, engineFromUrl, engineLabel, notDrawnIn, usesMapLibre, type EngineId } from './ui/engine-bar';
+// **エンジンは `@japan-geodata-catalog/<エンジン>`** (packages/)。ここでは**型だけ**読み、本体はバーで選んだときに読む
+// (地図の起動を重くしない)。エンジンとの口の型は core の engine。
+import type { EngineRow, SwappedEngine } from '@japan-geodata-catalog/core/engine';
+import type { DeckEngine } from '@japan-geodata-catalog/deckgl/engine';
+import type { ThreeEngine } from '@japan-geodata-catalog/three/engine';
+import type { CesiumEngine, CesiumVectorHit } from '@japan-geodata-catalog/cesium/engine';
+import type { NavaraEngine } from '@japan-geodata-catalog/navara/engine';
 import {
   PLATEAU_TILES_DEFAULT,
   plateauTilesChoice,
@@ -475,20 +477,12 @@ async function main() {
   /** 外部のベクトルタイル。ホバーで引き当てるために持っておく。 */
   const vectorOverlays: VectorOverlay[] = [];
 
-  // ---- 地図のエンジン (ui/engine-bar.ts・lib/engines/) ----------------------------------
+  // ---- 地図のエンジン (ui/engine-bar.ts・packages/<エンジン>) -----------------------------
   //
   // **UI は同じで、エンジンだけが替わる。** 一覧の状態 (出している行・重ね順・不透明度) はエンジンに依らず、
-  // 描くかどうかだけがエンジンに依る。描けない行は一覧で灰色にする (`unsupportedIn`)。
+  // 描くかどうかだけがエンジンに依る。描けない行は一覧で灰色にする (`unsupportedIn`)。灰色は行の種類 (`DrawKind`) と
+  // エンジンごとの「描ける種類の表」で決める (ui/engine-bar.ts の `notDrawnIn`)。
   // **見え方の正本は MapLibre** — Cesium で動かしたら、隠れている MapLibre を合わせる (一覧の「この範囲にあるか」などがそのまま効く)。
-  /** 地図を入れ替えるエンジン (Cesium・Navara) で描けない行。 */
-  const NOT_IN_SWAPPED: Layer['unsupportedIn'] = { cesium: m.notDrawnIn('Cesium'), navara: m.notDrawnIn('Navara') };
-  /** Navara で描けない行 (ベクトルタイル。PMTiles の中継が要る。lib/engines/navara.ts)。 */
-  const NOT_IN_NAVARA: Layer['unsupportedIn'] = { navara: m.notDrawnIn('Navara') };
-  /** 3D Tiles は、MapLibre 単体と deck.gl を重ねたときは描けない (Three.js を重ねると描ける)。 */
-  const NOT_3D_TILES: Layer['unsupportedIn'] = {
-    maplibre: m.notDrawn3dTilesInMapLibre,
-    'maplibre-deckgl': m.notDrawn3dTilesInMapLibre,
-  };
   let cesium: CesiumEngine | undefined;
   let navara: NavaraEngine | undefined;
   /** 背景地図の不透明度 (Collection ID → 0〜1)。MapLibre は層の paint に持つが、Cesium に渡すために覚える。 */
@@ -502,15 +496,16 @@ async function main() {
   const terrainNote = document.querySelector<HTMLParagraphElement>('#terrain-engine-note')!;
 
   /** いま使っている、地図を入れ替えるエンジン (MapLibre を使っていれば undefined)。 */
-  const swappedEngine = () => (engine === 'cesium' ? cesium : engine === 'navara' ? navara : undefined);
+  const swappedEngine = (): SwappedEngine | undefined =>
+    engine === 'cesium' ? cesium : engine === 'navara' ? navara : undefined;
   /** 一覧の状態を、地図を入れ替えるエンジン (Cesium・Navara) に写す。使っていなければ何もしない。 */
   const syncSwapped = () => {
     const target = swappedEngine();
     if (!layerList || !target) return;
     const engineId = engine;
     terrainNote.hidden = true;
-    const rows: CesiumRow[] = [];
-    const vectorRows = new Map<string, Extract<CesiumRow, { kind: 'vector' }>>();
+    const rows: EngineRow[] = [];
+    const vectorRows = new Map<string, Extract<EngineRow, { kind: 'vector' }>>();
     for (const layer of layerList.ordered('tile')) {
       if (!layer.visible || layer.unsupportedIn?.[engineId]) continue;
       const collection = layer.collections[0];
@@ -535,17 +530,11 @@ async function main() {
     }
     const selected = terrainCollections.find((c) => c.id === terrainSelect.value);
     const choice = { enabled: terrainToggle.checked, selected };
-    const used =
-      target === cesium
-        ? cesium.sync(
-            rows.filter((row) => row.kind !== 'vector' || row.layers.length > 0),
-            choice,
-          )
-        : navara!.sync(
-            // Navara はベクトルタイルを描かない (一覧で灰色。ここには来ない)。
-            rows.filter((row): row is NavaraRow => row.kind !== 'vector'),
-            choice,
-          );
+    // 描けない種類の行は一覧で灰色にしてあり、ここには来ない (上の `unsupportedIn`)。
+    const used = target.sync(
+      rows.filter((row) => row.kind !== 'vector' || row.layers.length > 0),
+      choice,
+    );
     // 選んだ標高が海面からの高さなら、楕円体高のものに替えて描く。替えたことを地形の欄で言う。
     if (used && used.id !== selected?.id) {
       terrainNote.textContent = m.ellipsoidTerrainInstead(engineLabel(engineId), used.title);
@@ -709,8 +698,8 @@ async function main() {
       section: 'data' as const,
       rank: DATA_RANKS[collection.kind] ?? 0,
       mapLayerIds: () => dataMapLayers,
-      // **データの行 (DuckDB) は Cesium ではまだ描かない** (問い合わせはエンジンに依らないが、描く側が MapLibre の層)。
-      unsupportedIn: NOT_IN_SWAPPED,
+      // **データの行 (DuckDB) は Cesium・Navara ではまだ描かない** (問い合わせはエンジンに依らないが、描く側が MapLibre の層)。
+      unsupportedIn: notDrawnIn('query'),
     };
     const tileBase = { ...base, section: 'tile' as const, rank: 0, unsupportedIn: undefined };
     switch (collection.kind) {
@@ -780,6 +769,7 @@ async function main() {
         const first = defaultOf(collections, 'raster_tiles');
         layers.push({
           ...tileBase,
+          unsupportedIn: notDrawnIn('raster-tiles'),
           // **先頭の背景地図 (淡色地図) だけ既定で出す** (スタイルを組むときと同じ規則)。
           visible: collection === first,
           // 何のソースかを行で言う (出所の名前は一覧が前に足す)。
@@ -810,8 +800,8 @@ async function main() {
         };
         layers.push({
           ...tileBase,
-          // スタイルの JSON で描く背景地図。Cesium はスタイルを読まない。
-          unsupportedIn: NOT_IN_SWAPPED,
+          // スタイルの JSON で描く背景地図。Cesium・Navara はスタイルを読まない。
+          unsupportedIn: notDrawnIn('style'),
           vintage: `${m.vectorStyle} · ズーム${collection.zoom?.join('〜') ?? ''}`,
           settings: sliderSettings(m.opacity, 0, 100, 5, 100, (v) => `${v}%`, (v) => {
             opacity = v / 100;
@@ -842,14 +832,14 @@ async function main() {
         if (collection.tileLink || collection.dem?.grid) terrainCollections.push(collection);
         break;
       case '3d_tiles':
-        // **MapLibre では描けず、Cesium で描く。** 一覧には足せて、MapLibre の間は灰色。
+        // **MapLibre 単体では描けず、Three.js を重ねるか Cesium・Navara で描く。** 一覧には足せて、描けない間は灰色。
         layers.push({
           ...tileBase,
           vintage: '3D Tiles',
           settings: tilesSettings(collection),
           refresh: () => {},
           mapLayerIds: () => [],
-          unsupportedIn: NOT_3D_TILES,
+          unsupportedIn: notDrawnIn('3d-tiles'),
         });
         break;
       case 'reference':
@@ -877,7 +867,7 @@ async function main() {
           layers.push({
             ...tileBase,
             // 点だけのテーマ (注記) は、Cesium のベクタでは文字を描けないので出さない。Navara はベクトルタイルをまだ描かない。
-            unsupportedIn: theme.layers.every((l) => l.geometry === 'Point') ? NOT_IN_SWAPPED : NOT_IN_NAVARA,
+            unsupportedIn: notDrawnIn(theme.layers.every((l) => l.geometry === 'Point') ? 'vector-points' : 'vector-tiles'),
             id: rowId,
             title: theme.title,
             // 出所が同じでも、どのタイルセットの層かを版と一緒に添える。
@@ -1315,9 +1305,11 @@ async function main() {
   const prepareSwapped = async (next: 'cesium' | 'navara') => {
     const quantizedMeshTerrains = collections.filter((c) => c.quantizedMesh);
     if (next === 'cesium') {
-      const { createCesiumEngine } = await busy(m.loadingNamed('Cesium'), () => import('./lib/engines/cesium'));
+      const { createCesiumEngine } = await busy(m.loadingNamed('Cesium'), () => import('@japan-geodata-catalog/cesium/engine'));
       cesium ??= createCesiumEngine({
         container: cesiumEl,
+        // 資産の置き場所は vite.config.ts の `cesiumAssets` と合わせる。
+        assetsUrl: `${import.meta.env.BASE_URL}cesium/`,
         quantizedMeshTerrains,
         onMoveEnd: followSwapped,
         onFailure: (collection) => showFailure(m.loadFailed(collection.title)),
@@ -1327,7 +1319,7 @@ async function main() {
       return cesium;
     }
     if (!navara) {
-      const { createNavaraEngine } = await busy(m.loadingNamed('Navara'), () => import('./lib/engines/navara'));
+      const { createNavaraEngine } = await busy(m.loadingNamed('Navara'), () => import('@japan-geodata-catalog/navara/engine'));
       navara = await busy(m.loadingNamed('Navara'), () =>
         createNavaraEngine({ container: navaraEl, quantizedMeshTerrains, onMoveEnd: followSwapped }),
       );
@@ -1374,7 +1366,7 @@ async function main() {
         // MapLibre に地形があると、付けた時点で deck.gl が MapLibre の内部を読んで落ちる)。地形は deck.gl が描く。
         terrainRow.reapply();
         if (next === 'maplibre-deckgl') {
-          const { createDeckEngine } = await busy(m.loadingNamed('deck.gl'), () => import('./lib/engines/deckgl'));
+          const { createDeckEngine } = await busy(m.loadingNamed('deck.gl'), () => import('@japan-geodata-catalog/deckgl/engine'));
           deck ??= createDeckEngine(map);
           (window as unknown as { __deck?: unknown }).__deck = deck;
           setMapLibreBuildingsVisible(false);
@@ -1383,8 +1375,13 @@ async function main() {
         }
         await syncDeckTerrain();
         if (next === 'maplibre-three') {
-          const { createThreeEngine } = await busy(m.loadingNamed('Three.js'), () => import('./lib/engines/three'));
-          three ??= createThreeEngine({ map, onFailure: (collection) => showFailure(m.loadFailed(collection.title)) });
+          const { createThreeEngine } = await busy(m.loadingNamed('Three.js'), () => import('@japan-geodata-catalog/three/engine'));
+          three ??= createThreeEngine({
+            map,
+            // 読み手の置き場所は vite.config.ts の `threeDecoders` と合わせる。
+            decodersUrl: `${import.meta.env.BASE_URL}three/`,
+            onFailure: (collection) => showFailure(m.loadFailed(collection.title)),
+          });
           (window as unknown as { __three?: unknown }).__three = three;
           await busy(m.loadingNamed('Three.js'), () => three!.attach());
           syncThree();

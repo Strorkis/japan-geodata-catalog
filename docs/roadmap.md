@@ -19,10 +19,10 @@
 
 | 部品 | 中身 | いまの在りか |
 | --- | --- | --- |
-| `core` | 地図に依らない: カタログを読む・DuckDB で引く・ジオコーディング・ライセンスを持ち回る | `web/src/lib/` (約3,600行。もう地図に依らない) |
+| `core` | 地図に依らない: カタログを読む・DuckDB で引く・ジオコーディング・ライセンスを持ち回る | `packages/core` (10-18 に分けた) |
 | `maplibre` | MapLibre で描く | `web/src/lib/tiles.ts`・`web/src/ui/` |
-| `cesium` | Cesium で描く | `web/src/lib/engines/cesium.ts`・`cesium-pmtiles.ts` |
-| (TOBE) `deckgl`・`three`・`navara` | 下の「エンジン」 | — |
+| `cesium` | Cesium で描く | `packages/cesium` (10-18 に分けた) |
+| `deckgl`・`three`・`navara` | 下の「エンジン」 | `packages/{deckgl,three,navara}` (10-18 に分けた) |
 | `pipeline` | 取る・変換する・STAC を書く (CLI) | `pipeline/`・`crates/remote-zip` |
 | Web サイト | 日本のカタログビジュアライザー | `web/` の残り |
 
@@ -54,7 +54,7 @@
 | PR | やること | 状態 |
 | --- | --- | --- |
 | A `refactor/workspace-core` | ワークスペースの起点を直下へ (`pnpm-workspace.yaml`・lockfile・`.pnpmfile.cjs`)。`packages/core` を切り出す | 10-18 |
-| B `refactor/engine-packages` | `packages/{deckgl,three,cesium,navara}`。**エンジンの実行時の資産を写す Vite のプラグイン**も部品に入れる。「できること」の表 | |
+| B `refactor/engine-packages` | `packages/{deckgl,three,cesium,navara}`。**エンジンの実行時の資産を写す Vite のプラグイン**も部品に入れる。「できること」の表 | 10-18 |
 | C `refactor/maplibre-package` | `packages/maplibre` (タイル・データの行の描き方・吹き出しの中身) | |
 | D `refactor/pipeline-crate-name` | Rust のクレート名を `duck-geocoder` から付け直す | |
 
@@ -72,6 +72,23 @@
   `tiles.ts` (MapLibre) は C、`engines/*`・`cesium-pmtiles.ts` は B で動かす
 - 単体テストはワークスペースで流す (`pnpm -w run test:unit`。core 25件・Web サイト 12件)
 
+**B でしたこと:**
+
+- エンジンごとに `packages/<エンジン>` に分けた。中身は `src/engine.ts` (エンジン)・`src/draws.ts` (描ける種類の表)・`vite.ts` (実行時の資産を
+  配る Vite のプラグイン)。依存 (cesium・three・deck.gl・Navara など) は Web サイトから各部品へ移した (解決した版は1つも変わっていない)
+- **エンジンとの口は core の `engine.ts`**: 見え方 (`View`)・地図を入れ替えるエンジンの口 (`SwappedEngine`)・渡す行 (`EngineRow`。
+  `CesiumRow`・`NavaraRow` を1つにした)・地形の選び方。Cesium・Navara は同じ口で、呼ぶ側はエンジンで分けずに `sync` を呼ぶ
+- **灰色は「描ける種類の表」で決める** (core の `DrawKind`・`Draws`)。行の種類はデータの行・地図タイル・スタイル・ベクトルタイル・
+  点だけのテーマ・3D Tiles の6つ。`NOT_IN_SWAPPED` などを消した。MapLibre に重ねるもの (deck.gl・Three.js) は、MapLibre の表と
+  重ねるものの表の「どちらかが描ける」。表は `src/draws.ts` に置き、型だけに依るので、エンジン本体を読まずに引ける (起動を重くしない)。
+  MapLibre の表は C で `packages/maplibre` へ移す (いまは `web/src/ui/engine-bar.ts`)
+- 部品は**アプリのビルドの設定を読まない**。資産の置き場所は使う側が渡す (Cesium は `assetsUrl`、Three.js は `decodersUrl`)。
+  Vite のプラグインに渡す置き場所と合わせる
+- 開発サーバーでエンジンの資産を配るのは、R2 に似せた配り方 (Range など) ではなく、そのまま配るだけにした (`core/vite.ts` の `serveDirectory`)。
+  `vite preview` ではビルドに写したものを配る (前は node_modules から配っていた)
+- エンジンの部品の入口はどれも `engine.ts` なので、ビルドの JS の名前はパッケージの名前で出す (`cesium-*.js` など。`vite.config.ts`)
+- `vite.ts` (Node の側) は型を確かめていない (`vite.config.ts` と同じ。前から)
+
 **このあと (分けたあと):** スタイル (Portolan の `style` アセット) を core に足す。ジオコーダーの口。既存の道具 (QGIS・GeoLibre) で開けるかの確認と
 Item の JSON (TOBE)。各パッケージの README (使い方の見本) は口が落ち着いてから。
 
@@ -86,7 +103,7 @@ MapLibre・MapLibre + deck.gl・MapLibre + Three.js・Cesium・Navara の5つ (2
 - Three.js は MapLibre の上に 3D Tiles を重ねる道 (下の「Navara は立ち位置が違う」に既出)
 - 「MapLibre 単体」はいまの MapLibre (バーの名前はそのまま)
 
-**MapLibre + deck.gl をざっと入れた (2026-10-12、`web/src/lib/engines/deckgl.ts`):**
+**MapLibre + deck.gl をざっと入れた (2026-10-12、いまは `packages/deckgl`):**
 
 - 建物 (DuckDB の行) と地形を deck.gl で描く。建物の MapLibre の層は透明にして残す (吹き出しは MapLibre が引き当てるので効く)。
   ジオメトリはいまは MapLibre と同じ GeoJSON。**座標の配列を直接渡す (binary)・GeoArrow で受けるのは次の段** (deck.gl-geoarrow は WKB を受けない)
@@ -107,7 +124,7 @@ MapLibre・MapLibre + deck.gl・MapLibre + Three.js・Cesium・Navara の5つ (2
     texture-compressor は @loaders.gl/textures が import せず Node の別のプロセスとして動かすだけなので、`.pnpmfile.cjs` (10-18 からリポジトリの直下) で外した
     (任意の peer なので overrides の `-` は効かなかった)。配る中身 (dist の JS・WASM) は外す前と同じだった
 
-**MapLibre + Three.js をざっと入れた (2026-10-13、`web/src/lib/engines/three.ts`):**
+**MapLibre + Three.js をざっと入れた (2026-10-13、いまは `packages/three`):**
 
 - **先に MapLibre を 6.8 → 6.14 に上げた** (補助のライブラリ `maplibre-gl-three` が 6.12 以上を求める)。変更履歴に壊れる変更は無く
   (地形まわりの修正が多い)、全件の E2E で確かめた。6.13 で custom layer が地形に描ける口 (`renderToTerrainTile`) が増えている — deck.gl・Three.js の
@@ -148,7 +165,7 @@ MapLibre・MapLibre + deck.gl・MapLibre + Three.js・Cesium・Navara の5つ (2
 - 利用者が取ってくれた配信の一覧 (`/datacatalog/plateau-datasets` の `composite_tilesets`、`.reference/tmp/`) では、全国版に建物のほか
   橋梁・道路・植生・都市設備・地下街なども揃っている。**ほかの種類をカタログに足すのは TOBE**
 
-**Navara をざっと入れた (2026-10-13、`web/src/lib/engines/navara.ts`):**
+**Navara をざっと入れた (2026-10-13、いまは `packages/navara`):**
 
 - `@navaramap/three` 0.2.1 (MIT OR Apache-2.0) + `three-default-plugin`。Cesium と同じく**入れ替える側**で、同じページに載せて隠すときは入れ物を隠すだけ
   (変化があったときだけ描くので、隠れている間は描かない)。描くのは背景地図・3D Tiles・地形 (Re:Earth Terrain の quantized-mesh)。
@@ -156,7 +173,7 @@ MapLibre・MapLibre + deck.gl・MapLibre + Three.js・Cesium・Navara の5つ (2
 - 写真のような空 (`addDefaultPhotorealScene`) は使わず、光は ambient と太陽だけ。配る大きさは約29MB (WASM 4.6MB・大気のテクスチャ・
   Gaussian Splatting の部品 spark 5MB) だが、大気と spark は**使うときだけ読む**。初めて Navara を選んだときに読むのは JS 2.5MB と WASM
 - **重ね順は足した順** (地形を先に)。並びや地形が変わったら地形から足し直す
-- ズームと距離の行き来は Cesium と共用にした (`lib/engines/zoom.ts`)。0.2.1 には MapLibre のズームと距離を行き来する関数が無い
+- ズームと距離の行き来は Cesium と共用にした (いまは core の `zoom.ts`)。0.2.1 には MapLibre のズームと距離を行き来する関数が無い
 - **画面の真ん中の地面は、描いた地表を拾わず、カメラの位置と向きから計算する** (視線と、地面の高さだけ膨らませた楕円体の交点)。
   `pickTerrainPosition` で拾うと、読み込みの途中の粗いタイルに当たって傾けた表示で約500mずれた (本番ビルドで。Cesium の約300mと同じ理由)
 - **画角を明示する** (50°)。作った直後は `camera.fov` が読めず、仮の値で置いていてズームが 0.17 ずれた
@@ -864,7 +881,7 @@ Re:Earth Terrain (Terrarium) ＋ 地理院の写真 ＋ Re:Earth Buildings (3D T
 ベクタ: **カタログのベクトルタイル (PMTiles) を、Cesium で選んで描く** (いまは一覧のテーマの行のまま。下の「バーで切り替える」。
 点だけの注記は文字を描けないので出さない)。**配る側の検証としては「PMTiles のままで別のエンジンに載るか」。**
 
-- `MVTDataProvider` は `{z}/{x}/{y}` の URL しか受けないので、`web/src/lib/cesium-pmtiles.ts` が PMTiles を中継する。
+- `MVTDataProvider` は `{z}/{x}/{y}` の URL しか受けないので、`packages/cesium/src/pmtiles.ts` が PMTiles を中継する。
   決まった形の URL だけを Cesium の取得の口 (`Resource._Implementations.loadWithXhr`、内部の口) で横取りし、`pmtiles` から返す。
   **Cesium の版を上げたら E2E で確かめる**
 - **見ている場所の周り (±0.03°、約6km) だけを読む。** `MVTDataProvider` は最初に範囲の中のタイルの木を全部作るので、
@@ -906,7 +923,7 @@ Re:Earth Terrain (Terrarium) ＋ 地理院の写真 ＋ Re:Earth Buildings (3D T
 ### バーで切り替える (2026-10-12、1段目)
 
 地図の上の真ん中に **MapLibre | Cesium | Navara** のバーを置いた (`web/src/ui/engine-bar.ts`)。Navara はこの段では押せなかった (10-13 に入った)。
-Cesium は**同じページに載せる** (`web/src/lib/engines/cesium.ts`。上の 3D のページの中身を移した)。3D のページ (`viewer3d.ts`) は消し、
+Cesium は**同じページに載せる** (いまは `packages/cesium/src/engine.ts`。上の 3D のページの中身を移した)。3D のページ (`viewer3d.ts`) は消し、
 `3d.html` も消した (はじめは古いリンクのために転送だけ残したが、公開していないので要らない、と利用者)。地図の右上の「3D」ボタンも外した。
 選んでいるエンジンは URL の `?engine=cesium` に載るので、読み直しても同じエンジンで開く。
 
@@ -929,7 +946,7 @@ Cesium は**同じページに載せる** (`web/src/lib/engines/cesium.ts`。上
     (2) **Cesium 1.146 の抜け:** 貼り付けたベクタは地表を通して「拾うための色」で拾うが、その色の元の pick ID は集まりの `update` の中でしか
     作られず、MVT の中身 (`VectorGltf3DTileContent.update`) は貼り付けるとき集まりの `update` を呼ばない。そのため ID が無く、何も拾えない
     (上流の main 10-08 でも同じ)。集まりの `update` を代わりに呼ぶと宙にもう一度描かれるので、ID を作るところ (`_updatePickIds`) だけを
-    中身の `update` の前後で呼ぶよう、中身の原型に一度だけ手を入れた (`lib/engines/cesium.ts` の `enableDrapedVectorPicking`)。
+    中身の `update` の前後で呼ぶよう、中身の原型に一度だけ手を入れた (`packages/cesium/src/engine.ts` の `enableDrapedVectorPicking`)。
     **TOBE: 上流で直れば外す** (投稿はしない)
   - 線は1画素ほどの細さなので、マウスの周り 7×7 画素を拾う
   - 東京駅の道路で、拾えて吹き出しが出ることを使い捨ての道具で確かめた (ヘッドレス・外の 3D Tiles と地形は止めた)

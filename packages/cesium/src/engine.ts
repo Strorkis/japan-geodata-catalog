@@ -37,13 +37,10 @@ import {
   Viewer,
 } from 'cesium';
 import 'cesium/Build/Cesium/Widgets/widgets.css';
-import type { Collection, VectorLayerInfo } from '@japan-geodata-catalog/core/stac';
+import type { EngineRow, SwappedEngine, TerrainChoice, View } from '@japan-geodata-catalog/core/engine';
+import type { Collection } from '@japan-geodata-catalog/core/stac';
 import { rangeForZoom, zoomForRange } from '@japan-geodata-catalog/core/zoom';
-import { pmtilesTemplate } from '../cesium-pmtiles';
-import type { View } from '../view-params';
-
-// Cesium の資産 (Workers・Assets・Widgets) の置き場所。ビルドでは `cesium/` に写す (vite.config.ts)。
-(window as unknown as { CESIUM_BASE_URL: string }).CESIUM_BASE_URL = `${import.meta.env.BASE_URL}cesium/`;
+import { pmtilesTemplate } from './pmtiles';
 
 /** `scene.pick` で拾った地物のうち、吹き出しに使うところ。 */
 interface PickedTileFeature {
@@ -102,29 +99,7 @@ const PICK_SIZE = 7;
 /** ベクトルタイルを読む広さ (度。片側)。z14 のタイル (約0.022°) で 3×3 ほど。 */
 const VECTOR_HALF_SPAN_DEG = 0.03;
 
-/** 一覧の行のうち、Cesium で描くもの。**上の行ほど上** (一覧の並び) で渡す。 */
-export type CesiumRow =
-  | { kind: 'raster'; collection: Collection; opacity: number }
-  /** `url` は読む tileset.json (PLATEAU なら一覧で選んだ LOD・テクスチャの組み合わせ。lib/plateau-tiles.ts)。 */
-  | { kind: '3d_tiles'; collection: Collection; url: string }
-  /** ベクトルタイル。出している層 (テーマをまたいで Collection ごとにまとめる) と、層ごとの色。 */
-  | { kind: 'vector'; collection: Collection; layers: { layer: VectorLayerInfo; color: string }[] };
-
-export interface CesiumTerrainChoice {
-  enabled: boolean;
-  /** 地形の欄で選んでいる標高。quantized-mesh を持たなければ、持つもの (Re:Earth Terrain) に替える。 */
-  selected: Collection | undefined;
-}
-
-export interface CesiumEngine {
-  /** 出す。MapLibre の見え方からカメラを置く。 */
-  show: (view: View) => Promise<void>;
-  /** 隠す (壊さず、描くのを止める)。 */
-  hide: () => void;
-  /** いまの見え方 (MapLibre の形に直したもの)。 */
-  view: () => View;
-  /** 一覧の状態を写す。**使う地形** (選んだ標高の代わりに替えたものを含む。平らなら undefined) を返す。 */
-  sync: (rows: CesiumRow[], terrain: CesiumTerrainChoice) => Collection | undefined;
+export interface CesiumEngine extends SwappedEngine {
   /** E2E のための足がかり。 */
   viewer: Viewer;
 }
@@ -132,6 +107,11 @@ export interface CesiumEngine {
 export interface CesiumEngineOptions {
   /** 入れ物 (地図と同じ場所に重ねる)。 */
   container: HTMLElement;
+  /**
+   * Cesium の実行時の資産 (Workers・Assets・Widgets・ThirdParty) の置き場所。ビルドでは `vite.ts` の
+   * `cesiumAssets` が写す。**最初のエンジンを作る前に決まる** (Cesium は初めて読むときに覚える)。
+   */
+  assetsUrl: string;
   /** 地形に使える quantized-mesh を持つ Collection (カタログの `rel: quantized-mesh`)。 */
   quantizedMeshTerrains: Collection[];
   /** カメラが止まったとき (MapLibre を合わせるため)。 */
@@ -156,7 +136,8 @@ export interface CesiumVectorHit {
 }
 
 export function createCesiumEngine(options: CesiumEngineOptions): CesiumEngine {
-  const { container, quantizedMeshTerrains, onMoveEnd, onFailure, onHover } = options;
+  const { container, assetsUrl, quantizedMeshTerrains, onMoveEnd, onFailure, onHover } = options;
+  (window as unknown as { CESIUM_BASE_URL: string }).CESIUM_BASE_URL = assetsUrl;
   const viewer = new Viewer(container, {
     // **ion を使う部品は出さない** (背景地図の選択・地名検索は ion の Bing などを読む)。
     baseLayer: false,
@@ -258,7 +239,7 @@ export function createCesiumEngine(options: CesiumEngineOptions): CesiumEngine {
   // ---- 地形 ----
   let terrainId: string | undefined; // いま使っている quantized-mesh (undefined = 平ら)
   let terrainLoading: Promise<void> = Promise.resolve();
-  const terrainFor = (choice: CesiumTerrainChoice): Collection | undefined => {
+  const terrainFor = (choice: TerrainChoice): Collection | undefined => {
     if (!choice.enabled) return undefined;
     if (choice.selected?.quantizedMesh) return choice.selected;
     // 選んでいる標高が海面からの高さ (Terrarium) なら、楕円体高のものに替える (建物が浮かないように)。
@@ -293,7 +274,7 @@ export function createCesiumEngine(options: CesiumEngineOptions): CesiumEngine {
 
   // ---- 背景地図 (ラスタタイル) ----
   const imagery = new Map<string, ImageryLayer>();
-  const syncImagery = (rows: Extract<CesiumRow, { kind: 'raster' }>[]) => {
+  const syncImagery = (rows: Extract<EngineRow, { kind: 'raster' }>[]) => {
     const wanted = new Set(rows.map((r) => r.collection.id));
     for (const [id, layer] of imagery) {
       if (!wanted.has(id)) {
@@ -325,8 +306,8 @@ export function createCesiumEngine(options: CesiumEngineOptions): CesiumEngine {
   // ---- 3D Tiles ----
   // 鍵は「Collection ID と URL」 (LOD・テクスチャを替えると URL が変わり、別のタイルセットになる)。
   const tilesets = new Map<string, Promise<Cesium3DTileset | undefined>>();
-  const tilesetKey = (row: Extract<CesiumRow, { kind: '3d_tiles' }>) => `${row.collection.id}|${row.url}`;
-  const syncTilesets = (rows: Extract<CesiumRow, { kind: '3d_tiles' }>[]) => {
+  const tilesetKey = (row: Extract<EngineRow, { kind: '3d_tiles' }>) => `${row.collection.id}|${row.url}`;
+  const syncTilesets = (rows: Extract<EngineRow, { kind: '3d_tiles' }>[]) => {
     const wanted = new Set(rows.map(tilesetKey));
     for (const row of rows) {
       const key = tilesetKey(row);
@@ -365,10 +346,10 @@ export function createCesiumEngine(options: CesiumEngineOptions): CesiumEngine {
   // `MVTDataProvider` (実験段階) は最初に範囲の中のタイルの木を全部作るので、**見ている場所の周りだけ**を読み、
   // 離れたら作り直す。上流の `MVT_implicit_tile` (未マージ) が入れば、この絞りは要らない。
   const vectors = new Map<string, { provider: MVTDataProvider; key: string; center: [number, number] }>();
-  let vectorRows: Extract<CesiumRow, { kind: 'vector' }>[] = [];
+  let vectorRows: Extract<EngineRow, { kind: 'vector' }>[] = [];
   const quote = (text: string) => `'${text.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
   const building = new Map<string, Promise<void>>();
-  const buildVector = async (row: Extract<CesiumRow, { kind: 'vector' }>, key: string) => {
+  const buildVector = async (row: Extract<EngineRow, { kind: 'vector' }>, key: string) => {
     const here = lookingAt() ?? { lon: lastView.lon, lat: lastView.lat };
     const layers = row.layers.map((l) => l.layer);
     try {
@@ -416,8 +397,8 @@ export function createCesiumEngine(options: CesiumEngineOptions): CesiumEngine {
       onFailure(row.collection);
     }
   };
-  const keyOf = (row: Extract<CesiumRow, { kind: 'vector' }>) => row.layers.map((l) => `${l.layer.id}:${l.color}`).join(',');
-  const syncVectors = (rows: Extract<CesiumRow, { kind: 'vector' }>[], force = false) => {
+  const keyOf = (row: Extract<EngineRow, { kind: 'vector' }>) => row.layers.map((l) => `${l.layer.id}:${l.color}`).join(',');
+  const syncVectors = (rows: Extract<EngineRow, { kind: 'vector' }>[], force = false) => {
     vectorRows = rows;
     const wanted = new Set(rows.map((r) => r.collection.id));
     for (const [id, entry] of vectors) {
@@ -444,12 +425,12 @@ export function createCesiumEngine(options: CesiumEngineOptions): CesiumEngine {
     }
   };
 
-  let lastRows: CesiumRow[] = [];
-  const sync = (rows: CesiumRow[], terrain: CesiumTerrainChoice) => {
+  let lastRows: EngineRow[] = [];
+  const sync = (rows: EngineRow[], terrain: TerrainChoice) => {
     lastRows = rows;
-    syncImagery(rows.filter((r): r is Extract<CesiumRow, { kind: 'raster' }> => r.kind === 'raster'));
-    syncTilesets(rows.filter((r): r is Extract<CesiumRow, { kind: '3d_tiles' }> => r.kind === '3d_tiles'));
-    syncVectors(rows.filter((r): r is Extract<CesiumRow, { kind: 'vector' }> => r.kind === 'vector'));
+    syncImagery(rows.filter((r): r is Extract<EngineRow, { kind: 'raster' }> => r.kind === 'raster'));
+    syncTilesets(rows.filter((r): r is Extract<EngineRow, { kind: '3d_tiles' }> => r.kind === '3d_tiles'));
+    syncVectors(rows.filter((r): r is Extract<EngineRow, { kind: 'vector' }> => r.kind === 'vector'));
     const terrainCollection = terrainFor(terrain);
     setTerrain(terrainCollection);
     setCredits([...rows.map((r) => r.collection), ...(terrainCollection ? [terrainCollection] : [])]);
@@ -506,7 +487,7 @@ export function createCesiumEngine(options: CesiumEngineOptions): CesiumEngine {
     lastView = view();
     onMoveEnd(lastView);
     // 離れたらベクトルタイルを読み直す。
-    syncVectors(lastRows.filter((r): r is Extract<CesiumRow, { kind: 'vector' }> => r.kind === 'vector'));
+    syncVectors(lastRows.filter((r): r is Extract<EngineRow, { kind: 'vector' }> => r.kind === 'vector'));
   });
 
   return {

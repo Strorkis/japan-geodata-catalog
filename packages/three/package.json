@@ -1,0 +1,22 @@
+{
+  "name": "@japan-geodata-catalog/three",
+  "description": "MapLibre に Three.js の層を重ね、3D Tiles を描く。Draco・KTX2 の読み手を配る Vite のプラグイン",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    "./vite": "./vite.ts",
+    "./*": "./src/*.ts"
+  },
+  "dependencies": {
+    "3d-tiles-renderer": "^0.5.3",
+    "@japan-geodata-catalog/core": "workspace:*",
+    "maplibre-gl": "^6.14.0",
+    "maplibre-gl-three": "^3.0.2",
+    "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "@types/three": "^0.186.0",
+    "vite": "^8.2.0"
+  }
+}

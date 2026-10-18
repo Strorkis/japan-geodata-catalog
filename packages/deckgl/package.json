@@ -1,0 +1,18 @@
+{
+  "name": "@japan-geodata-catalog/deckgl",
+  "description": "MapLibre に deck.gl を重ね、建物 (DuckDB で引いた行) と地形を描く",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    "./*": "./src/*.ts"
+  },
+  "dependencies": {
+    "@deck.gl/core": "^9.4.0",
+    "@deck.gl/geo-layers": "^9.4.0",
+    "@deck.gl/layers": "^9.4.0",
+    "@deck.gl/mapbox": "^9.4.0",
+    "@japan-geodata-catalog/core": "workspace:*",
+    "maplibre-gl": "^6.14.0"
+  }
+}

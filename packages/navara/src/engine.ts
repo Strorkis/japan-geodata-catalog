@@ -12,31 +12,11 @@
  */
 import ThreeView, { type Layer, type Source } from '@navaramap/three';
 import { DefaultPlugin, type DefaultDescriptions } from '@navaramap/three-default-plugin';
+import type { EngineRow, SwappedEngine, TerrainChoice, View } from '@japan-geodata-catalog/core/engine';
 import type { Collection } from '@japan-geodata-catalog/core/stac';
 import { rangeForZoom, zoomForRange } from '@japan-geodata-catalog/core/zoom';
-import type { View } from '../view-params';
 
-/** 一覧の行のうち、Navara で描くもの。**上の行ほど上** (一覧の並び) で渡す。 */
-export type NavaraRow =
-  | { kind: 'raster'; collection: Collection; opacity: number }
-  /** `url` は読む tileset.json (PLATEAU なら一覧で選んだ LOD・テクスチャの組み合わせ)。 */
-  | { kind: '3d_tiles'; collection: Collection; url: string };
-
-export interface NavaraTerrainChoice {
-  enabled: boolean;
-  /** 地形の欄で選んでいる標高。quantized-mesh を持たなければ、持つもの (Re:Earth Terrain) に替える。 */
-  selected: Collection | undefined;
-}
-
-export interface NavaraEngine {
-  /** 出す。MapLibre の見え方からカメラを置く。 */
-  show: (view: View) => Promise<void>;
-  /** 隠す (壊さない)。 */
-  hide: () => void;
-  /** いまの見え方 (MapLibre の形に直したもの)。 */
-  view: () => View;
-  /** 一覧の状態を写す。**使う地形** (選んだ標高の代わりに替えたものを含む。平らなら undefined) を返す。 */
-  sync: (rows: NavaraRow[], terrain: NavaraTerrainChoice) => Collection | undefined;
+export interface NavaraEngine extends SwappedEngine {
   /** E2E のための足がかり。 */
   navara: ThreeView<DefaultDescriptions>;
 }
@@ -195,12 +175,12 @@ export async function createNavaraEngine(options: NavaraEngineOptions): Promise<
   let terrain: { id: string | undefined; layer: Layer; source: Source | undefined } | undefined;
   const rasters = new Map<string, Layer>();
   let rasterOrder = '';
-  const terrainFor = (choice: NavaraTerrainChoice): Collection | undefined => {
+  const terrainFor = (choice: TerrainChoice): Collection | undefined => {
     if (!choice.enabled) return undefined;
     if (choice.selected?.quantizedMesh) return choice.selected;
     return quantizedMeshTerrains.find((c) => c.id === 'reearth-terrain') ?? quantizedMeshTerrains[0];
   };
-  const syncSurface = (rows: Extract<NavaraRow, { kind: 'raster' }>[], terrainCollection: Collection | undefined) => {
+  const syncSurface = (rows: Extract<EngineRow, { kind: 'raster' }>[], terrainCollection: Collection | undefined) => {
     const order = rows.map((r) => r.collection.id).join(',');
     if (terrain && terrain.id === terrainCollection?.id && order === rasterOrder) {
       for (const row of rows) {
@@ -248,7 +228,7 @@ export async function createNavaraEngine(options: NavaraEngineOptions): Promise<
   // ---- 3D Tiles (出しているものだけ層を置く。ソースは使い回す) ----
   // 鍵は URL (LOD・テクスチャを替えると URL が変わり、別のタイルセットになる)。
   const tilesets = new Map<string, Layer>();
-  const syncTilesets = (rows: Extract<NavaraRow, { kind: '3d_tiles' }>[]) => {
+  const syncTilesets = (rows: Extract<EngineRow, { kind: '3d_tiles' }>[]) => {
     const wanted = new Set(rows.map((r) => r.url));
     for (const [url, layer] of tilesets) {
       if (wanted.has(url)) continue;
@@ -262,10 +242,10 @@ export async function createNavaraEngine(options: NavaraEngineOptions): Promise<
     }
   };
 
-  const sync = (rows: NavaraRow[], choice: NavaraTerrainChoice) => {
+  const sync = (rows: EngineRow[], choice: TerrainChoice) => {
     const terrainCollection = terrainFor(choice);
-    syncSurface(rows.filter((r): r is Extract<NavaraRow, { kind: 'raster' }> => r.kind === 'raster'), terrainCollection);
-    syncTilesets(rows.filter((r): r is Extract<NavaraRow, { kind: '3d_tiles' }> => r.kind === '3d_tiles'));
+    syncSurface(rows.filter((r): r is Extract<EngineRow, { kind: 'raster' }> => r.kind === 'raster'), terrainCollection);
+    syncTilesets(rows.filter((r): r is Extract<EngineRow, { kind: '3d_tiles' }> => r.kind === '3d_tiles'));
     setCredits([...rows.map((r) => r.collection), ...(terrainCollection ? [terrainCollection] : [])]);
     navara.forceUpdate();
     return terrainCollection;
