@@ -14,10 +14,30 @@ import {
   packCityGml,
   type CityGmlFile,
 } from '@japan-geodata-catalog/core/plateau-api';
-import { DEM_ENCODING_LABELS, DEM_VERTICAL_LABELS, GEOMETRY_LABELS } from '../lib/tiles';
 import { externalLink, termsBadges } from './credits';
 import { formatBytes, saveBytes } from './download';
 import { m } from '../i18n';
+
+/** 標高のエンコードの呼び名。 */
+const DEM_ENCODING_LABELS: Record<string, string> = {
+  terrarium: 'Terrarium (Mapzen)',
+  mapbox: 'Terrain-RGB (Mapbox)',
+  gsi: m.demGsi,
+  cog: m.demCog,
+};
+
+/** 高さの基準の呼び名。 */
+const DEM_VERTICAL_LABELS: Record<string, string> = {
+  orthometric: m.verticalOrthometric,
+  ellipsoid: m.verticalEllipsoid,
+};
+
+/** 形の種類の呼び名。 */
+const GEOMETRY_LABELS: Record<string, string> = {
+  Point: m.geometryPoint,
+  LineString: m.geometryLine,
+  Polygon: m.geometryPolygon,
+};
 
 export interface CollectionCardOptions {
   collections: Collection[];

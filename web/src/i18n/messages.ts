@@ -147,7 +147,7 @@ const ja = {
   roadPrimary: '都道府県道',
   lineClassLabels: { power_line: '送電線', cable: '地中・海底線', river: '川', canal: '運河' },
 
-  // ---- 地図タイルと標高の呼び名 (lib/tiles.ts) ----
+  // ---- 地図タイルと標高の呼び名 (ui/collection-card.ts) ----
   demGsi: '地理院の独自形式 (このアプリで読み込むときに Terrarium へ詰め直しています)',
   demCog: 'COG (このアプリで要る範囲だけ読み、Terrarium に詰め直しています)',
   verticalOrthometric: '海面から (標高)',

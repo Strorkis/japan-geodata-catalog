@@ -12,7 +12,7 @@ import { Popup, type Map as MapLibreMap } from 'maplibre-gl';
 import type { Collection } from '@japan-geodata-catalog/core/stac';
 import { LINE_KINDS } from '@japan-geodata-catalog/core/sources';
 import { MESH_SIZE_LABELS } from '@japan-geodata-catalog/core/mesh';
-import type { VectorOverlay } from '../lib/tiles';
+import type { VectorOverlay } from '@japan-geodata-catalog/maplibre/tiles';
 import { BUILDING_TILES_PREFIX, buildingTilesLayerId } from './map';
 import { hoverContent, text, vectorHover, type Hover, type HoverRows } from './hover-rows';
 import { m } from '../i18n';

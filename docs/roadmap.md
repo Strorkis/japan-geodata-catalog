@@ -20,7 +20,7 @@
 | 部品 | 中身 | いまの在りか |
 | --- | --- | --- |
 | `core` | 地図に依らない: カタログを読む・DuckDB で引く・ジオコーディング・ライセンスを持ち回る | `packages/core` (10-18 に分けた) |
-| `maplibre` | MapLibre で描く | `web/src/lib/tiles.ts`・`web/src/ui/` |
+| `maplibre` | MapLibre で描く | `packages/maplibre` (地図タイル。10-18 に分けた)・データの行の描き方は `web/src/ui/layers/` |
 | `cesium` | Cesium で描く | `packages/cesium` (10-18 に分けた) |
 | `deckgl`・`three`・`navara` | 下の「エンジン」 | `packages/{deckgl,three,navara}` (10-18 に分けた) |
 | `pipeline` | 取る・変換する・STAC を書く (CLI) | `pipeline/`・`crates/remote-zip` |
@@ -55,7 +55,7 @@
 | --- | --- | --- |
 | A `refactor/workspace-core` | ワークスペースの起点を直下へ (`pnpm-workspace.yaml`・lockfile・`.pnpmfile.cjs`)。`packages/core` を切り出す | 10-18 |
 | B `refactor/engine-packages` | `packages/{deckgl,three,cesium,navara}`。**エンジンの実行時の資産を写す Vite のプラグイン**も部品に入れる。「できること」の表 | 10-18 |
-| C `refactor/maplibre-package` | `packages/maplibre` (タイル・データの行の描き方・吹き出しの中身) | |
+| C `refactor/maplibre-package` | `packages/maplibre` (地図タイルと描ける種類の表。データの行の描き方は残した。下の「C でしたこと」) | 10-18 |
 | D `refactor/pipeline-crate-name` | Rust のクレート名を `duck-geocoder` から付け直す | |
 
 置き場所は **`web/` はそのまま、直下に `packages/*`** (`web/` を動かすと文書・CI のパスの直しが大きい)。名前は `@japan-geodata-catalog/*`
@@ -88,6 +88,16 @@
   `vite preview` ではビルドに写したものを配る (前は node_modules から配っていた)
 - エンジンの部品の入口はどれも `engine.ts` なので、ビルドの JS の名前はパッケージの名前で出す (`cesium-*.js` など。`vite.config.ts`)
 - `vite.ts` (Node の側) は型を確かめていない (`vite.config.ts` と同じ。前から)
+
+**C でしたこと (範囲を絞った。利用者が選んだ):**
+
+- `lib/tiles.ts` (背景地図・スタイルの背景地図・地形・地理院と COG の標高・ベクトルタイル・PMTiles) を `packages/maplibre/src/tiles.ts` へ、
+  MapLibre の描ける種類の表を `src/draws.ts` へ移した。標高の形式などの呼び名の表はカタログのカード (`ui/collection-card.ts`) にしか
+  使っていなかったので、カードの側へ移した (部品は文言に依らない)
+- **データの行の描き方 (`web/src/ui/layers/`) は Web サイトに残した。** 描く処理・サイトの HTML (`#road-classes` などを探す)・
+  設定パネルを作る処理が1つの関数に混ざっていて、そのまま移すと部品がサイトの HTML に依る。**TOBE: 描く処理 (引いて GeoJSON の
+  ソースに渡す) と設定パネルを分ける**。地図の層の定義 (`ui/map.ts` の `addDataLayers`) も同じ
+- 吹き出しの中身 (`ui/hover-rows.ts`) は Cesium も使い、MapLibre の部品ではないので残した
 
 **このあと (分けたあと):** スタイル (Portolan の `style` アセット) を core に足す。ジオコーダーの口。既存の道具 (QGIS・GeoLibre) で開けるかの確認と
 Item の JSON (TOBE)。各パッケージの README (使い方の見本) は口が落ち着いてから。
@@ -731,7 +741,8 @@ Collection とは分けて扱う。いまは UI のコードに入っている (
   | `lib/wkb.ts` | ジオメトリ (GeoArrow の WKB) を GeoJSON に読む。`tests-unit/` に単体テスト |
 
   (10-18 追記) `lib/` のうち地図に依らないもの (stac・sources・duckdb・queries・search・nearby・mesh・plateau-api・wkb など) は
-  `packages/core/src/` に移った (上の「全体方針」の「ライブラリに分ける」)。`tiles.ts`・`detail.ts`・`igrc.ts` は `web/src/lib/` のまま
+  `packages/core/src/` に移った (上の「全体方針」の「ライブラリに分ける」)。`tiles.ts` は `packages/maplibre/src/` に移った。
+  `detail.ts`・`igrc.ts` は `web/src/lib/` のまま
 
   | モジュール | 中身 |
   | --- | --- |

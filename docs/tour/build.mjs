@@ -240,7 +240,7 @@ DuckDB は文字列の統計を頭の数文字でしか比べないため、<cod
         body: `
 <p>カタログに写した<b>層ごとの形の種類 (面・線・点)</b> から、層ごとに描き方を決める。テーマ (人向けのまとまり) ごとに
 出し入れでき、出るズームはタイル側の minzoom・maxzoom に従う。</p>`,
-        code: [{ file: 'web/src/lib/tiles.ts', anchor: 'function vectorLayerSpecs(', maxLines: 40 }],
+        code: [{ file: 'packages/maplibre/src/tiles.ts', anchor: 'function vectorLayerSpecs(', maxLines: 40 }],
       },
       {
         id: 'gsi-dem',
@@ -249,7 +249,7 @@ DuckDB は文字列の統計を頭の数文字でしか比べないため、<cod
         body: `
 <p>独自のプロトコルで画像を受け取り、<b>1画素ずつ高さに直して Terrarium に詰め直す</b>。値なし (海など) は 0m、
 負の値 (2の補数) は正しく負にする。背景地図と地形はカタログから組み立てる。</p>`,
-        code: [{ file: 'web/src/lib/tiles.ts', anchor: 'export function gsiDemHeight(' }],
+        code: [{ file: 'packages/maplibre/src/tiles.ts', anchor: 'export function gsiDemHeight(' }],
       },
       {
         id: 'cog-dem',
