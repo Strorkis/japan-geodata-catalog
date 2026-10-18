@@ -13,6 +13,22 @@ importers:
 
   .: {}
 
+  packages/cesium:
+    dependencies:
+      '@japan-geodata-catalog/core':
+        specifier: workspace:*
+        version: link:../core
+      cesium:
+        specifier: ^1.146.0
+        version: 1.146.0
+      pmtiles:
+        specifier: ^4.5.0
+        version: 4.5.0
+    devDependencies:
+      vite:
+        specifier: ^8.2.0
+        version: 8.2.1(@types/node@20.19.43)
+
   packages/core:
     dependencies:
       '@duckdb/duckdb-wasm':
@@ -21,12 +37,13 @@ importers:
       geotiff:
         specifier: ^3.0.5
         version: 3.0.5
+    devDependencies:
+      vite:
+        specifier: ^8.2.0
+        version: 8.2.1(@types/node@20.19.43)
 
-  web:
+  packages/deckgl:
     dependencies:
-      3d-tiles-renderer:
-        specifier: ^0.5.3
-        version: 0.5.3(@react-three/fiber@9.8.1(@types/react@19.3.0)(react@19.3.0)(three@0.186.1))(react@19.3.0)(three@0.186.1)
       '@deck.gl/core':
         specifier: ^9.4.0
         version: 9.4.0(@luma.gl/webgpu@9.4.2(@luma.gl/core@9.4.2)(@luma.gl/shadertools@9.4.2(@luma.gl/core@9.4.2)))
@@ -39,30 +56,24 @@ importers:
       '@deck.gl/mapbox':
         specifier: ^9.4.0
         version: 9.4.0(@deck.gl/core@9.4.0(@luma.gl/webgpu@9.4.2(@luma.gl/core@9.4.2)(@luma.gl/shadertools@9.4.2(@luma.gl/core@9.4.2))))(@luma.gl/core@9.4.2)(@math.gl/web-mercator@4.1.0)
-      '@duckdb/duckdb-wasm':
-        specifier: 1.33.1-dev57.0
-        version: 1.33.1-dev57.0
       '@japan-geodata-catalog/core':
         specifier: workspace:*
-        version: link:../packages/core
+        version: link:../core
+      maplibre-gl:
+        specifier: ^6.14.0
+        version: 6.14.0
+
+  packages/navara:
+    dependencies:
+      '@japan-geodata-catalog/core':
+        specifier: workspace:*
+        version: link:../core
       '@navaramap/three':
         specifier: ^0.2.1
         version: 0.2.1(@react-three/fiber@9.8.1(@types/react@19.3.0)(react@19.3.0)(three@0.186.1))(postprocessing@6.39.5(three@0.186.1))(react@19.3.0)(three@0.186.1)
       '@navaramap/three-default-plugin':
         specifier: ^0.2.1
         version: 0.2.1(@navaramap/three@0.2.1(@react-three/fiber@9.8.1(@types/react@19.3.0)(react@19.3.0)(three@0.186.1))(postprocessing@6.39.5(three@0.186.1))(react@19.3.0)(three@0.186.1))(@react-three/fiber@9.8.1(@types/react@19.3.0)(react@19.3.0)(three@0.186.1))(postprocessing@6.39.5(three@0.186.1))(react@19.3.0)(three@0.186.1)
-      cesium:
-        specifier: ^1.146.0
-        version: 1.146.0
-      maplibre-gl:
-        specifier: ^6.14.0
-        version: 6.14.0
-      maplibre-gl-three:
-        specifier: ^3.0.2
-        version: 3.0.2(3d-tiles-renderer@0.5.3(@react-three/fiber@9.8.1(@types/react@19.3.0)(react@19.3.0)(three@0.186.1))(react@19.3.0)(three@0.186.1))(maplibre-gl@6.14.0)(three@0.186.1)
-      pmtiles:
-        specifier: ^4.5.0
-        version: 4.5.0
       postprocessing:
         specifier: ^6.39.5
         version: 6.39.5(three@0.186.1)
@@ -70,15 +81,71 @@ importers:
         specifier: ^0.186.1
         version: 0.186.1
     devDependencies:
+      '@types/three':
+        specifier: ^0.186.0
+        version: 0.186.0
+      vite:
+        specifier: ^8.2.0
+        version: 8.2.1(@types/node@20.19.43)
+
+  packages/three:
+    dependencies:
+      3d-tiles-renderer:
+        specifier: ^0.5.3
+        version: 0.5.3(@react-three/fiber@9.8.1(@types/react@19.3.0)(react@19.3.0)(three@0.186.1))(react@19.3.0)(three@0.186.1)
+      '@japan-geodata-catalog/core':
+        specifier: workspace:*
+        version: link:../core
+      maplibre-gl:
+        specifier: ^6.14.0
+        version: 6.14.0
+      maplibre-gl-three:
+        specifier: ^3.0.2
+        version: 3.0.2(3d-tiles-renderer@0.5.3(@react-three/fiber@9.8.1(@types/react@19.3.0)(react@19.3.0)(three@0.186.1))(react@19.3.0)(three@0.186.1))(maplibre-gl@6.14.0)(three@0.186.1)
+      three:
+        specifier: ^0.186.1
+        version: 0.186.1
+    devDependencies:
+      '@types/three':
+        specifier: ^0.186.0
+        version: 0.186.0
+      vite:
+        specifier: ^8.2.0
+        version: 8.2.1(@types/node@20.19.43)
+
+  web:
+    dependencies:
+      '@duckdb/duckdb-wasm':
+        specifier: 1.33.1-dev57.0
+        version: 1.33.1-dev57.0
+      '@japan-geodata-catalog/cesium':
+        specifier: workspace:*
+        version: link:../packages/cesium
+      '@japan-geodata-catalog/core':
+        specifier: workspace:*
+        version: link:../packages/core
+      '@japan-geodata-catalog/deckgl':
+        specifier: workspace:*
+        version: link:../packages/deckgl
+      '@japan-geodata-catalog/navara':
+        specifier: workspace:*
+        version: link:../packages/navara
+      '@japan-geodata-catalog/three':
+        specifier: workspace:*
+        version: link:../packages/three
+      maplibre-gl:
+        specifier: ^6.14.0
+        version: 6.14.0
+      pmtiles:
+        specifier: ^4.5.0
+        version: 4.5.0
+    devDependencies:
       '@playwright/test':
         specifier: ^1.62.1
         version: 1.62.1
       '@types/geojson':
         specifier: ^7946.0.16
         version: 7946.0.16
-      '@types/three':
-        specifier: ^0.186.0
-        version: 0.186.0
       typescript:
         specifier: ~6.0.2
         version: 6.0.3

@@ -1,0 +1,19 @@
+{
+  "name": "@japan-geodata-catalog/cesium",
+  "description": "地図を入れ替える Cesium のエンジン (背景地図・3D Tiles・PMTiles のベクトルタイル・地形)。実行時の資産を配る Vite のプラグイン",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    "./vite": "./vite.ts",
+    "./*": "./src/*.ts"
+  },
+  "dependencies": {
+    "@japan-geodata-catalog/core": "workspace:*",
+    "cesium": "^1.146.0",
+    "pmtiles": "^4.5.0"
+  },
+  "devDependencies": {
+    "vite": "^8.2.0"
+  }
+}

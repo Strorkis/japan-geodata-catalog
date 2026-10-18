@@ -1,18 +1,9 @@
 /**
- * **地図の見え方。** URL で場所を渡すときと、地図のエンジン (MapLibre ⇄ Cesium) を切り替えるときに使う。
- *
- * 意味は MapLibre に合わせる (ズームは 512 画素のタイル、傾きは真上からの度、向きは北から時計回りの度)。
- * Cesium 側でカメラの距離に直す (lib/engines/cesium.ts)。
+ * **地図の見え方を URL で渡す。** 見え方の型 (`View`) は core にある (エンジンと共有する)。
  */
-export interface View {
-  lon: number;
-  lat: number;
-  zoom: number;
-  /** 傾き (度)。0 で真上から。 */
-  pitch: number;
-  /** 向き (度)。0 で北が上。 */
-  bearing: number;
-}
+import type { View } from '@japan-geodata-catalog/core/engine';
+
+export type { View };
 
 /** URL の `lon`・`lat` (と `zoom`・`pitch`・`bearing`) を読む。位置が無いか壊れていれば undefined。 */
 export function readView(search: string, fallback: Omit<View, 'lon' | 'lat'>): View | undefined {

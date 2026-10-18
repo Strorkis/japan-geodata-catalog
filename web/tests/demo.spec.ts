@@ -1612,7 +1612,7 @@ test.describe('地図のエンジン (Cesium)', { tag: '@engine' }, () => {
     await expect(page.locator('.layer-row[data-layer="gsi-pale"]')).not.toHaveClass(/unsupported/);
     // **読んだ WASM (Worker の分も) は、どれも WASM として返ってくる。** 本番ビルドでは Worker が自分の隣から読む WASM を
     // 写し忘れて、404 の HTML を WASM として読んでいた。Draco の読み手は圧縮されたタイルが届いてから読むので
-    // (ここでは外の 3D Tiles を止めている)、写し忘れはビルドの時に見る (vite.config.ts の copyNavaraWorkerWasm)。
+    // (ここでは外の 3D Tiles を止めている)、写し忘れはビルドの時に見る (packages/navara/vite.ts の navaraWorkerWasm)。
     await expect.poll(() => wasm.some((w) => w.url.includes('navara_wasm_worker'))).toBe(true);
     expect(wasm.filter((w) => !w.ok)).toEqual([]);
     // 既定の組み合わせ (LOD2 まで・テクスチャ無し) は Navara でも同じ。
@@ -1661,7 +1661,7 @@ test.describe('地図のエンジン (Cesium)', { tag: '@engine' }, () => {
 
   /**
    * **一覧のベクトルタイル (PMTiles) を、Cesium ではそのベクタ (`MVTDataProvider`) で描く。**
-   * `MVTDataProvider` は `{z}/{x}/{y}` しか受けないので、PMTiles を `cesium-pmtiles.ts` の中継で渡している。
+   * `MVTDataProvider` は `{z}/{x}/{y}` しか受けないので、PMTiles を `packages/cesium/src/pmtiles.ts` の中継で渡している。
    * 地理院の PMTiles (16.9GB) は叩かず、手元の別の PMTiles (z12〜14) をその URL の代わりに Range で返す。
    * 「中継が効いている」ことは、Cesium に替えたあとも PMTiles が Range で読まれる (タイルが取りに行かれる) ことで見る。
    */

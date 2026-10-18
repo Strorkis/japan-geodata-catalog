@@ -1,7 +1,11 @@
-import { copyFileSync, createReadStream, mkdirSync, readdirSync, statSync } from 'node:fs';
-import { dirname, extname, join, normalize } from 'node:path';
+import { createReadStream, statSync } from 'node:fs';
+import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineConfig, type Connect, type Plugin } from 'vite';
+import { cesiumAssets } from '@japan-geodata-catalog/cesium/vite';
+import { copyDirIfChanged, copyFileIfChanged } from '@japan-geodata-catalog/core/vite';
+import { navaraWorkerWasm } from '@japan-geodata-catalog/navara/vite';
+import { threeDecoders } from '@japan-geodata-catalog/three/vite';
 import { BASE_PATH } from './base-path.ts';
 import { ensureDuckDbExtensions } from './duckdb-extensions.ts';
 
@@ -13,12 +17,6 @@ const DUCKDB_EXTENSIONS_CACHE = fileURLToPath(new URL('./.duckdb-extensions/', i
 
 /** DuckDB-WASM本体の在り処。開発時の配信元と、ビルド時のコピー元を兼ねる。 */
 const DUCKDB_DIST = './node_modules/@duckdb/duckdb-wasm/dist/';
-/** CesiumJS の実行時の資産 (Workers・Assets・Widgets・ThirdParty)。バーで Cesium を選んだときに読む。 */
-const CESIUM_BUILD = './node_modules/cesium/Build/Cesium/';
-/** three.js の同梱の読み手 (Draco・Basis)。MapLibre + Three.js が 3D Tiles を読むのに使う。 */
-const THREE_LIBS = './node_modules/three/examples/jsm/libs/';
-/** Navara の同梱の資産 (Worker が読む WASM)。Navara を選んだときに読む。 */
-const NAVARA_ASSETS = './node_modules/@navaramap/three/dist/assets/';
 
 /**
  * DuckDB-WASM本体のうち、ビルド成果物にそのままコピーするファイル。
@@ -45,12 +43,6 @@ const CONTENT_TYPES: Record<string, string> = {
   '.js': 'text/javascript',
   '.json': 'application/json',
   '.parquet': 'application/octet-stream',
-  // Cesium の資産 (地図の部品の見た目・アイコン・星空の画像など)。
-  '.css': 'text/css',
-  '.png': 'image/png',
-  '.jpg': 'image/jpeg',
-  '.svg': 'image/svg+xml',
-  '.xml': 'application/xml',
 };
 
 /**
@@ -153,33 +145,6 @@ function serveLikeObjectStorage(urlPath: string, directory: string): Plugin {
   };
 }
 
-/**
- * コピー元とサイズ・更新日時が同じならコピーを飛ばす。
- * DuckDB本体・拡張とも合計100MB超あり、変わっていないものまで毎回コピーすると遅い
- * (node_modules 側もキャッシュ側も、更新されるのは `pnpm update` や
- * バージョン変更のときだけ)。
- */
-function copyFileIfChanged(from: string, to: string): void {
-  const original = statSync(from);
-  const copied = statSync(to, { throwIfNoEntry: false });
-  if (copied?.size === original.size && copied.mtimeMs >= original.mtimeMs) return;
-  mkdirSync(dirname(to), { recursive: true });
-  copyFileSync(from, to);
-}
-
-/** ディレクトリを再帰的にコピーする。拡張のキャッシュは version/platform の階層を持つため。 */
-function copyDirIfChanged(source: string, destination: string): void {
-  for (const entry of readdirSync(source, { withFileTypes: true })) {
-    const from = join(source, entry.name);
-    const to = join(destination, entry.name);
-    if (entry.isDirectory()) {
-      copyDirIfChanged(from, to);
-    } else {
-      copyFileIfChanged(from, to);
-    }
-  }
-}
-
 /** DuckDB-WASM本体をビルド成果物の `duckdb/` に置く。 */
 function copyDuckDbRuntime(): Plugin {
   const source = fileURLToPath(new URL(DUCKDB_DIST, import.meta.url));
@@ -197,79 +162,6 @@ function copyDuckDbRuntime(): Plugin {
       const licenses = fileURLToPath(new URL('./licenses/', import.meta.url));
       copyFileIfChanged(join(licenses, 'duckdb.md'), join(destination, 'LICENSES.md'));
       copyFileIfChanged(join(licenses, 'LGPL-2.1.txt'), join(destination, 'LGPL-2.1.txt'));
-    },
-  };
-}
-
-/**
- * CesiumJS の実行時の資産をビルド成果物の `cesium/` に置く。Cesium のエンジン (lib/engines/cesium.ts) が `CESIUM_BASE_URL` で読む。
- * **写して配るので、ライセンス (Apache-2.0) の本文も一緒に置く。**
- */
-function copyCesiumRuntime(): Plugin {
-  const source = fileURLToPath(new URL(CESIUM_BUILD, import.meta.url));
-  return {
-    name: 'copy-cesium-runtime',
-    apply: 'build',
-    writeBundle(options) {
-      const destination = join(options.dir ?? 'dist', 'cesium');
-      for (const dir of ['Workers', 'ThirdParty', 'Assets', 'Widgets']) {
-        copyDirIfChanged(join(source, dir), join(destination, dir));
-      }
-      copyFileIfChanged(join(source, '..', '..', 'LICENSE.md'), join(destination, 'LICENSE.md'));
-    },
-  };
-}
-
-/**
- * three.js の **Draco と KTX2 (Basis) の読み手** をビルド成果物の `three/` に置く。MapLibre + Three.js (lib/engines/three.ts) が
- * 3D Tiles の圧縮された形を読むのに使う。補助ライブラリ (maplibre-gl-three) の既定は jsDelivr から読むが、外へ読みに行かないよう自前で配る。
- * **写して配るので、ライセンスの文書も一緒に置く** (three.js は MIT、Draco と Basis は Apache-2.0。各ディレクトリの README に書いてある)。
- */
-function copyThreeDecoders(): Plugin {
-  const source = fileURLToPath(new URL(THREE_LIBS, import.meta.url));
-  return {
-    name: 'copy-three-decoders',
-    apply: 'build',
-    writeBundle(options) {
-      const destination = join(options.dir ?? 'dist', 'three');
-      for (const dir of ['draco', 'basis']) copyDirIfChanged(join(source, dir), join(destination, dir));
-      copyFileIfChanged(join(source, '..', '..', '..', 'LICENSE'), join(destination, 'LICENSE'));
-    },
-  };
-}
-
-/**
- * **Navara の Worker が読む WASM を、Worker の隣 (`assets/`) に置く。** Navara の Worker (`index-*.js`・`fontWorker-*.js`) は
- * Draco の読み手と文字の描き手の WASM を `new URL('…wasm', self.location.href)` で**自分の隣から**読む。Vite は Worker を
- * ただのファイルとして写すので、その中の参照には気付かず WASM を出力しない。公開サイトでは 404 の HTML を WASM として読んで
- * `expected magic word 00 61 73 6d, found 3c 21 44 4f` (`<!DO`) で落ちた (2026-10-16、利用者が見つけた。開発サーバーは
- * node_modules から配るので起きない)。名前 (ハッシュ付き) は Navara が付けたままで写す。Navara の版を上げたら、
- * 本番ビルドで Worker の参照が全部あるかを確かめる (docs/roadmap.md)。
- */
-function copyNavaraWorkerWasm(): Plugin {
-  const source = fileURLToPath(new URL(NAVARA_ASSETS, import.meta.url));
-  return {
-    name: 'copy-navara-worker-wasm',
-    apply: 'build',
-    writeBundle(options, bundle) {
-      const destination = join(options.dir ?? 'dist', 'assets');
-      for (const file of readdirSync(source).filter((name) => name.endsWith('.wasm'))) {
-        copyFileIfChanged(join(source, file), join(destination, file));
-      }
-      // **写し忘れはビルドで止める。** Worker が自分の隣から読むもの (`new URL(\`名前\`, self.location.href)`) が
-      // 出力に無ければ失敗にする。Draco の読み手は圧縮されたタイルが届くまで読まれないので、E2E では見えない。
-      const missing = new Set<string>();
-      // Navara の Worker は Vite から見るとただのファイル (asset) として出る。JS のもの (chunk) と両方を見る。
-      for (const output of Object.values(bundle)) {
-        if (!output.fileName.endsWith('.js')) continue;
-        const code = output.type === 'chunk' ? output.code : Buffer.from(output.source).toString('utf8');
-        for (const [, name] of code.matchAll(/new URL\(`([^`/:]+)`,\s*self\.location\.href\)/g)) {
-          if (!statSync(join(destination, name), { throwIfNoEntry: false })) missing.add(`${name} (${output.fileName})`);
-        }
-      }
-      if (missing.size > 0) {
-        this.error(`Worker が読むファイルが出力にありません: ${[...missing].join(', ')}`);
-      }
     },
   };
 }
@@ -298,6 +190,15 @@ export default defineConfig(async () => {
     build: {
       license: { fileName: 'THIRD-PARTY-LICENSES.md' },
       // 地図は1ページ (Cesium はバーで選んだときに動的 import で読むので、起動は重くならない)。
+      rolldownOptions: {
+        output: {
+          // エンジンの部品の入口はどれも `src/engine.ts` なので、そのままでは `engine-*.js` が並ぶ。パッケージの名前で出す。
+          chunkFileNames: (chunk) => {
+            const engine = /packages\/([^/]+)\/src\/engine\.ts$/.exec(chunk.facadeModuleId ?? '');
+            return `assets/${engine ? engine[1] : '[name]'}-[hash].js`;
+          },
+        },
+      },
     },
     plugins: [
       // `DATA_DIR` (web/ からの相対) で配るディレクトリを差し替えられる。並べ方・分け方を変えた
@@ -307,15 +208,13 @@ export default defineConfig(async () => {
       serveLikeObjectStorage('/duckdb/extensions', DUCKDB_EXTENSIONS_CACHE),
       // 開発時はDuckDB-WASM本体を node_modules から配る (ビルド時はコピーする)。
       serveLikeObjectStorage('/duckdb', DUCKDB_DIST),
-      // 開発時は Cesium の資産を node_modules から配る (ビルド時はコピーする)。
-      serveLikeObjectStorage('/cesium', CESIUM_BUILD),
-      // 開発時は three.js の読み手を node_modules から配る (ビルド時はコピーする)。
-      serveLikeObjectStorage('/three', THREE_LIBS),
       copyDuckDbRuntime(),
       copyDuckDbExtensions(DUCKDB_EXTENSIONS_CACHE),
-      copyCesiumRuntime(),
-      copyThreeDecoders(),
-      copyNavaraWorkerWasm(),
+      // **エンジンの実行時の資産** (バンドラに通さないもの)。開発時は node_modules から配り、ビルドでは写す。
+      // 置き場所は main.ts でエンジンに渡すものと合わせる。
+      ...cesiumAssets('cesium'),
+      ...threeDecoders('three'),
+      navaraWorkerWasm(),
     ],
   };
 });

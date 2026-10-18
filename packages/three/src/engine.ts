@@ -7,7 +7,7 @@
  * - **高さの基準を自動で合わせる。** 3D Tiles は楕円体高、MapLibre は海面から。ライブラリがジオイド (EGM96) の格子を読んで差を引く。
  *   格子は PROJ の配信 (`cdn.proj.org`、パブリックドメイン) から読む (自前で配るのは TOBE)。読めなければ補正なしで描き、そう言う
  *   (東京で約37m 浮く)
- * - Draco・KTX2 の読み手は自前で配る (`three/`。vite.config.ts)。ライブラリの既定の jsDelivr には読みに行かない
+ * - Draco・KTX2 の読み手は自前で配る (`decodersUrl`。ビルドでは `vite.ts` の `threeDecoders` が写す)。ライブラリの既定の jsDelivr には読みに行かない
  * - MapLibre の地形とはそのまま重なる (同じ画面に描く custom layer なので、deck.gl のような別画面の問題は無い)
  */
 import type { Map as MapLibreMap } from 'maplibre-gl';
@@ -24,7 +24,6 @@ import {
 import type { Collection } from '@japan-geodata-catalog/core/stac';
 
 const LAYER_ID = 'three-3d-tiles';
-const BASE = `${import.meta.env.BASE_URL}three/`;
 
 /**
  * **光を足す。** 補助のライブラリは場面に光を置かない。PLATEAU の glTF は光を受けない材質 (unlit) なので、テクスチャが無いと
@@ -76,12 +75,15 @@ export interface ThreeEngine {
 
 export interface ThreeEngineOptions {
   map: MapLibreMap;
+  /** three.js の Draco と KTX2 (Basis) の読み手の置き場所 (`draco/` と `basis/` を持つ)。 */
+  decodersUrl: string;
   /** 読めなかったもの。 */
   onFailure: (collection: Collection) => void;
 }
 
-export function createThreeEngine({ map, onFailure }: ThreeEngineOptions): ThreeEngine {
-  const decoders = { dracoPath: `${BASE}draco/`, ktx2Path: `${BASE}basis/` };
+export function createThreeEngine({ map, decodersUrl, onFailure }: ThreeEngineOptions): ThreeEngine {
+  const base = decodersUrl.replace(/\/?$/, '/');
+  const decoders = { dracoPath: `${base}draco/`, ktx2Path: `${base}basis/` };
   let manager: ThreeDManager | undefined;
   let datum = false;
   let layer: ThreeLayer | undefined;

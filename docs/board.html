@@ -225,7 +225,7 @@
   <body>
     <header>
       <h1>japan-geodata-catalog ダッシュボード</h1>
-      <span class="meta">更新 2026-10-18 18:20 (日本時間)</span>
+      <span class="meta">更新 2026-10-18 19:55 (日本時間)</span>
       <span class="meta">
         <a href="https://strorkis.github.io/japan-geodata-catalog/">公開サイト (改名後の URL)</a> ·
         <a href="roadmap.md">方針 (roadmap)</a> ·
@@ -241,7 +241,7 @@
       <div class="card kpi">
         <div class="label">公開待ちの PR</div>
         <div class="value">1 <small>件</small></div>
-        <span class="status you">ライブラリに分ける A (refactor/workspace-core)</span>
+        <span class="status you">ライブラリに分ける B (refactor/engine-packages)</span>
       </div>
       <div class="card kpi">
         <div class="label">R2 の配信データ (手元の data/output)</div>
@@ -258,9 +258,9 @@
       <h2>公開までの残り</h2>
       <ol class="steps">
         <li class="current">
-          <b>ブランチ <code>refactor/workspace-core</code> を push → PR を見てマージ</b><span class="status you">あなたの番</span>
+          <b>ブランチ <code>refactor/engine-packages</code> を push → PR を見てマージ</b><span class="status you">あなたの番</span>
           <span class="sub">
-            ライブラリに分ける作業の1つめ (ワークスペースの起点を直下へ・<code>packages/core</code> の切り出し)。画面は変わらない。
+            ライブラリに分ける作業の2つめ (エンジンを <code>packages/{deckgl,three,cesium,navara}</code> に・描ける種類の表)。画面は変わらない。
             push のあと私が PR を作る。PR の「読むべき所」を見てから、マージコミットでマージ
           </span>
         </li>
@@ -277,9 +277,9 @@
         <h2>次にやること</h2>
         <ol class="tasks">
           <li>
-            <b>ライブラリに分ける</b> <span class="status todo">A を PR に</span>
+            <b>ライブラリに分ける</b> <span class="status todo">B を PR に</span>
             <span class="sub">
-              A ワークスペースと core → B エンジンの部品 (資産を写す Vite のプラグイン・「できること」の表) → C MapLibre の部品 →
+              A ワークスペースと core (済み) → B エンジンの部品 (資産を写す Vite のプラグイン・「できること」の表) → C MapLibre の部品 →
               D Rust のクレート名。手本は GeoLibre (roadmap「ライブラリに分ける」)
             </span>
           </li>

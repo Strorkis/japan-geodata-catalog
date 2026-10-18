@@ -6,9 +6,48 @@
  * - **MapLibre に重ねる** (MapLibre + deck.gl・MapLibre + Three.js): 地図は MapLibre のまま、一部の行を別の描き手が描く
  * - **入れ替える** (Cesium・Navara): 地図そのものが替わる
  */
+import type { DrawKind, Draws } from '@japan-geodata-catalog/core/engine';
+import { CESIUM_DRAWS } from '@japan-geodata-catalog/cesium/draws';
+import { DECKGL_DRAWS } from '@japan-geodata-catalog/deckgl/draws';
+import { NAVARA_DRAWS } from '@japan-geodata-catalog/navara/draws';
+import { THREE_DRAWS } from '@japan-geodata-catalog/three/draws';
 import { m } from '../i18n';
 
 export type EngineId = 'maplibre' | 'maplibre-deckgl' | 'maplibre-three' | 'cesium' | 'navara';
+
+/** **MapLibre が描ける種類** (core の `engine.ts`)。3D Tiles は描けない。TOBE: MapLibre の部品 (packages/maplibre) へ移す。 */
+const MAPLIBRE_DRAWS = {
+  query: true,
+  'raster-tiles': true,
+  style: true,
+  'vector-tiles': true,
+  'vector-points': true,
+  '3d-tiles': false,
+} as const satisfies Draws;
+
+/** MapLibre に重ねたときに描ける種類 (どちらかが描ければ描ける)。 */
+const overlaid = (overlay: Draws): Draws =>
+  Object.fromEntries(Object.entries(MAPLIBRE_DRAWS).map(([kind, own]) => [kind, own || overlay[kind as DrawKind]])) as Draws;
+
+/** **エンジンごとの、描ける種類の表。** 一覧の灰色はこれで決める (エンジンの名前では決めない)。 */
+const ENGINE_DRAWS: Record<EngineId, Draws> = {
+  maplibre: MAPLIBRE_DRAWS,
+  'maplibre-deckgl': overlaid(DECKGL_DRAWS),
+  'maplibre-three': overlaid(THREE_DRAWS),
+  cesium: CESIUM_DRAWS,
+  navara: NAVARA_DRAWS,
+};
+
+/** その種類の行を描けないエンジンと、一覧で添える理由。 */
+export function notDrawnIn(kind: DrawKind): Partial<Record<EngineId, string>> {
+  const reasons: Partial<Record<EngineId, string>> = {};
+  for (const id of Object.keys(ENGINE_DRAWS) as EngineId[]) {
+    if (ENGINE_DRAWS[id][kind]) continue;
+    // 3D Tiles は MapLibre の間だけ描けない (描けるエンジンへ案内する)。
+    reasons[id] = kind === '3d-tiles' && usesMapLibre(id) ? m.notDrawn3dTilesInMapLibre : m.notDrawnIn(engineLabel(id));
+  }
+  return reasons;
+}
 
 const ENGINES: { id: EngineId; label: string }[] = [
   { id: 'maplibre', label: 'MapLibre' },
