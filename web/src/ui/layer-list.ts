@@ -15,7 +15,7 @@
 import type { Map as MapLibreMap } from 'maplibre-gl';
 import type { Bbox, CatalogGroup, Collection, VectorLayerInfo } from '@japan-geodata-catalog/core/stac';
 import type { BuildingCoverage } from '@japan-geodata-catalog/core/sources';
-import type { VectorOverlay } from '../lib/tiles';
+import type { VectorOverlay } from '@japan-geodata-catalog/maplibre/tiles';
 import type { EngineId } from './engine-bar';
 import { m } from '../i18n';
 

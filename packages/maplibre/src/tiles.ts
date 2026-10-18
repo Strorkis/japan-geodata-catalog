@@ -26,7 +26,6 @@ import { Protocol as PmtilesProtocol } from 'pmtiles';
 import type { Collection, DatasetKind, VectorLayerInfo } from '@japan-geodata-catalog/core/stac';
 import { demTile, type CogGrid } from '@japan-geodata-catalog/core/cog-dem';
 import { vectorThemeLook, type VectorLook } from '@japan-geodata-catalog/core/vector-looks';
-import { m } from '../i18n';
 
 /** 背景地図の地図上の ID (ソースと層で同じ)。 */
 export const basemapLayerId = (collection: Collection) => `basemap/${collection.id}`;
@@ -40,27 +39,6 @@ export function registerPmtiles() {
   addProtocol('pmtiles', new PmtilesProtocol().tile);
   pmtilesRegistered = true;
 }
-
-/** 標高のエンコードの呼び名。 */
-export const DEM_ENCODING_LABELS: Record<string, string> = {
-  terrarium: 'Terrarium (Mapzen)',
-  mapbox: 'Terrain-RGB (Mapbox)',
-  gsi: m.demGsi,
-  cog: m.demCog,
-};
-
-/** 高さの基準の呼び名。 */
-export const DEM_VERTICAL_LABELS: Record<string, string> = {
-  orthometric: m.verticalOrthometric,
-  ellipsoid: m.verticalEllipsoid,
-};
-
-/** 形の種類の呼び名。 */
-export const GEOMETRY_LABELS: Record<string, string> = {
-  Point: m.geometryPoint,
-  LineString: m.geometryLine,
-  Polygon: m.geometryPolygon,
-};
 
 /**
  * タイルの層1つを描く地図の層。**カタログに書いた形の種類だけから決める**

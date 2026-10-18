@@ -9,21 +9,12 @@
 import type { DrawKind, Draws } from '@japan-geodata-catalog/core/engine';
 import { CESIUM_DRAWS } from '@japan-geodata-catalog/cesium/draws';
 import { DECKGL_DRAWS } from '@japan-geodata-catalog/deckgl/draws';
+import { MAPLIBRE_DRAWS } from '@japan-geodata-catalog/maplibre/draws';
 import { NAVARA_DRAWS } from '@japan-geodata-catalog/navara/draws';
 import { THREE_DRAWS } from '@japan-geodata-catalog/three/draws';
 import { m } from '../i18n';
 
 export type EngineId = 'maplibre' | 'maplibre-deckgl' | 'maplibre-three' | 'cesium' | 'navara';
-
-/** **MapLibre が描ける種類** (core の `engine.ts`)。3D Tiles は描けない。TOBE: MapLibre の部品 (packages/maplibre) へ移す。 */
-const MAPLIBRE_DRAWS = {
-  query: true,
-  'raster-tiles': true,
-  style: true,
-  'vector-tiles': true,
-  'vector-points': true,
-  '3d-tiles': false,
-} as const satisfies Draws;
 
 /** MapLibre に重ねたときに描ける種類 (どちらかが描ければ描ける)。 */
 const overlaid = (overlay: Draws): Draws =>

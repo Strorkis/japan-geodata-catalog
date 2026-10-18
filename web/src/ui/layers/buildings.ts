@@ -9,7 +9,7 @@
  */
 import type { ExpressionSpecification, FilterSpecification, GeoJSONSource } from 'maplibre-gl';
 import { sourceLodNote, type BuildingSource } from '@japan-geodata-catalog/core/sources';
-import { registerPmtiles } from '../../lib/tiles';
+import { registerPmtiles } from '@japan-geodata-catalog/maplibre/tiles';
 import { MESH_SIZE_LABELS, meshDigits } from '@japan-geodata-catalog/core/mesh';
 import {
   coverageFeatureCollection,

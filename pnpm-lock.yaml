@@ -63,6 +63,18 @@ importers:
         specifier: ^6.14.0
         version: 6.14.0
 
+  packages/maplibre:
+    dependencies:
+      '@japan-geodata-catalog/core':
+        specifier: workspace:*
+        version: link:../core
+      maplibre-gl:
+        specifier: ^6.14.0
+        version: 6.14.0
+      pmtiles:
+        specifier: ^4.5.0
+        version: 4.5.0
+
   packages/navara:
     dependencies:
       '@japan-geodata-catalog/core':
@@ -127,6 +139,9 @@ importers:
       '@japan-geodata-catalog/deckgl':
         specifier: workspace:*
         version: link:../packages/deckgl
+      '@japan-geodata-catalog/maplibre':
+        specifier: workspace:*
+        version: link:../packages/maplibre
       '@japan-geodata-catalog/navara':
         specifier: workspace:*
         version: link:../packages/navara
@@ -136,9 +151,6 @@ importers:
       maplibre-gl:
         specifier: ^6.14.0
         version: 6.14.0
-      pmtiles:
-        specifier: ^4.5.0
-        version: 4.5.0
     devDependencies:
       '@playwright/test':
         specifier: ^1.62.1

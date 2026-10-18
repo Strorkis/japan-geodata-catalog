@@ -13,7 +13,7 @@ import {
 } from 'maplibre-gl';
 import type { Collection } from '@japan-geodata-catalog/core/stac';
 import { LINE_KINDS, type LineKind } from '@japan-geodata-catalog/core/sources';
-import { TERRAIN_SOURCE, baseStyle } from '../lib/tiles';
+import { TERRAIN_SOURCE, baseStyle } from '@japan-geodata-catalog/maplibre/tiles';
 import { buildDataCredits, collapseAttribution, watchAttributionHeight } from './credits';
 import { LAYER_ANCHORS } from './layer-list';
 import { m } from '../i18n';

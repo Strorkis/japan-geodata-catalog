@@ -7,7 +7,7 @@
  */
 import type { Map as MapLibreMap } from 'maplibre-gl';
 import type { Collection } from '@japan-geodata-catalog/core/stac';
-import { TERRAIN_SOURCE, defaultOf, terrainSource } from '../lib/tiles';
+import { TERRAIN_SOURCE, defaultOf, terrainSource } from '@japan-geodata-catalog/maplibre/tiles';
 import { LAYER_ANCHORS, sliderSettings } from './layer-list';
 import { m } from '../i18n';
 

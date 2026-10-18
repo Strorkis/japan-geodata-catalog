@@ -1,7 +1,7 @@
 import './style.css';
 import { MapLibreMap, GeoJSONSource, setWorkerUrl } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-// 地図タイル (背景地図・地形・外部のベクタータイル) を載せる部品は lib/tiles.ts。
+// 地図タイル (背景地図・地形・外部のベクタータイル) を載せる部品は `@japan-geodata-catalog/maplibre` (packages/maplibre)。
 import {
   addStyleBasemap,
   basemapLayerId,
@@ -9,7 +9,7 @@ import {
   defaultOf,
   setStyleBasemapOpacity,
   type VectorOverlay,
-} from './lib/tiles';
+} from '@japan-geodata-catalog/maplibre/tiles';
 // **地図に依らない部品は `@japan-geodata-catalog/core`** (packages/core)。
 // データの出所 (GeoParquet のファイル群) と、表示範囲から読むファイルを選ぶ部品は sources。
 import {

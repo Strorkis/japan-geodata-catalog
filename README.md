@@ -23,6 +23,7 @@
 - **[web/](web)** — 日本のカタログを見せる Web サイト (DuckDB-WASM + MapLibre・deck.gl・Three.js・Cesium・Navara)
 - **[packages/](packages)** — 地図ライブラリごとの部品 (pnpm のワークスペース。分けている途中、[docs/roadmap.md](docs/roadmap.md) の「ライブラリに分ける」)
   - **[packages/core/](packages/core)** — 地図に依らない部品: カタログ (STAC) を読む・DuckDB-WASM で引く・問い合わせ・WKB・エンジンとの口
+  - **[packages/maplibre/](packages/maplibre)** — カタログの地図タイル (背景地図・地形・ベクトルタイル) を MapLibre に載せる
   - **[packages/deckgl/](packages/deckgl)**・**[three/](packages/three)** — MapLibre に重ねるエンジン (建物と地形・3D Tiles)
   - **[packages/cesium/](packages/cesium)**・**[navara/](packages/navara)** — 地図を入れ替えるエンジン。実行時の資産を配る Vite のプラグインも持つ
 - **data/** — 元データと変換後のGeoParquet (git管理外)
