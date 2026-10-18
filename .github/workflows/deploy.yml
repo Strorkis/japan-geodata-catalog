@@ -15,17 +15,20 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
+  # **PR でも build (型・単体テスト・R2 の確認・ビルド) までは流す。** 公開 (deploy) は main のときだけ (下の if)。
+  # 作業はブランチで行い、PR で main に入れる (AGENTS.md)。
+  pull_request:
   workflow_dispatch:
 
+# 公開に要る権限 (pages・id-token) は deploy のジョブにだけ渡す (PR のビルドには渡さない)。
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
-# 同時に走らせない。実行中のデプロイは中断しない (公開中のサイトを壊さないため)。
+# 公開は同時に走らせない。実行中のデプロイは中断しない (公開中のサイトを壊さないため)。
+# PR のビルドは公開と別の組にし、同じ PR の古い実行は止める。
 concurrency:
-  group: pages
-  cancel-in-progress: false
+  group: ${{ github.event_name == 'pull_request' && format('pr-{0}', github.ref) || 'pages' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   build:
@@ -118,12 +121,18 @@ jobs:
           SB_pathPrefix: /${{ github.event.repository.name }}/catalog/
 
       - uses: actions/upload-pages-artifact@v3
+        if: github.event_name != 'pull_request'
         with:
           path: web/dist
 
+  # **公開は main への push (と手動) のときだけ。** PR ではビルドが通るかまでを見る。
   deploy:
     needs: build
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

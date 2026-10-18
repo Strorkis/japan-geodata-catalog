@@ -172,6 +172,18 @@ cd web && pnpm exec tsc --noEmit && pnpm test && pnpm test:dist
 CI は型・単体テスト・ビルドと、R2 の CORS と Range の確認 (手元では見えない) だけを回す。落ちれば公開されない
 (docs/deploy.md「テスト」)。
 
+### ブランチと PR (2026-10-18、利用者)
+
+**作業はブランチで行い、PR で main に入れる。** main への push は公開の引き金なので、main で直接コミットしない。
+
+- **push と PR のマージは利用者がする** (公開の引き金は人が引く)。エージェントはブランチを作ってコミットし、
+  利用者が push したら `gh pr create` で PR を作る (`gh` は token で入っている。権限は PR・Actions の読み書き程度)
+- **マージはマージコミットで** (スカッシュしない)。コミットの本文に判断の根拠を書いているので、main に残す
+- **PR の説明文は `.github/pull_request_template.md` に沿う。** とくに「読むべき所」(依存・CI・手元で自動で動くもの・
+  新しく通信する先) は空欄にしない。利用者は差分を全部は読めないので、影響の大きい所をここで示す
+- CI は PR でも build (型・単体テスト・R2 の確認・ビルド) まで流れ、公開 (deploy) は main への push のときだけ
+- CI の失敗は `gh run view <id> --log-failed`、trace は `gh run download <id>` で読める (以前は利用者に頼んでいた)
+
 コミットメッセージはConventional Commits (`feat:` `fix:` `perf:` `refactor:` `docs:` `test:`)。
 
 - **動詞の終止形で書く。**「〜する」「〜出す」「〜直す」。過去形にはしない

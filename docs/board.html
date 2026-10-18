@@ -258,10 +258,11 @@
       <h2>公開までの残り</h2>
       <ol class="steps">
         <li class="current">
-          <b>push</b><span class="status you">あなたの番</span>
+          <b>ブランチ <code>pr-workflow</code> を push → PR を見てマージ</b><span class="status you">あなたの番</span>
           <span class="sub">
-            Navara の出典 (右下の ⓘ) が、Navara を隠したあとも MapLibre の ⓘ に重なって残る不具合の直し。カタログは変わっていない (上げ直し不要)。
-            手元の本番ビルドで E2E 全件が通った (10-17、125件)
+            これからは<b>ブランチで作業し、PR で main に入れる</b> (main への push が公開の引き金なので)。<code>git push -u origin pr-workflow</code>
+            のあと私が PR を作る。PR の「読むべき所」(依存・CI・手元で自動で動くもの・通信先) を見てから、<b>マージコミット</b>でマージ。
+            Settings → General → Pull Requests → Allow merge commits の既定のメッセージを「Pull request title」にすると、公開の CI の題名が PR の題名になる
           </span>
         </li>
         <li>
