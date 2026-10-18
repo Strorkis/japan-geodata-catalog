@@ -13,8 +13,8 @@
  * 覚えておくと、前に何を足したかで起動時の見た目と読み込む量が変わる)。
  */
 import type { Map as MapLibreMap } from 'maplibre-gl';
-import type { Bbox, CatalogGroup, Collection, VectorLayerInfo } from '../lib/stac';
-import type { BuildingCoverage } from '../lib/sources';
+import type { Bbox, CatalogGroup, Collection, VectorLayerInfo } from '@japan-geodata-catalog/core/stac';
+import type { BuildingCoverage } from '@japan-geodata-catalog/core/sources';
 import type { VectorOverlay } from '../lib/tiles';
 import type { EngineId } from './engine-bar';
 import { m } from '../i18n';

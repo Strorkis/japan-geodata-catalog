@@ -1,15 +1,15 @@
 /**
- * **周辺検索のパネル** (右上) と、地図への描き方。問い合わせそのものは lib/nearby.ts。
+ * **周辺検索のパネル** (右上) と、地図への描き方。問い合わせそのものは core の nearby.ts。
  *
  * 起点は4通り: 検索で選んだもの / 地図上の点 / 地図上の線 / 建物。
  * 地図上のものは ◎ を押してからクリックする。何も無いところなら点、
  * 線や建物の上ならそれを起点にする。
  */
-import type { Conn } from '../lib/duckdb';
+import type { Conn } from '@japan-geodata-catalog/core/duckdb';
 import type { ExpressionSpecification, GeoJSONSource, Map as MapLibreMap } from 'maplibre-gl';
-import type { Collection } from '../lib/stac';
-import { MESH_SIZE_LABELS } from '../lib/mesh';
-import { geometryOf } from '../lib/wkb';
+import type { Collection } from '@japan-geodata-catalog/core/stac';
+import { MESH_SIZE_LABELS } from '@japan-geodata-catalog/core/mesh';
+import { geometryOf } from '@japan-geodata-catalog/core/wkb';
 import { m } from '../i18n';
 import {
   bboxOverlaps,
@@ -21,7 +21,7 @@ import {
   type RailwaySource,
   type RoadSource,
   type ViewBounds,
-} from '../lib/sources';
+} from '@japan-geodata-catalog/core/sources';
 import {
   NEARBY_DRAW_LIMIT,
   fetchNearbyBuildings,
@@ -32,8 +32,8 @@ import {
   type NearbyBuildings,
   type NearbyFrame,
   type NearbyOrigin,
-} from '../lib/nearby';
-import { aroundBox, clipLines } from '../lib/clip';
+} from '@japan-geodata-catalog/core/nearby';
+import { aroundBox, clipLines } from '@japan-geodata-catalog/core/clip';
 import { buildingTilesLayerId } from './map';
 
 /** 種類の名前 (地図の絞り込みの鍵でもある「建物」「駅」…) を、画面の言語で見せる。 */

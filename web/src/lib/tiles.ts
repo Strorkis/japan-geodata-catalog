@@ -23,9 +23,9 @@ import {
   type StyleSpecification,
 } from 'maplibre-gl';
 import { Protocol as PmtilesProtocol } from 'pmtiles';
-import type { Collection, DatasetKind, VectorLayerInfo } from './stac';
-import { demTile, type CogGrid } from './cog-dem';
-import { vectorThemeLook, type VectorLook } from './vector-looks';
+import type { Collection, DatasetKind, VectorLayerInfo } from '@japan-geodata-catalog/core/stac';
+import { demTile, type CogGrid } from '@japan-geodata-catalog/core/cog-dem';
+import { vectorThemeLook, type VectorLook } from '@japan-geodata-catalog/core/vector-looks';
 import { m } from '../i18n';
 
 /** 背景地図の地図上の ID (ソースと層で同じ)。 */

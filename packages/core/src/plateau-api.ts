@@ -5,7 +5,7 @@
  * このAPIはブラウザから直接呼べる (`access-control-allow-origin: *` を確かめた)。
  * **呼ぶのは利用者が押したときだけ** (起動時には呼ばない。配信サービスに負荷をかけない)。
  */
-import { m } from '../i18n';
+import { m } from './i18n';
 
 const PLATEAU_API = 'https://api.plateauview.mlit.go.jp';
 

@@ -6,12 +6,12 @@
  *    (全部外したときの早期 return より前でないといけない。実際に起きた)
  * 2. 一覧で出していなければ空にして終わる (既に空なら `setData` しない — 地図の Worker を
  *    建物の描画と取り合うため)
- * 3. 表示範囲で引き (lib/queries.ts)、世代が変わっていなければ描いて、一覧の行に状態を書く
+ * 3. 表示範囲で引き (core の queries.ts)、世代が変わっていなければ描いて、一覧の行に状態を書く
  */
-import type { Conn } from '../../lib/duckdb';
+import type { Conn } from '@japan-geodata-catalog/core/duckdb';
 import type { Map as MapLibreMap } from 'maplibre-gl';
 import type { DetailSettings } from '../../lib/detail';
-import type { ViewBounds } from '../../lib/sources';
+import type { ViewBounds } from '@japan-geodata-catalog/core/sources';
 import { m } from '../../i18n';
 
 export interface DrawContext {

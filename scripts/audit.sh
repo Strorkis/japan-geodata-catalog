@@ -5,7 +5,7 @@
 # という流れを避けるため。判断のうえで受け入れるものは、無視せず設定に書く:
 #
 #   Rust : pipeline/.cargo/audit.toml の ignore に、理由と外せる条件を添えて足す
-#   npm  : web/pnpm-workspace.yaml の auditConfig.ignoreGhsas に足す (pnpm 11 は package.json の
+#   npm  : pnpm-workspace.yaml (リポジトリの直下) の auditConfig.ignoreGhsas に足す (pnpm 11 は package.json の
 #          "pnpm" を読まない。GitHub の番号 (GHSA) しか付いていないものも多いので CVE ではなく GHSA で書く)
 #
 # どちらも「なぜ受け入れたか」がリポジトリに残る形にすること。
@@ -14,9 +14,10 @@ cd "$(dirname "$0")/.."
 
 status=0
 
-echo "== web (npm) =="
+echo "== web・packages (npm) =="
 # pnpm audit は見つかると非0で終わる。ここで止めずに両方見たいので拾っておく。
-(cd web && mise exec -- pnpm audit) || status=1
+# ワークスペースの起点 (直下) で流す (lockfile が1つなので、Web サイトと packages/* をまとめて見る)。
+mise exec -- pnpm audit || status=1
 
 echo
 echo "== pipeline (Rust) =="

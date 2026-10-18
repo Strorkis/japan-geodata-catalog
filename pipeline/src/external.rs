@@ -693,7 +693,7 @@ pub const EXTERNAL_RASTERS: &[ExternalRaster] = &[
         id: "plateau-3dtiles",
         dir: "plateau",
         title: "建物 (3D Tiles・公式配信)",
-        // 配信サービスは LOD とテクスチャの組み合わせを URL で選べる (web/src/lib/plateau-tiles.ts)。カタログに載せるのは既定の組み合わせ。
+        // 配信サービスは LOD とテクスチャの組み合わせを URL で選べる (packages/core/src/plateau-tiles.ts)。カタログに載せるのは既定の組み合わせ。
         description: "PLATEAU 配信サービスが配っている建物の 3D Tiles です。全国の都市を1つの tileset.json に束ねたもので、\
                       既定では都市ごとに LOD2 までの細かいものを採り、テクスチャがあればテクスチャ付きになります。\
                       配信サービスは LOD とテクスチャの有無を選べます。地図では軽い「LOD2 まで・テクスチャ無し」で始め、\
@@ -790,7 +790,7 @@ pub const EXTERNAL_RASTERS: &[ExternalRaster] = &[
     },
     // ---- 衛星の標高 ----
     // AW3D30 は地形として描ける (2026-10-10)。JAXA の COG を UI が直接読み、Terrarium のタイルにする
-    // (web/src/lib/cog-dem.ts)。R2 には置かない。
+    // (packages/core/src/cog-dem.ts)。R2 には置かない。
     ExternalRaster {
         id: "jaxa-aw3d30",
         dir: "jaxa",

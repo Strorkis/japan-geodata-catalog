@@ -1,0 +1,8 @@
+{
+  "name": "japan-geodata-catalog",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:unit": "pnpm -r --if-present test:unit"
+  }
+}

@@ -3,7 +3,7 @@
   利用者が見るべきことを1枚にまとめたダッシュボード。**作業の区切りごとに更新する** (AGENTS.md)。
   **全体が一目で分かるよう、判断と行動に要るものだけを載せる** (2026-10-12 に絞った):
   あなたの番 (確かめてほしいこと・公開までの残り)・次にやること (5つまで。ほかは roadmap)・待ち・未決の問い、
-  数字は行動に結び付くものだけ (公開待ちのコミット・R2 の無料枠)。
+  数字は行動に結び付くものだけ (公開待ちの PR・R2 の無料枠)。
   細かい経緯や根拠はここに書かず、各ドキュメントへのリンクにする (コードの読みどころは tour.html)。
   **済んだものは消す** (移さない。決めたことと経緯は roadmap.md に、何をしたかは git の履歴にある)。
   **利用者に確かめてほしいことは「確かめてほしいこと」に具体的な手順で書く** (開く URL・押すもの・見るべき点)。
@@ -12,7 +12,7 @@
 
   数字は手で写している (file:// からは data/ を読めない)。出どころ:
   - 配信データの量: du -sb data/output/<出所>
-  - 公開待ちのコミット: git rev-list --count origin/main..main
+  - 公開待ちの PR: まだマージしていない PR と、push を待っているブランチ (10-18 から PR で入れる。gh pr list)
   - 更新の日時: 日付だけでなく時刻まで (日本時間)。同じ日に何度も更新するので
   状態の色はアイコンと文字と一緒にだけ使う。
 -->
@@ -225,7 +225,7 @@
   <body>
     <header>
       <h1>japan-geodata-catalog ダッシュボード</h1>
-      <span class="meta">更新 2026-10-14 21:35 (日本時間)</span>
+      <span class="meta">更新 2026-10-18 18:20 (日本時間)</span>
       <span class="meta">
         <a href="https://strorkis.github.io/japan-geodata-catalog/">公開サイト (改名後の URL)</a> ·
         <a href="roadmap.md">方針 (roadmap)</a> ·
@@ -239,9 +239,9 @@
     <!-- ===== 数字 (行動に結び付くものだけ) ===== -->
     <section class="kpis" aria-label="数字">
       <div class="card kpi">
-        <div class="label">公開待ちのコミット</div>
-        <div class="value">2 <small>件</small></div>
-        <span class="status you">ブランチ ci/pr-workflow の push 待ち</span>
+        <div class="label">公開待ちの PR</div>
+        <div class="value">1 <small>件</small></div>
+        <span class="status you">ライブラリに分ける A (refactor/workspace-core)</span>
       </div>
       <div class="card kpi">
         <div class="label">R2 の配信データ (手元の data/output)</div>
@@ -258,11 +258,10 @@
       <h2>公開までの残り</h2>
       <ol class="steps">
         <li class="current">
-          <b>ブランチ <code>ci/pr-workflow</code> を push → PR を見てマージ</b><span class="status you">あなたの番</span>
+          <b>ブランチ <code>refactor/workspace-core</code> を push → PR を見てマージ</b><span class="status you">あなたの番</span>
           <span class="sub">
-            これからは<b>ブランチで作業し、PR で main に入れる</b> (main への push が公開の引き金なので)。<code>git push -u origin ci/pr-workflow</code>
-            のあと私が PR を作る。PR の「読むべき所」(依存・CI・手元で自動で動くもの・通信先) を見てから、<b>マージコミット</b>でマージ。
-            Settings → General → Pull Requests → Allow merge commits の既定のメッセージを「Pull request title」にすると、公開の CI の題名が PR の題名になる
+            ライブラリに分ける作業の1つめ (ワークスペースの起点を直下へ・<code>packages/core</code> の切り出し)。画面は変わらない。
+            push のあと私が PR を作る。PR の「読むべき所」を見てから、マージコミットでマージ
           </span>
         </li>
         <li>
@@ -278,10 +277,10 @@
         <h2>次にやること</h2>
         <ol class="tasks">
           <li>
-            <b>ライブラリに分ける</b> <span class="status todo">次</span>
+            <b>ライブラリに分ける</b> <span class="status todo">A を PR に</span>
             <span class="sub">
-              地図に依らない core と、地図ライブラリごとの部品に分ける。Web サイトは日本のカタログビジュアライザーに。
-              Rust の変換はビルド済みにせず cargo で使う (roadmap「全体方針」)
+              A ワークスペースと core → B エンジンの部品 (資産を写す Vite のプラグイン・「できること」の表) → C MapLibre の部品 →
+              D Rust のクレート名。手本は GeoLibre (roadmap「ライブラリに分ける」)
             </span>
           </li>
           <li>

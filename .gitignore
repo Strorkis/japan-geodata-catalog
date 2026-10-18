@@ -1,5 +1,7 @@
 /data
 /.reference
+# pnpm のワークスペース (直下と packages/*)
+node_modules/
 .claude/settings.local.json
 
 # Rust

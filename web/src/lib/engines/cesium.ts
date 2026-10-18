@@ -37,10 +37,10 @@ import {
   Viewer,
 } from 'cesium';
 import 'cesium/Build/Cesium/Widgets/widgets.css';
-import type { Collection, VectorLayerInfo } from '../stac';
+import type { Collection, VectorLayerInfo } from '@japan-geodata-catalog/core/stac';
+import { rangeForZoom, zoomForRange } from '@japan-geodata-catalog/core/zoom';
 import { pmtilesTemplate } from '../cesium-pmtiles';
 import type { View } from '../view-params';
-import { rangeForZoom, zoomForRange } from './zoom';
 
 // Cesium の資産 (Workers・Assets・Widgets) の置き場所。ビルドでは `cesium/` に写す (vite.config.ts)。
 (window as unknown as { CESIUM_BASE_URL: string }).CESIUM_BASE_URL = `${import.meta.env.BASE_URL}cesium/`;

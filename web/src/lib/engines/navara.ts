@@ -12,9 +12,9 @@
  */
 import ThreeView, { type Layer, type Source } from '@navaramap/three';
 import { DefaultPlugin, type DefaultDescriptions } from '@navaramap/three-default-plugin';
-import type { Collection } from '../stac';
+import type { Collection } from '@japan-geodata-catalog/core/stac';
+import { rangeForZoom, zoomForRange } from '@japan-geodata-catalog/core/zoom';
 import type { View } from '../view-params';
-import { rangeForZoom, zoomForRange } from './zoom';
 
 /** 一覧の行のうち、Navara で描くもの。**上の行ほど上** (一覧の並び) で渡す。 */
 export type NavaraRow =

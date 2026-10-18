@@ -1,7 +1,14 @@
-# pnpm の設定。pnpm 11 は package.json の "pnpm" ではなくここを読む。
+# pnpm のワークスペースと設定。pnpm 11 は package.json の "pnpm" ではなくここを読む。
+#
+# **リポジトリの直下をワークスペースの起点にする** (2026-10-18、ライブラリに分ける作業の1段目)。Web サイト (`web/`) と、
+# 地図ライブラリごとの部品 (`packages/*`) が1つの lockfile を使う。部品は TypeScript のまま読み込む (部品ごとのビルドは無い)。
 #
 # **公開から1日たたない版は入れない** (pnpm 11 の既定の minimumReleaseAge)。足りない版に当たったとき、pnpm が
 # minimumReleaseAgeExclude をここへ黙って書き足すことがある (2026-10-12 に起きた)。**例外は足さず、1日待つ。**
+
+packages:
+  - web
+  - packages/*
 
 overrides:
   # fflate 0.7.4 は壊れた ZIP64 で無限ループする (GHSA-px8p-9vwx-vf98)。0.7.5 で直った (同じ 0.7 の中の修正)。

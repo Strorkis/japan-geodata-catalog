@@ -7,8 +7,8 @@
  * `lodForZoom` がデータの許容誤差から決める。
  */
 import type { GeoJSONSource } from 'maplibre-gl';
-import { COARSE_LOD, lodForZoom, lodNote, type RoadSource } from '../../lib/sources';
-import { fetchRoadsInView } from '../../lib/queries';
+import { COARSE_LOD, lodForZoom, lodNote, type RoadSource } from '@japan-geodata-catalog/core/sources';
+import { fetchRoadsInView } from '@japan-geodata-catalog/core/queries';
 import { EMPTY_FEATURE_COLLECTION, ROAD_STYLES } from '../map';
 import { requester, type DrawContext } from './context';
 import { m } from '../../i18n';

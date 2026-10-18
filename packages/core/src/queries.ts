@@ -9,7 +9,7 @@
  * 返すのは描くための素の値。色や呼び名は描く側 (main) が決める。
  *
  * **ジオメトリは列をそのまま返す** (GeoArrow の WKB)。SQL で GeoJSON の文字列にしてから
- * `JSON.parse` するより速い (lib/wkb.ts)。
+ * `JSON.parse` するより速い (wkb.ts)。
  */
 import type { Conn } from './duckdb';
 import { tierExpression } from './stac';

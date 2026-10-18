@@ -10,8 +10,8 @@
  * 表示範囲で絞るだけで足りる (全国で2.2万件・821KB)。
  */
 import type { GeoJSONSource } from 'maplibre-gl';
-import { lodForZoom, lodNote, type RailwaySource } from '../../lib/sources';
-import { fetchRailwayInView, type RailwayFeature } from '../../lib/queries';
+import { lodForZoom, lodNote, type RailwaySource } from '@japan-geodata-catalog/core/sources';
+import { fetchRailwayInView, type RailwayFeature } from '@japan-geodata-catalog/core/queries';
 import { EMPTY_FEATURE_COLLECTION, RAILWAY_COLORS, RAILWAY_FALLBACK_COLOR } from '../map';
 import { requester, type DrawContext } from './context';
 import { m } from '../../i18n';

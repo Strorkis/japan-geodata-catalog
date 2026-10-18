@@ -322,31 +322,31 @@ HTTP Range で末尾を読み、目次から欲しいファイルの位置だけ
 <p>注意: 間引きのための <code>lod</code> 列だけはファイルに焼き込んでいる。段の規則を変えたら <code>add_building_lod</code> を掛け直す。</p>
 
 <figure class="code">
-<figcaption><a href="../pipeline/src/catalog.rs">pipeline/src/catalog.rs</a> <span class="lines">214〜237 行</span></figcaption>
-<pre><code><span class="ln">214</span>/// 段の**順位** (0がいちばん重要) を求めるSQLの式。
-<span class="ln">215</span>///
-<span class="ln">216</span>/// UI (`tierExpression`) は同じ規則から段の ID を求める。**規則は1つで、
-<span class="ln">217</span>/// 式の形だけが違う** — こちらは並べ替え (間引きの段) に使うので順位を返す。
-<span class="ln">218</span>pub fn rank_sql(&amp;self) -&gt; String {
-<span class="ln">219</span>    let quote = |value: &amp;str| format!("'{}'", value.replace('\'', "''"));
-<span class="ln">220</span>    let mut whens = Vec::new();
-<span class="ln">221</span>    if self.named_first {
-<span class="ln">222</span>        whens.push("WHEN name IS NOT NULL THEN 0".to_string());
-<span class="ln">223</span>    }
-<span class="ln">224</span>    let (_, rest) = self
-<span class="ln">225</span>        .tiers
-<span class="ln">226</span>        .split_last()
-<span class="ln">227</span>        .expect("段が1つも無い規則は validate_tiers で弾いている");
-<span class="ln">228</span>    for (rank, tier) in rest.iter().enumerate() {
-<span class="ln">229</span>        let values = tier.values.iter().map(|v| quote(v)).collect::&lt;Vec&lt;_&gt;&gt;();
-<span class="ln">230</span>        whens.push(format!(
-<span class="ln">231</span>            "WHEN {} IN ({}) THEN {rank}",
-<span class="ln">232</span>            self.column,
-<span class="ln">233</span>            values.join(", ")
-<span class="ln">234</span>        ));
-<span class="ln">235</span>    }
-<span class="ln">236</span>    format!("CASE {} ELSE {} END", whens.join(" "), self.tiers.len() - 1)
-<span class="ln">237</span>}</code></pre>
+<figcaption><a href="../pipeline/src/catalog.rs">pipeline/src/catalog.rs</a> <span class="lines">216〜239 行</span></figcaption>
+<pre><code><span class="ln">216</span>/// 段の**順位** (0がいちばん重要) を求めるSQLの式。
+<span class="ln">217</span>///
+<span class="ln">218</span>/// UI (`tierExpression`) は同じ規則から段の ID を求める。**規則は1つで、
+<span class="ln">219</span>/// 式の形だけが違う** — こちらは並べ替え (間引きの段) に使うので順位を返す。
+<span class="ln">220</span>pub fn rank_sql(&amp;self) -&gt; String {
+<span class="ln">221</span>    let quote = |value: &amp;str| format!("'{}'", value.replace('\'', "''"));
+<span class="ln">222</span>    let mut whens = Vec::new();
+<span class="ln">223</span>    if self.named_first {
+<span class="ln">224</span>        whens.push("WHEN name IS NOT NULL THEN 0".to_string());
+<span class="ln">225</span>    }
+<span class="ln">226</span>    let (_, rest) = self
+<span class="ln">227</span>        .tiers
+<span class="ln">228</span>        .split_last()
+<span class="ln">229</span>        .expect("段が1つも無い規則は validate_tiers で弾いている");
+<span class="ln">230</span>    for (rank, tier) in rest.iter().enumerate() {
+<span class="ln">231</span>        let values = tier.values.iter().map(|v| quote(v)).collect::&lt;Vec&lt;_&gt;&gt;();
+<span class="ln">232</span>        whens.push(format!(
+<span class="ln">233</span>            "WHEN {} IN ({}) THEN {rank}",
+<span class="ln">234</span>            self.column,
+<span class="ln">235</span>            values.join(", ")
+<span class="ln">236</span>        ));
+<span class="ln">237</span>    }
+<span class="ln">238</span>    format!("CASE {} ELSE {} END", whens.join(" "), self.tiers.len() - 1)
+<span class="ln">239</span>}</code></pre>
 </figure>
 </section>
 <section class="card" id="stac-layout">
@@ -362,19 +362,19 @@ HTTP Range で末尾を読み、目次から欲しいファイルの位置だけ
 </ul>
 
 <figure class="code">
-<figcaption><a href="../pipeline/src/stac.rs">pipeline/src/stac.rs</a> <span class="lines">110〜121 行</span></figcaption>
-<pre><code><span class="ln">110</span>/// `dir` にある Collection から、Item をまとめた stac-geoparquet への相対リンク。
-<span class="ln">111</span>///
-<span class="ln">112</span>/// **Item は全 Collection 分を1つの Parquet にまとめる** ([`crate::stac_geoparquet`])。
-<span class="ln">113</span>/// 以前は Collection ごとに ItemCollection の JSON (`*-items.json`) を置いていた。
-<span class="ln">114</span>fn items_href(dir: &amp;str) -&gt; String {
-<span class="ln">115</span>    let file = crate::stac_geoparquet::ITEMS_FILE;
-<span class="ln">116</span>    if dir.is_empty() {
-<span class="ln">117</span>        file.to_string()
-<span class="ln">118</span>    } else {
-<span class="ln">119</span>        format!("../{file}")
-<span class="ln">120</span>    }
-<span class="ln">121</span>}</code></pre>
+<figcaption><a href="../pipeline/src/stac.rs">pipeline/src/stac.rs</a> <span class="lines">113〜124 行</span></figcaption>
+<pre><code><span class="ln">113</span>/// `dir` にある Collection から、Item をまとめた stac-geoparquet への相対リンク。
+<span class="ln">114</span>///
+<span class="ln">115</span>/// **Item は全 Collection 分を1つの Parquet にまとめる** ([`crate::stac_geoparquet`])。
+<span class="ln">116</span>/// 以前は Collection ごとに ItemCollection の JSON (`*-items.json`) を置いていた。
+<span class="ln">117</span>fn items_href(dir: &amp;str) -&gt; String {
+<span class="ln">118</span>    let file = crate::stac_geoparquet::ITEMS_FILE;
+<span class="ln">119</span>    if dir.is_empty() {
+<span class="ln">120</span>        file.to_string()
+<span class="ln">121</span>    } else {
+<span class="ln">122</span>        format!("../{file}")
+<span class="ln">123</span>    }
+<span class="ln">124</span>}</code></pre>
 </figure>
 </section>
 <section class="card" id="stac-geoparquet">
@@ -427,42 +427,42 @@ HTTP Range で末尾を読み、目次から欲しいファイルの位置だけ
 日本語版と英語版を結ぶ。</p>
 
 <figure class="code">
-<figcaption><a href="../pipeline/src/stac_i18n.rs">pipeline/src/stac_i18n.rs</a> <span class="lines">448〜482 行</span></figcaption>
-<pre><code><span class="ln">448</span>/// 題名・説明・名前を英語にする。**訳の無い日本語が残ったらエラー**。
-<span class="ln">449</span>fn translate(value: &amp;mut Value, table: &amp;BTreeMap&lt;&amp;str, &amp;str&gt;, at: &amp;str) -&gt; Result&lt;()&gt; {
-<span class="ln">450</span>    match value {
-<span class="ln">451</span>        Value::Object(map) =&gt; {
-<span class="ln">452</span>            for (key, child) in map.iter_mut() {
-<span class="ln">453</span>                // 出典の文言は規約が書き方を指定しているので訳さない。語彙はデータの中身。
-<span class="ln">454</span>                if key == "duck:attribution" || key == "summaries" {
-<span class="ln">455</span>                    continue;
-<span class="ln">456</span>                }
-<span class="ln">457</span>                let translatable = matches!(
-<span class="ln">458</span>                    key.as_str(),
-<span class="ln">459</span>                    "title" | "description" | "name" | "duck:vintage"
-<span class="ln">460</span>                );
-<span class="ln">461</span>                match child {
-<span class="ln">462</span>                    Value::String(text) if translatable &amp;&amp; has_japanese(text) =&gt; {
-<span class="ln">463</span>                        let Some(english) = table.get(text.as_str()) else {
-<span class="ln">464</span>                            bail!(
-<span class="ln">465</span>                                "{at}: 英語の訳がありません (stac_i18n.rs の EN に足すこと): {text}"
-<span class="ln">466</span>                            );
-<span class="ln">467</span>                        };
-<span class="ln">468</span>                        *text = (*english).to_string();
-<span class="ln">469</span>                    }
-<span class="ln">470</span>                    _ =&gt; translate(child, table, at)?,
-<span class="ln">471</span>                }
-<span class="ln">472</span>            }
-<span class="ln">473</span>        }
-<span class="ln">474</span>        Value::Array(items) =&gt; {
-<span class="ln">475</span>            for child in items {
-<span class="ln">476</span>                translate(child, table, at)?;
-<span class="ln">477</span>            }
-<span class="ln">478</span>        }
-<span class="ln">479</span>        _ =&gt; {}
-<span class="ln">480</span>    }
-<span class="ln">481</span>    Ok(())
-<span class="ln">482</span>}</code></pre>
+<figcaption><a href="../pipeline/src/stac_i18n.rs">pipeline/src/stac_i18n.rs</a> <span class="lines">523〜557 行</span></figcaption>
+<pre><code><span class="ln">523</span>/// 題名・説明・名前を英語にする。**訳の無い日本語が残ったらエラー**。
+<span class="ln">524</span>fn translate(value: &amp;mut Value, table: &amp;BTreeMap&lt;&amp;str, &amp;str&gt;, at: &amp;str) -&gt; Result&lt;()&gt; {
+<span class="ln">525</span>    match value {
+<span class="ln">526</span>        Value::Object(map) =&gt; {
+<span class="ln">527</span>            for (key, child) in map.iter_mut() {
+<span class="ln">528</span>                // 出典の文言は規約が書き方を指定しているので訳さない。語彙はデータの中身。
+<span class="ln">529</span>                if key == "duck:attribution" || key == "summaries" {
+<span class="ln">530</span>                    continue;
+<span class="ln">531</span>                }
+<span class="ln">532</span>                let translatable = matches!(
+<span class="ln">533</span>                    key.as_str(),
+<span class="ln">534</span>                    "title" | "description" | "name" | "duck:vintage" | "processing:lineage"
+<span class="ln">535</span>                );
+<span class="ln">536</span>                match child {
+<span class="ln">537</span>                    Value::String(text) if translatable &amp;&amp; has_japanese(text) =&gt; {
+<span class="ln">538</span>                        let Some(english) = table.get(text.as_str()) else {
+<span class="ln">539</span>                            bail!(
+<span class="ln">540</span>                                "{at}: 英語の訳がありません (stac_i18n.rs の EN に足すこと): {text}"
+<span class="ln">541</span>                            );
+<span class="ln">542</span>                        };
+<span class="ln">543</span>                        *text = (*english).to_string();
+<span class="ln">544</span>                    }
+<span class="ln">545</span>                    _ =&gt; translate(child, table, at)?,
+<span class="ln">546</span>                }
+<span class="ln">547</span>            }
+<span class="ln">548</span>        }
+<span class="ln">549</span>        Value::Array(items) =&gt; {
+<span class="ln">550</span>            for child in items {
+<span class="ln">551</span>                translate(child, table, at)?;
+<span class="ln">552</span>            }
+<span class="ln">553</span>        }
+<span class="ln">554</span>        _ =&gt; {}
+<span class="ln">555</span>    }
+<span class="ln">556</span>    Ok(())
+<span class="ln">557</span>}</code></pre>
 </figure>
 </section>
 <section class="card" id="building-tiles">
@@ -573,34 +573,34 @@ DuckDB は文字列の統計を頭の数文字でしか比べないため、<cod
 <code>file_row_number</code> で絞る。</p>
 
 <figure class="code">
-<figcaption><a href="../web/src/lib/duckdb.ts">web/src/lib/duckdb.ts</a> <span class="lines">220〜246 行</span></figcaption>
-<pre><code><span class="ln">220</span>const collectionRows = (file: string) =&gt; {
-<span class="ln">221</span>  let ranges = rowRanges.get(file);
-<span class="ln">222</span>  if (!ranges) {
-<span class="ln">223</span>    ranges = conn
-<span class="ln">224</span>      .query(
-<span class="ln">225</span>        `SELECT row_group_id, row_group_num_rows AS n, stats_min_value AS lo, stats_max_value AS hi
-<span class="ln">226</span>         FROM parquet_metadata('${file}') WHERE path_in_schema = 'collection' ORDER BY row_group_id;`,
-<span class="ln">227</span>      )
-<span class="ln">228</span>      .then((result) =&gt; {
-<span class="ln">229</span>        const found = new Map&lt;string, [number, number]&gt;();
-<span class="ln">230</span>        let start = 0;
-<span class="ln">231</span>        for (const row of result.toArray()) {
-<span class="ln">232</span>          const end = start + Number(row.n);
-<span class="ln">233</span>          // 1つの行グループに1つの Collection だけのときに使う (混ざっていれば使わない)。
-<span class="ln">234</span>          if (row.lo !== null &amp;&amp; row.lo === row.hi) {
-<span class="ln">235</span>            const known = found.get(row.lo);
-<span class="ln">236</span>            // 行グループの上限を超えて2つに分かれた Collection は、続きとしてつなぐ。
-<span class="ln">237</span>            found.set(row.lo, known &amp;&amp; known[1] === start ? [known[0], end] : [start, end]);
-<span class="ln">238</span>          }
-<span class="ln">239</span>          start = end;
-<span class="ln">240</span>        }
-<span class="ln">241</span>        return found;
-<span class="ln">242</span>      });
-<span class="ln">243</span>    rowRanges.set(file, ranges);
-<span class="ln">244</span>  }
-<span class="ln">245</span>  return ranges;
-<span class="ln">246</span>};</code></pre>
+<figcaption><a href="../packages/core/src/duckdb.ts">packages/core/src/duckdb.ts</a> <span class="lines">226〜252 行</span></figcaption>
+<pre><code><span class="ln">226</span>const collectionRows = (file: string) =&gt; {
+<span class="ln">227</span>  let ranges = rowRanges.get(file);
+<span class="ln">228</span>  if (!ranges) {
+<span class="ln">229</span>    ranges = conn
+<span class="ln">230</span>      .query(
+<span class="ln">231</span>        `SELECT row_group_id, row_group_num_rows AS n, stats_min_value AS lo, stats_max_value AS hi
+<span class="ln">232</span>         FROM parquet_metadata('${file}') WHERE path_in_schema = 'collection' ORDER BY row_group_id;`,
+<span class="ln">233</span>      )
+<span class="ln">234</span>      .then((result) =&gt; {
+<span class="ln">235</span>        const found = new Map&lt;string, [number, number]&gt;();
+<span class="ln">236</span>        let start = 0;
+<span class="ln">237</span>        for (const row of result.toArray()) {
+<span class="ln">238</span>          const end = start + Number(row.n);
+<span class="ln">239</span>          // 1つの行グループに1つの Collection だけのときに使う (混ざっていれば使わない)。
+<span class="ln">240</span>          if (row.lo !== null &amp;&amp; row.lo === row.hi) {
+<span class="ln">241</span>            const known = found.get(row.lo);
+<span class="ln">242</span>            // 行グループの上限を超えて2つに分かれた Collection は、続きとしてつなぐ。
+<span class="ln">243</span>            found.set(row.lo, known &amp;&amp; known[1] === start ? [known[0], end] : [start, end]);
+<span class="ln">244</span>          }
+<span class="ln">245</span>          start = end;
+<span class="ln">246</span>        }
+<span class="ln">247</span>        return found;
+<span class="ln">248</span>      });
+<span class="ln">249</span>    rowRanges.set(file, ranges);
+<span class="ln">250</span>  }
+<span class="ln">251</span>  return ranges;
+<span class="ln">252</span>};</code></pre>
 </figure>
 </section>
 <section class="card" id="files-in-view">
@@ -611,7 +611,7 @@ DuckDB は文字列の統計を頭の数文字でしか比べないため、<cod
 <p>線の粗い段を使うズームは、カタログにある許容誤差から求める: 誤差が2画素以下に収まるズームまでは粗い段で足りる。</p>
 
 <figure class="code">
-<figcaption><a href="../web/src/lib/sources.ts">web/src/lib/sources.ts</a> <span class="lines">42〜52 行</span></figcaption>
+<figcaption><a href="../packages/core/src/sources.ts">packages/core/src/sources.ts</a> <span class="lines">42〜52 行</span></figcaption>
 <pre><code><span class="ln">42</span>/** 表示範囲に重なるファイル。**重ならないファイルは読まない** (行グループの統計より手前で落とす)。 */
 <span class="ln">43</span>export function filesInView(
 <span class="ln">44</span>  source: { files: ItemFile[] },
@@ -625,7 +625,7 @@ DuckDB は文字列の統計を頭の数文字でしか比べないため、<cod
 <span class="ln">52</span>}</code></pre>
 </figure>
 <figure class="code">
-<figcaption><a href="../web/src/lib/sources.ts">web/src/lib/sources.ts</a> <span class="lines">270〜284 行</span></figcaption>
+<figcaption><a href="../packages/core/src/sources.ts">packages/core/src/sources.ts</a> <span class="lines">270〜284 行</span></figcaption>
 <pre><code><span class="ln">270</span>/**
 <span class="ln">271</span> * 許容誤差 `toleranceM` で簡略化したものが使えるのは、どのズームまでか。
 <span class="ln">272</span> *
@@ -727,7 +727,7 @@ DuckDB は文字列の統計を頭の数文字でしか比べないため、<cod
 知りたいのはふつう駅や駅と駅の間くらい (利用者の判断)。行グループは都心で約2km四方あり、それより細い範囲は並べ方を変えないと絞れない。</p>
 
 <figure class="code">
-<figcaption><a href="../web/src/lib/nearby.ts">web/src/lib/nearby.ts</a> <span class="lines">52〜85 行</span></figcaption>
+<figcaption><a href="../packages/core/src/nearby.ts">packages/core/src/nearby.ts</a> <span class="lines">52〜85 行</span></figcaption>
 <pre><code><span class="ln">52</span>/**
 <span class="ln">53</span> * 周辺検索の座標系と先に絞る範囲を決める。
 <span class="ln">54</span> *
@@ -764,7 +764,7 @@ DuckDB は文字列の統計を頭の数文字でしか比べないため、<cod
 <span class="ln">85</span>}</code></pre>
 </figure>
 <figure class="code">
-<figcaption><a href="../web/src/lib/nearby.ts">web/src/lib/nearby.ts</a> <span class="lines">103〜109 行</span></figcaption>
+<figcaption><a href="../packages/core/src/nearby.ts">packages/core/src/nearby.ts</a> <span class="lines">103〜109 行</span></figcaption>
 <pre><code><span class="ln">103</span>/** 先に bbox で絞り、そのうえで距離で判定する WHERE の中身。 */
 <span class="ln">104</span>function nearbyCondition(frame: NearbyFrame): string {
 <span class="ln">105</span>  const b = frame.bounds;
@@ -774,7 +774,7 @@ DuckDB は文字列の統計を頭の数文字でしか比べないため、<cod
 <span class="ln">109</span>}</code></pre>
 </figure>
 <figure class="code">
-<figcaption><a href="../web/src/lib/clip.ts">web/src/lib/clip.ts</a> <span class="lines">14〜49 行</span></figcaption>
+<figcaption><a href="../packages/core/src/clip.ts">packages/core/src/clip.ts</a> <span class="lines">14〜49 行</span></figcaption>
 <pre><code><span class="ln">14</span>/**
 <span class="ln">15</span> * 線 (LineString / MultiLineString) を四角で切り取る。四角の中に何も残らなければ null。
 <span class="ln">16</span> * 線以外はそのまま返す。切り取った部分は途切れたところで別の線に分ける。
@@ -898,7 +898,7 @@ R2 には何も置かない (カタログから公開元を直接読む)。</p>
 </ul>
 <p class="docs">関連: <a href="format-survey.md">format-survey.md の「測ったこと: COG を読む」</a></p>
 <figure class="code">
-<figcaption><a href="../web/src/lib/cog-dem.ts">web/src/lib/cog-dem.ts</a> <span class="lines">36〜52 行</span></figcaption>
+<figcaption><a href="../packages/core/src/cog-dem.ts">packages/core/src/cog-dem.ts</a> <span class="lines">36〜52 行</span></figcaption>
 <pre><code><span class="ln">36</span>/**
 <span class="ln">37</span> * 地図のタイル1画素の大きさ (度) に見合う読み方を選ぶ。**画面より粗くならない中でいちばん粗いもの**。
 <span class="ln">38</span> * どれも画面より粗ければ (寄りすぎ)、いちばん細かいもの。
@@ -918,7 +918,7 @@ R2 には何も置かない (カタログから公開元を直接読む)。</p>
 <span class="ln">52</span>}</code></pre>
 </figure>
 <figure class="code">
-<figcaption><a href="../web/src/lib/cog-dem.ts">web/src/lib/cog-dem.ts</a> <span class="lines">77〜95 行</span></figcaption>
+<figcaption><a href="../packages/core/src/cog-dem.ts">packages/core/src/cog-dem.ts</a> <span class="lines">77〜95 行</span></figcaption>
 <pre><code><span class="ln">77</span>const open = (url: string) =&gt; {
 <span class="ln">78</span>  let tiff = opened.get(url);
 <span class="ln">79</span>  if (!tiff) {
@@ -947,7 +947,7 @@ R2 には何も置かない (カタログから公開元を直接読む)。</p>
 単体テストの見本は DuckDB の spatial で作った (WKB と GeoJSON の組)。</p>
 
 <figure class="code">
-<figcaption><a href="../web/src/lib/wkb.ts">web/src/lib/wkb.ts</a> <span class="lines">37〜76 行</span></figcaption>
+<figcaption><a href="../packages/core/src/wkb.ts">packages/core/src/wkb.ts</a> <span class="lines">37〜76 行</span></figcaption>
 <pre><code><span class="ln">37</span>geometry(): GeoJSON.Geometry {
 <span class="ln">38</span>  this.little = this.view.getUint8(this.offset) === 1;
 <span class="ln">39</span>  this.offset += 1;
@@ -987,7 +987,7 @@ R2 には何も置かない (カタログから公開元を直接読む)。</p>
 <span class="ln">73</span>        coordinates: this.parts(() =&gt; (this.geometry() as GeoJSON.Polygon).coordinates),
 <span class="ln">74</span>      };
 <span class="ln">75</span>    case GEOMETRY_COLLECTION:
-<span class="ln">76</span>      return { type: 'GeometryCollection', geometries: this.parts(() =&gt; this.geometry()) };</code></pre><div class="more">… 続きは <a href="../web/src/lib/wkb.ts">web/src/lib/wkb.ts</a> で</div>
+<span class="ln">76</span>      return { type: 'GeometryCollection', geometries: this.parts(() =&gt; this.geometry()) };</code></pre><div class="more">… 続きは <a href="../packages/core/src/wkb.ts">packages/core/src/wkb.ts</a> で</div>
 </figure>
 </section>
 <section class="card" id="draw-shape">
@@ -1016,32 +1016,32 @@ R2 には何も置かない (カタログから公開元を直接読む)。</p>
 ライセンスを持ち回れるようにするのが、このリポジトリの軸の1つ。</p>
 
 <figure class="code">
-<figcaption><a href="../web/src/lib/duckdb.ts">web/src/lib/duckdb.ts</a> <span class="lines">564〜588 行</span></figcaption>
-<pre><code><span class="ln">564</span>/**
-<span class="ln">565</span> * 問い合わせの結果を Parquet にして返す (ダウンロード用)。
-<span class="ln">566</span> *
-<span class="ln">567</span> * DuckDB-WASM の中の空のファイルに書いてから取り出す。ジオメトリの列が
-<span class="ln">568</span> * GEOMETRY 型なら DuckDB が `geo` メタデータを書くので、GeoParquet として読める。
-<span class="ln">569</span> * `kv` に出典や規約を入れて、**切り出したファイルにも条件が付いて回る**ようにする。
-<span class="ln">570</span> */
-<span class="ln">571</span>const exportParquet = async (select: string, kv: Record&lt;string, string&gt;): Promise&lt;Uint8Array&gt; =&gt; {
-<span class="ln">572</span>  const name = `export_${Date.now()}.parquet`;
-<span class="ln">573</span>  await ready;
-<span class="ln">574</span>  const { db } = await opened;
-<span class="ln">575</span>  await db.registerEmptyFileBuffer(name);
-<span class="ln">576</span>  const escape = (text: string) =&gt; text.replace(/'/g, "''");
-<span class="ln">577</span>  const kvSql = Object.entries(kv)
-<span class="ln">578</span>    .map(([key, value]) =&gt; `'${escape(key)}': '${escape(value)}'`)
-<span class="ln">579</span>    .join(', ');
-<span class="ln">580</span>  try {
-<span class="ln">581</span>    await conn.query(
-<span class="ln">582</span>      `COPY (${select}) TO '${name}' (FORMAT PARQUET${kvSql ? `, KV_METADATA {${kvSql}}` : ''});`,
-<span class="ln">583</span>    );
-<span class="ln">584</span>    return await db.copyFileToBuffer(name);
-<span class="ln">585</span>  } finally {
-<span class="ln">586</span>    await db.dropFile(name);
-<span class="ln">587</span>  }
-<span class="ln">588</span>};</code></pre>
+<figcaption><a href="../packages/core/src/duckdb.ts">packages/core/src/duckdb.ts</a> <span class="lines">570〜594 行</span></figcaption>
+<pre><code><span class="ln">570</span>/**
+<span class="ln">571</span> * 問い合わせの結果を Parquet にして返す (ダウンロード用)。
+<span class="ln">572</span> *
+<span class="ln">573</span> * DuckDB-WASM の中の空のファイルに書いてから取り出す。ジオメトリの列が
+<span class="ln">574</span> * GEOMETRY 型なら DuckDB が `geo` メタデータを書くので、GeoParquet として読める。
+<span class="ln">575</span> * `kv` に出典や規約を入れて、**切り出したファイルにも条件が付いて回る**ようにする。
+<span class="ln">576</span> */
+<span class="ln">577</span>const exportParquet = async (select: string, kv: Record&lt;string, string&gt;): Promise&lt;Uint8Array&gt; =&gt; {
+<span class="ln">578</span>  const name = `export_${Date.now()}.parquet`;
+<span class="ln">579</span>  await ready;
+<span class="ln">580</span>  const { db } = await opened;
+<span class="ln">581</span>  await db.registerEmptyFileBuffer(name);
+<span class="ln">582</span>  const escape = (text: string) =&gt; text.replace(/'/g, "''");
+<span class="ln">583</span>  const kvSql = Object.entries(kv)
+<span class="ln">584</span>    .map(([key, value]) =&gt; `'${escape(key)}': '${escape(value)}'`)
+<span class="ln">585</span>    .join(', ');
+<span class="ln">586</span>  try {
+<span class="ln">587</span>    await conn.query(
+<span class="ln">588</span>      `COPY (${select}) TO '${name}' (FORMAT PARQUET${kvSql ? `, KV_METADATA {${kvSql}}` : ''});`,
+<span class="ln">589</span>    );
+<span class="ln">590</span>    return await db.copyFileToBuffer(name);
+<span class="ln">591</span>  } finally {
+<span class="ln">592</span>    await db.dropFile(name);
+<span class="ln">593</span>  }
+<span class="ln">594</span>};</code></pre>
 </figure>
 </section>
 <section class="card" id="layer-order">
@@ -1051,22 +1051,22 @@ R2 には何も置かない (カタログから公開元を直接読む)。</p>
 持たせてあり、建物は引いた表示のタイルの層も一緒に動く。地図に無い層は飛ばす。</p>
 
 <figure class="code">
-<figcaption><a href="../web/src/ui/layer-list.ts">web/src/ui/layer-list.ts</a> <span class="lines">203〜217 行</span></figcaption>
-<pre><code><span class="ln">203</span>/**
-<span class="ln">204</span> * 重ね順を地図に写す。**下から順に、区分の目印の直下へ動かす** (動かすたびにその直下へ
-<span class="ln">205</span> * 入るので、最後に動かしたものがいちばん上になる)。
-<span class="ln">206</span> */
-<span class="ln">207</span>const applyOrder = () =&gt; {
-<span class="ln">208</span>  for (const section of ['tile', 'data'] as const) {
-<span class="ln">209</span>    const anchor = LAYER_ANCHORS[section];
-<span class="ln">210</span>    if (!map.getLayer(anchor)) continue;
-<span class="ln">211</span>    for (const id of [...order[section]].reverse()) {
-<span class="ln">212</span>      for (const mapLayer of byId.get(id)?.mapLayerIds() ?? []) {
-<span class="ln">213</span>        if (map.getLayer(mapLayer)) map.moveLayer(mapLayer, anchor);
-<span class="ln">214</span>      }
-<span class="ln">215</span>    }
-<span class="ln">216</span>  }
-<span class="ln">217</span>};</code></pre>
+<figcaption><a href="../web/src/ui/layer-list.ts">web/src/ui/layer-list.ts</a> <span class="lines">227〜241 行</span></figcaption>
+<pre><code><span class="ln">227</span>/**
+<span class="ln">228</span> * 重ね順を地図に写す。**下から順に、区分の目印の直下へ動かす** (動かすたびにその直下へ
+<span class="ln">229</span> * 入るので、最後に動かしたものがいちばん上になる)。
+<span class="ln">230</span> */
+<span class="ln">231</span>const applyOrder = () =&gt; {
+<span class="ln">232</span>  for (const section of ['tile', 'data'] as const) {
+<span class="ln">233</span>    const anchor = LAYER_ANCHORS[section];
+<span class="ln">234</span>    if (!map.getLayer(anchor)) continue;
+<span class="ln">235</span>    for (const id of [...order[section]].reverse()) {
+<span class="ln">236</span>      for (const mapLayer of byId.get(id)?.mapLayerIds() ?? []) {
+<span class="ln">237</span>        if (map.getLayer(mapLayer)) map.moveLayer(mapLayer, anchor);
+<span class="ln">238</span>      }
+<span class="ln">239</span>    }
+<span class="ln">240</span>  }
+<span class="ln">241</span>};</code></pre>
 </figure>
 </section>
 <section class="card" id="hover">
@@ -1118,77 +1118,77 @@ R2 には何も置かない (カタログから公開元を直接読む)。</p>
 <b>R2 と同じ待ちを足せる</b>。<code>DATA_DIR</code> で配るディレクトリを差し替えれば、並べ方を変えたデータをアプリはそのままで比べられる。</p>
 
 <figure class="code">
-<figcaption><a href="../web/vite.config.ts">web/vite.config.ts</a> <span class="lines">75〜144 行</span></figcaption>
-<pre><code><span class="ln"> 75</span>function serveLikeObjectStorage(urlPath: string, directory: string): Plugin {
-<span class="ln"> 76</span>  const root = fileURLToPath(new URL(directory, import.meta.url));
-<span class="ln"> 77</span>  // ベースパス配下で配信されることがあるので、解決後の base を前置きしてマウントする。
-<span class="ln"> 78</span>  let mountPath = urlPath;
-<span class="ln"> 79</span>
-<span class="ln"> 80</span>  const handle: Connect.NextHandleFunction = (request, response, next) =&gt; {
-<span class="ln"> 81</span>    // マウントした接頭辞は取り除かれた状態で渡ってくるので、残りがファイル名。
-<span class="ln"> 82</span>    const path = (request.url ?? '').split('?')[0].replace(/^\//, '');
-<span class="ln"> 83</span>    // 開発サーバーとはいえ、指定したディレクトリの外は出さない。
-<span class="ln"> 84</span>    const relative = normalize(decodeURIComponent(path));
-<span class="ln"> 85</span>    if (relative.startsWith('..')) return next();
-<span class="ln"> 86</span>    const file = join(root, relative);
-<span class="ln"> 87</span>
-<span class="ln"> 88</span>    let size: number;
-<span class="ln"> 89</span>    try {
-<span class="ln"> 90</span>      size = statSync(file).size;
-<span class="ln"> 91</span>    } catch {
-<span class="ln"> 92</span>      return next();
-<span class="ln"> 93</span>    }
-<span class="ln"> 94</span>
-<span class="ln"> 95</span>    response.setHeader('Accept-Ranges', 'bytes');
-<span class="ln"> 96</span>    // 別オリジンに置いたときにDuckDB-WASMがこれらを読めるようにする。
-<span class="ln"> 97</span>    response.setHeader('Access-Control-Allow-Origin', '*');
-<span class="ln"> 98</span>    response.setHeader(
-<span class="ln"> 99</span>      'Access-Control-Expose-Headers',
-<span class="ln">100</span>      'Content-Range, Content-Length, Accept-Ranges',
-<span class="ln">101</span>    );
-<span class="ln">102</span>    const contentType = CONTENT_TYPES[extname(file)];
-<span class="ln">103</span>    if (contentType) response.setHeader('Content-Type', contentType);
-<span class="ln">104</span>
-<span class="ln">105</span>    // "bytes=100-199" / "bytes=100-" の2形だけ扱う (複数レンジは使われない)。
-<span class="ln">106</span>    const match = /^bytes=(\d+)-(\d*)$/.exec(request.headers.range ?? '');
-<span class="ln">107</span>    const start = match ? Number(match[1]) : 0;
-<span class="ln">108</span>    const end = match &amp;&amp; match[2] !== '' ? Math.min(Number(match[2]), size - 1) : size - 1;
-<span class="ln">109</span>
-<span class="ln">110</span>    if (match &amp;&amp; (start &gt; end || start &gt;= size)) {
-<span class="ln">111</span>      response.statusCode = 416;
-<span class="ln">112</span>      response.setHeader('Content-Range', `bytes */${size}`);
-<span class="ln">113</span>      return response.end();
-<span class="ln">114</span>    }
-<span class="ln">115</span>
-<span class="ln">116</span>    if (match) {
-<span class="ln">117</span>      response.statusCode = 206;
-<span class="ln">118</span>      response.setHeader('Content-Range', `bytes ${start}-${end}/${size}`);
-<span class="ln">119</span>      response.setHeader('Content-Length', end - start + 1);
-<span class="ln">120</span>    } else {
-<span class="ln">121</span>      response.statusCode = 200;
-<span class="ln">122</span>      response.setHeader('Content-Length', size);
-<span class="ln">123</span>    }
-<span class="ln">124</span>
-<span class="ln">125</span>    // HEADは本文を返さない。ヘッダはGETと同じものを返す。
-<span class="ln">126</span>    const send = () =&gt; {
-<span class="ln">127</span>      if (request.method === 'HEAD') return response.end();
-<span class="ln">128</span>      createReadStream(file, { start, end }).pipe(response);
-<span class="ln">129</span>    };
-<span class="ln">130</span>    // **R2 の遅さを手元で再現する** (`DATA_LATENCY_MS` / `DATA_BANDWIDTH_MBPS`)。
-<span class="ln">131</span>    // 手元では往復の待ちがほぼ0なので、読み込みの回数や量が増えても気付けない。
-<span class="ln">132</span>    const bytes = request.method === 'HEAD' ? 0 : end - start + 1;
-<span class="ln">133</span>    const delay = SIMULATED_LATENCY_MS + (SIMULATED_BYTES_PER_MS &gt; 0 ? bytes / SIMULATED_BYTES_PER_MS : 0);
-<span class="ln">134</span>    if (delay &gt; 0) setTimeout(send, delay);
-<span class="ln">135</span>    else send();
-<span class="ln">136</span>  };
-<span class="ln">137</span>
-<span class="ln">138</span>  return {
-<span class="ln">139</span>    name: `serve-like-object-storage${urlPath.replace(/\//g, '-')}`,
-<span class="ln">140</span>    configResolved(config) {
-<span class="ln">141</span>      mountPath = `${config.base.replace(/\/$/, '')}${urlPath}`;
-<span class="ln">142</span>    },
-<span class="ln">143</span>    configureServer(server) {
-<span class="ln">144</span>      server.middlewares.use(mountPath, handle);</code></pre><div class="more">… 続きは <a href="../web/vite.config.ts">web/vite.config.ts</a> で</div>
+<figcaption><a href="../web/vite.config.ts">web/vite.config.ts</a> <span class="lines">79〜148 行</span></figcaption>
+<pre><code><span class="ln"> 79</span>function serveLikeObjectStorage(urlPath: string, directory: string): Plugin {
+<span class="ln"> 80</span>  const root = fileURLToPath(new URL(directory, import.meta.url));
+<span class="ln"> 81</span>  // ベースパス配下で配信されることがあるので、解決後の base を前置きしてマウントする。
+<span class="ln"> 82</span>  let mountPath = urlPath;
+<span class="ln"> 83</span>
+<span class="ln"> 84</span>  const handle: Connect.NextHandleFunction = (request, response, next) =&gt; {
+<span class="ln"> 85</span>    // マウントした接頭辞は取り除かれた状態で渡ってくるので、残りがファイル名。
+<span class="ln"> 86</span>    const path = (request.url ?? '').split('?')[0].replace(/^\//, '');
+<span class="ln"> 87</span>    // 開発サーバーとはいえ、指定したディレクトリの外は出さない。
+<span class="ln"> 88</span>    const relative = normalize(decodeURIComponent(path));
+<span class="ln"> 89</span>    if (relative.startsWith('..')) return next();
+<span class="ln"> 90</span>    const file = join(root, relative);
+<span class="ln"> 91</span>
+<span class="ln"> 92</span>    let size: number;
+<span class="ln"> 93</span>    try {
+<span class="ln"> 94</span>      size = statSync(file).size;
+<span class="ln"> 95</span>    } catch {
+<span class="ln"> 96</span>      return next();
+<span class="ln"> 97</span>    }
+<span class="ln"> 98</span>
+<span class="ln"> 99</span>    response.setHeader('Accept-Ranges', 'bytes');
+<span class="ln">100</span>    // 別オリジンに置いたときにDuckDB-WASMがこれらを読めるようにする。
+<span class="ln">101</span>    response.setHeader('Access-Control-Allow-Origin', '*');
+<span class="ln">102</span>    response.setHeader(
+<span class="ln">103</span>      'Access-Control-Expose-Headers',
+<span class="ln">104</span>      'Content-Range, Content-Length, Accept-Ranges',
+<span class="ln">105</span>    );
+<span class="ln">106</span>    const contentType = CONTENT_TYPES[extname(file)];
+<span class="ln">107</span>    if (contentType) response.setHeader('Content-Type', contentType);
+<span class="ln">108</span>
+<span class="ln">109</span>    // "bytes=100-199" / "bytes=100-" の2形だけ扱う (複数レンジは使われない)。
+<span class="ln">110</span>    const match = /^bytes=(\d+)-(\d*)$/.exec(request.headers.range ?? '');
+<span class="ln">111</span>    const start = match ? Number(match[1]) : 0;
+<span class="ln">112</span>    const end = match &amp;&amp; match[2] !== '' ? Math.min(Number(match[2]), size - 1) : size - 1;
+<span class="ln">113</span>
+<span class="ln">114</span>    if (match &amp;&amp; (start &gt; end || start &gt;= size)) {
+<span class="ln">115</span>      response.statusCode = 416;
+<span class="ln">116</span>      response.setHeader('Content-Range', `bytes */${size}`);
+<span class="ln">117</span>      return response.end();
+<span class="ln">118</span>    }
+<span class="ln">119</span>
+<span class="ln">120</span>    if (match) {
+<span class="ln">121</span>      response.statusCode = 206;
+<span class="ln">122</span>      response.setHeader('Content-Range', `bytes ${start}-${end}/${size}`);
+<span class="ln">123</span>      response.setHeader('Content-Length', end - start + 1);
+<span class="ln">124</span>    } else {
+<span class="ln">125</span>      response.statusCode = 200;
+<span class="ln">126</span>      response.setHeader('Content-Length', size);
+<span class="ln">127</span>    }
+<span class="ln">128</span>
+<span class="ln">129</span>    // HEADは本文を返さない。ヘッダはGETと同じものを返す。
+<span class="ln">130</span>    const send = () =&gt; {
+<span class="ln">131</span>      if (request.method === 'HEAD') return response.end();
+<span class="ln">132</span>      createReadStream(file, { start, end }).pipe(response);
+<span class="ln">133</span>    };
+<span class="ln">134</span>    // **R2 の遅さを手元で再現する** (`DATA_LATENCY_MS` / `DATA_BANDWIDTH_MBPS`)。
+<span class="ln">135</span>    // 手元では往復の待ちがほぼ0なので、読み込みの回数や量が増えても気付けない。
+<span class="ln">136</span>    const bytes = request.method === 'HEAD' ? 0 : end - start + 1;
+<span class="ln">137</span>    const delay = SIMULATED_LATENCY_MS + (SIMULATED_BYTES_PER_MS &gt; 0 ? bytes / SIMULATED_BYTES_PER_MS : 0);
+<span class="ln">138</span>    if (delay &gt; 0) setTimeout(send, delay);
+<span class="ln">139</span>    else send();
+<span class="ln">140</span>  };
+<span class="ln">141</span>
+<span class="ln">142</span>  return {
+<span class="ln">143</span>    name: `serve-like-object-storage${urlPath.replace(/\//g, '-')}`,
+<span class="ln">144</span>    configResolved(config) {
+<span class="ln">145</span>      mountPath = `${config.base.replace(/\/$/, '')}${urlPath}`;
+<span class="ln">146</span>    },
+<span class="ln">147</span>    configureServer(server) {
+<span class="ln">148</span>      server.middlewares.use(mountPath, handle);</code></pre><div class="more">… 続きは <a href="../web/vite.config.ts">web/vite.config.ts</a> で</div>
 </figure>
 </section>
 <section class="card" id="stac-browser">

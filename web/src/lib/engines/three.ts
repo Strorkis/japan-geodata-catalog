@@ -21,7 +21,7 @@ import {
   type Object3D,
   type Scene,
 } from 'three';
-import type { Collection } from '../stac';
+import type { Collection } from '@japan-geodata-catalog/core/stac';
 
 const LAYER_ID = 'three-3d-tiles';
 const BASE = `${import.meta.env.BASE_URL}three/`;

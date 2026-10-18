@@ -1,7 +1,7 @@
 // 線を四角で切り取る部品の単体テスト。周辺検索で、長い線 (鉄道) の押した地点の前後だけを起点にする。
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { aroundBox, clipLines } from '../src/lib/clip.ts';
+import { aroundBox, clipLines } from '../src/clip.ts';
 
 const BOX: [number, number, number, number] = [0, 0, 10, 10];
 

@@ -64,7 +64,7 @@ R2 の公開URL (r2.dev) を手元から測った (2026-10-08)。
 | ~~概観 (別ファイルの複製)~~ (10-10 にタイルへ置き換えた) | 最後の段を除いた行を、都道府県・QuadKey ごとに1ファイルへ集める | z13: 121秒 → 29秒 (R2 相当) | pipeline.md「建物の概観」 |
 | **引いた表示はタイル (PMTiles)** | 最後の段を除いた建物を、出所ごとに PMTiles 1つへ。MapLibre が並列に取る | z13: **39秒 → 10秒**、z14.5: 36秒 → 3.4秒 | pipeline.md「引いた表示はタイル」 |
 | **ファイルの分け方を件数で決める** | Overture の建物は QuadKey の適応的な四分木 (40万棟を超えたら割る)。PLATEAU は都市ごと | 1ファイルをメモリに載せて並べ替えられる大きさに | pipeline.md「建物を全国に」 |
-| **カタログをファイル選びの索引にする** | Item の bbox で、画面に重なるファイルだけを渡す (`filesInView`) | 開くファイルを減らす | web/src/lib/sources.ts |
+| **カタログをファイル選びの索引にする** | Item の bbox で、画面に重なるファイルだけを渡す (`filesInView`) | 開くファイルを減らす | packages/core/src/sources.ts |
 | **Item の一覧も GeoParquet に** (stac-geoparquet) | Collection ごとに行グループを分け、Item の少ない Collection をフッターの隣に置く | 起動時に要る行政区域の Item がフッターと同じブロックで読める | pipeline.md / stac_geoparquet.rs |
 
 ### 並べ方の比べ方 (repack の `Layout`)

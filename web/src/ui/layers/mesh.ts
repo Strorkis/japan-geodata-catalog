@@ -5,9 +5,9 @@
  * 一覧の行は1つで、ID は先頭のメッシュ。
  */
 import type { GeoJSONSource } from 'maplibre-gl';
-import { meshSourceFor, type MeshSource } from '../../lib/sources';
-import { MESH_SIZE_LABELS, meshBounds, meshDigits } from '../../lib/mesh';
-import { fetchMeshInView } from '../../lib/queries';
+import { meshSourceFor, type MeshSource } from '@japan-geodata-catalog/core/sources';
+import { MESH_SIZE_LABELS, meshBounds, meshDigits } from '@japan-geodata-catalog/core/mesh';
+import { fetchMeshInView } from '@japan-geodata-catalog/core/queries';
 import { AIRCRAFT_CLASSES, IGRC_BANDS, igrcBand } from '../../lib/igrc';
 import { EMPTY_FEATURE_COLLECTION } from '../map';
 import { requester, type DrawContext } from './context';

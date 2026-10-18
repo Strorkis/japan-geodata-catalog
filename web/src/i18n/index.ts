@@ -12,19 +12,11 @@
  * カタログの題名と説明 (カタログ側で英語版を持つまでは日本語のまま)。
  */
 // 拡張子を付けておく (単体テストが Node から直接読むため。Node は拡張子を補わない)。
+import { lang, type Lang } from '@japan-geodata-catalog/core/i18n';
 import { HTML_EN, MESSAGES, type Messages } from './messages.ts';
 
-export type Lang = 'ja' | 'en';
-
-/** URL の `lang` → ブラウザの言語、の順で決める。 */
-export function detectLang(search: string, languages: readonly string[]): Lang {
-  const requested = new URLSearchParams(search).get('lang');
-  if (requested === 'ja' || requested === 'en') return requested;
-  return languages[0]?.toLowerCase().startsWith('ja') ? 'ja' : 'en';
-}
-
-export const lang: Lang =
-  typeof window === 'undefined' ? 'ja' : detectLang(window.location.search, navigator.languages ?? []);
+// **言語の決め方は core が持つ** (core の文言と画面の文言で言語がずれないように)。ここからも引けるよう渡し直す。
+export { detectLang, lang, type Lang } from '@japan-geodata-catalog/core/i18n';
 
 /** いまの言語の文言。 */
 export const m: Messages = MESSAGES[lang];

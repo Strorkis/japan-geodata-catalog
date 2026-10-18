@@ -1,10 +1,10 @@
 /**
  * **検索欄** と、選んだ結果の見せ方 (ハイライト・寄せ方・吹き出し)。
  *
- * 地名・行政区域・駅・鉄道路線・道路の路線を1つの欄で引く (問い合わせは lib/search.ts)。
+ * 地名・行政区域・駅・鉄道路線・道路の路線を1つの欄で引く (問い合わせは core の search.ts)。
  * 📍 で地図から選んだ地点 (逆ジオコーディング) も、結果の見せ方は同じなのでここで持つ。
  */
-import type { Conn } from '../lib/duckdb';
+import type { Conn } from '@japan-geodata-catalog/core/duckdb';
 import { Popup, type LngLat, type Map as MapLibreMap } from 'maplibre-gl';
 import {
   MAX_RESULTS,
@@ -19,8 +19,8 @@ import {
   searchStations,
   toMultiLineString,
   type SearchResult,
-} from '../lib/search';
-import type { Bbox } from '../lib/stac';
+} from '@japan-geodata-catalog/core/search';
+import type { Bbox } from '@japan-geodata-catalog/core/stac';
 import { ROAD_STYLES } from './map';
 import { m } from '../i18n';
 

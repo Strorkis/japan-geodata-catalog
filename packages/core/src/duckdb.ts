@@ -35,15 +35,20 @@ import {
  * duckdb-eh.wasm が35MB、duckdb-mvp.wasm が40MBあり、バンドラに通すと
  * ホスティングのファイルサイズ制限に当たるため (Cloudflare Pagesは25MiBまで)。
  * 開発時は vite.config.ts が node_modules から配信し、ビルド時は同じ場所から
- * dist/duckdb/ にコピーされる。別の場所に置きたい場合は
- * VITE_DUCKDB_BASE_URL で上書きできる。
+ * dist/duckdb/ にコピーされる。
+ *
+ * **置き場所は使う側が [`configureDuckDb`] で渡す** (core はアプリのビルドの設定を読まない)。渡さなければ、
+ * ページと同じ場所の `duckdb/`。Web サイトは `VITE_DUCKDB_BASE_URL` (無ければ `<base>/duckdb`) を渡す。
  */
-const DUCKDB_BASE_URL = (
-  import.meta.env.VITE_DUCKDB_BASE_URL ?? `${import.meta.env.BASE_URL}duckdb`
-).replace(/\/$/, '');
+let duckdbBaseUrl = 'duckdb';
+
+/** DuckDB-WASM 本体と拡張の置き場所を決める。**`initDuckDb` より前に**呼ぶ。 */
+export function configureDuckDb(baseUrl: string): void {
+  duckdbBaseUrl = baseUrl.replace(/\/$/, '');
+}
 
 function duckdbUrl(file: string): string {
-  return new URL(`${DUCKDB_BASE_URL}/${file}`, window.location.href).toString();
+  return new URL(`${duckdbBaseUrl}/${file}`, window.location.href).toString();
 }
 
 /**
@@ -53,8 +58,9 @@ function duckdbUrl(file: string): string {
  *
  * 本家 (extensions.duckdb.org) にあるのと同じ署名済みファイルをそのまま
  * 置いているだけなので、`allowUnsignedExtensions` は要らない。
+ * 置き場所が [`configureDuckDb`] で決まるので、使うときに組み立てる。
  */
-const DUCKDB_EXTENSIONS_URL = duckdbUrl('extensions');
+const duckdbExtensionsUrl = () => duckdbUrl('extensions');
 
 /**
  * 初回に一度だけ実行し、以降は同じ結果を返す。
@@ -153,7 +159,7 @@ async function openDuckDb(): Promise<{ db: duckdb.AsyncDuckDB; conn: duckdb.Asyn
   // 本家 (extensions.duckdb.org) に依存したままになる。
   // parquet拡張は明示LOADしていないが、read_parquet()の時点でDuckDBが自動取得する
   // (autoload) ので、取得元さえ切り替えておけば以降は暗黙に自前配信から読まれる。
-  await conn.query(`SET custom_extension_repository = '${DUCKDB_EXTENSIONS_URL}';`);
+  await conn.query(`SET custom_extension_repository = '${duckdbExtensionsUrl()}';`);
   return { db, conn };
 }
 

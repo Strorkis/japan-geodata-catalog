@@ -6,7 +6,7 @@
  * 標高の候補はカタログの地形の Collection (Mapterhorn・Re:Earth・地理院…)。
  */
 import type { Map as MapLibreMap } from 'maplibre-gl';
-import type { Collection } from '../lib/stac';
+import type { Collection } from '@japan-geodata-catalog/core/stac';
 import { TERRAIN_SOURCE, defaultOf, terrainSource } from '../lib/tiles';
 import { LAYER_ANCHORS, sliderSettings } from './layer-list';
 import { m } from '../i18n';

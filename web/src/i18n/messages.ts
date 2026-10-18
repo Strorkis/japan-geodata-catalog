@@ -116,8 +116,6 @@ const ja = {
   stationCount: (count: number) => `${count.toLocaleString()} 駅`,
   displayLimit: ' (表示上限)',
   limitReached: ' (上限に達しました。拡大すると全部出ます)',
-  simplifiedNote: (zoom: number) => ` · 簡略表示 (ズーム${zoom}から原寸)`,
-  sourceLodNote: (shown: number, max: number) => ` · 表示はLOD${shown} / 原典はLOD${max}まで`,
   buildings: '建物',
   roads: '道路',
   railways: '鉄道',
@@ -131,7 +129,6 @@ const ja = {
   /** 引いた表示をタイルで描いているとき (件数は数えられない)。後ろに段 (`thinnedTiers`) が続く。 */
   shownAsTiles: "表示しています",
   noTier: 'どの段にも入らないもの',
-  allTiers: 'すべて',
   classesHeldBack: (count: number, zoom: number) => ` · ${count}種別はズーム${zoom}から`,
   noClassAtThisZoom: '選んだ等級はこのズームでは出しません',
   noRoadsInView: 'この範囲に道路がありません',
@@ -307,25 +304,7 @@ const ja = {
   fullLicenses: 'ライセンスの全文: ',
   appLibraries: '画面のライブラリ',
   duckdbAndExtensions: 'DuckDB と拡張',
-
-  // ---- PLATEAU の CityGML の地物の種類 (lib/plateau-api.ts) ----
-  citygmlTypes: {
-    bldg: '建物',
-    tran: '道路',
-    rwy: '鉄道',
-    brid: '橋',
-    luse: '土地利用',
-    dem: '地形',
-    fld: '洪水浸水想定',
-    tnm: '津波浸水想定',
-    htd: '高潮浸水想定',
-    lsld: '土砂災害警戒区域',
-    urf: '都市計画決定',
-    veg: '植生',
-    frn: '都市設備',
-    ubld: '地下街',
-    wwy: '航路',
-  },
+  // CityGML の地物の種類の呼び名は core が持つ (packages/core/src/i18n.ts の citygmlTypes)。
 } as const;
 
 /** 日本語の辞書と同じ形。文字は文字、関数は同じ引数の関数、並びは並び、表 (コード → 呼び名) は表。 */
@@ -441,8 +420,6 @@ const en: Messages = {
   stationCount: (n) => count(n, 'station', 'stations'),
   displayLimit: ' (display limit)',
   limitReached: ' (limit reached; zoom in to see all)',
-  simplifiedNote: (zoom) => ` · simplified (full detail from zoom ${zoom})`,
-  sourceLodNote: (shown, max) => ` · shown at LOD${shown} / source up to LOD${max}`,
   buildings: 'buildings',
   roads: 'roads',
   railways: 'railways',
@@ -455,7 +432,6 @@ const en: Messages = {
   thinnedTiers: (titles, zoom) => ` · only ${titles.join(', ')} (all from zoom ${zoom})`,
   shownAsTiles: "Shown",
   noTier: 'Not in any tier',
-  allTiers: 'All',
   classesHeldBack: (count, zoom) => ` · ${count} more classes from zoom ${zoom}`,
   noClassAtThisZoom: 'The selected classes are not shown at this zoom',
   noRoadsInView: 'No roads in this area',
@@ -631,24 +607,6 @@ const en: Messages = {
   fullLicenses: 'Full license texts: ',
   appLibraries: 'App libraries',
   duckdbAndExtensions: 'DuckDB and extensions',
-
-  citygmlTypes: {
-    bldg: 'Buildings',
-    tran: 'Roads',
-    rwy: 'Railways',
-    brid: 'Bridges',
-    luse: 'Land use',
-    dem: 'Terrain',
-    fld: 'Flood inundation',
-    tnm: 'Tsunami inundation',
-    htd: 'Storm surge inundation',
-    lsld: 'Landslide warning areas',
-    urf: 'Urban planning',
-    veg: 'Vegetation',
-    frn: 'City furniture',
-    ubld: 'Underground malls',
-    wwy: 'Waterways',
-  },
 };
 
 export const MESSAGES: Record<'ja' | 'en', Messages> = { ja, en };
