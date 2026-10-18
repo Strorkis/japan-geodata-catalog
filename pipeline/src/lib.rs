@@ -186,7 +186,7 @@ mod tests {
     #[test]
     fn read_zip_entry_bytes_errors_on_ambiguous_match() {
         let path = write_test_zip(
-            "duck_geocoder_test_ambiguous.zip",
+            "japan_geodata_pipeline_test_ambiguous.zip",
             &[
                 ("foo.geojson", b"detailed" as &[u8]),
                 ("foo_prefecture.geojson", b"dissolved" as &[u8]),
@@ -208,7 +208,7 @@ mod tests {
     #[test]
     fn read_zip_entry_bytes_errors_on_no_match() {
         let path = write_test_zip(
-            "duck_geocoder_test_no_match.zip",
+            "japan_geodata_pipeline_test_no_match.zip",
             &[("foo.csv", b"data" as &[u8])],
         );
 

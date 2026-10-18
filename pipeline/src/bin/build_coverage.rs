@@ -1,6 +1,6 @@
 use anyhow::{Context, Result, bail};
-use duck_geocoder::coverage::{self, Row};
-use duck_geocoder::repack;
+use japan_geodata_pipeline::coverage::{self, Row};
+use japan_geodata_pipeline::repack;
 use std::path::PathBuf;
 use std::process::Command;
 
@@ -11,7 +11,7 @@ use std::process::Command;
 /// 違う — **PLATEAUの整備範囲は市域と一致しない**。
 ///
 /// メッシュは経緯度から機械的に決まる方眼なので、境界データを持ち込まずに済む
-/// (詳細は [`duck_geocoder::coverage`])。
+/// (詳細は [`japan_geodata_pipeline::coverage`])。
 fn main() -> Result<()> {
     let args: Vec<String> = std::env::args().collect();
     let (glob, output, covers) = match args.as_slice() {

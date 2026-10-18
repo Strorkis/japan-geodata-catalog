@@ -1,6 +1,8 @@
 use anyhow::{Result, bail};
-use duck_geocoder::isj_oaza;
-use duck_geocoder::{decode_sjis, extract_epsg_from_isj_metadata_xml, read_zip_entry_bytes};
+use japan_geodata_pipeline::isj_oaza;
+use japan_geodata_pipeline::{
+    decode_sjis, extract_epsg_from_isj_metadata_xml, read_zip_entry_bytes,
+};
 use std::path::PathBuf;
 
 /// 位置参照情報 (大字・町丁目レベル) の CSV (Shift-JIS) を読み、

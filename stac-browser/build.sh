@@ -5,7 +5,7 @@
 #
 # 環境変数:
 #   SB_catalogUrl  カタログの URL (例: https://…/catalog.json)
-#   SB_pathPrefix  配信するパス (例: /duck-geocoder/catalog/)
+#   SB_pathPrefix  配信するパス (例: /japan-geodata-catalog/catalog/)
 #
 # ソースは CI が版を固定して取ってくる (deploy.yml)。ここでは取りに行かない。
 #

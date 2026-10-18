@@ -1,7 +1,7 @@
 use anyhow::{Context, Result, bail};
-use duck_geocoder::geoparquet::{self, VINTAGE_KEY};
-use duck_geocoder::lod::{self, CoarseLevel};
-use duck_geocoder::repack;
+use japan_geodata_pipeline::geoparquet::{self, VINTAGE_KEY};
+use japan_geodata_pipeline::lod::{self, CoarseLevel};
+use japan_geodata_pipeline::repack;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -9,7 +9,7 @@ use std::process::Command;
 ///
 /// 新しいファイルは作らない。`lod = 0` の行 (統合して簡略化したもの) を
 /// 同じファイルの先頭の行グループに置き、`lod = 1` に元の行をそのまま残す。
-/// 理由と実測値は [`duck_geocoder::lod`] にある。
+/// 理由と実測値は [`japan_geodata_pipeline::lod`] にある。
 ///
 /// **入力を上書きする。** 段を足したファイルをもう一度通しても二重にはならない
 /// (`lod` 列があれば拒む)。

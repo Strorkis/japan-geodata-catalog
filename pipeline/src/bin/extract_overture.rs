@@ -1,5 +1,5 @@
 use anyhow::{Context, Result, bail};
-use duck_geocoder::overture::{
+use japan_geodata_pipeline::overture::{
     BoundingBox, DEFAULT_RELEASE, JAPAN_BBOX, OvertureLine, build_divisions_extract_sql,
     build_extract_sql, build_lines_extract_sql, build_ocean_extract_sql, build_roads_extract_sql,
 };

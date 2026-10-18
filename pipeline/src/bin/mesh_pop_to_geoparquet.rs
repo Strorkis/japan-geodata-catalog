@@ -1,5 +1,5 @@
 use anyhow::{Context, Result, bail};
-use duck_geocoder::{decode_sjis, mesh_pop, read_zip_entry_bytes};
+use japan_geodata_pipeline::{decode_sjis, mesh_pop, read_zip_entry_bytes};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 

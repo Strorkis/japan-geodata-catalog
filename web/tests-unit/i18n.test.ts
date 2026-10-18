@@ -45,8 +45,8 @@ test('言語は URL の lang が先、無ければブラウザの言語 (日本�
 
 test('言語の切り替えは lang だけを差し替え、ほかの URL はそのまま', () => {
   assert.equal(
-    urlWithLang('https://example.com/duck-geocoder/?lang=ja#map', 'en'),
-    'https://example.com/duck-geocoder/?lang=en#map',
+    urlWithLang('https://example.com/japan-geodata-catalog/?lang=ja#map', 'en'),
+    'https://example.com/japan-geodata-catalog/?lang=en#map',
   );
-  assert.equal(urlWithLang('https://example.com/duck-geocoder/', 'en'), 'https://example.com/duck-geocoder/?lang=en');
+  assert.equal(urlWithLang('https://example.com/japan-geodata-catalog/', 'en'), 'https://example.com/japan-geodata-catalog/?lang=en');
 });

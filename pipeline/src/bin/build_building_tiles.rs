@@ -1,6 +1,6 @@
 use anyhow::{Context, Result, bail};
-use duck_geocoder::catalog::tiers_for_file;
-use duck_geocoder::geoparquet;
+use japan_geodata_pipeline::catalog::tiers_for_file;
+use japan_geodata_pipeline::geoparquet;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 

@@ -1,5 +1,5 @@
 use anyhow::{Context, Result, bail};
-use duck_geocoder::admin_names::build_extract_sql;
+use japan_geodata_pipeline::admin_names::build_extract_sql;
 use std::path::PathBuf;
 use std::process::Command;
 
@@ -7,7 +7,7 @@ use std::process::Command;
 ///
 /// UIはこれを読んで地名検索の候補を出す。行政区域そのものから引くと、
 /// 名称の列がファイル全体に散らばっているためHTTP越しでは往復が多くなりすぎる
-/// (詳細は `duck_geocoder::admin_names`)。
+/// (詳細は `japan_geodata_pipeline::admin_names`)。
 fn main() -> Result<()> {
     let args: Vec<String> = std::env::args().collect();
     let (input, output) = match args.as_slice() {

@@ -1,4 +1,4 @@
-use duck_geocoder::{
+use japan_geodata_pipeline::{
     decode_sjis, extract_epsg_from_isj_metadata_xml, isj_block, isj_oaza, n03, read_zip_entry_bytes,
 };
 use std::path::Path;

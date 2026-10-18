@@ -1,6 +1,6 @@
 use anyhow::{Context, Result, bail};
-use duck_geocoder::n02;
-use duck_geocoder::read_zip_entry;
+use japan_geodata_pipeline::n02;
+use japan_geodata_pipeline::read_zip_entry;
 
 /// 国土数値情報 鉄道データ (N02) のzipに同梱されたGeoJSONをGeoParquetに変換する。
 ///

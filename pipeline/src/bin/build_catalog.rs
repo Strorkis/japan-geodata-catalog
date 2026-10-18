@@ -1,5 +1,5 @@
 use anyhow::{Context, Result, bail};
-use duck_geocoder::{catalog, external, stac, stac_i18n};
+use japan_geodata_pipeline::{catalog, external, stac, stac_i18n};
 use std::path::PathBuf;
 
 /// 配信ディレクトリ配下のGeoParquetを走査し、STACの文書一式を書き出す。
@@ -31,8 +31,8 @@ fn main() -> Result<()> {
 
     // Item は stac-geoparquet 1つにまとめる (Collection ごとに行グループを分ける)。
     // **古い文書を消すより先に書く** — ここで失敗したら、手元の一式は前のまま残る。
-    let items_path = dir.join(duck_geocoder::stac_geoparquet::ITEMS_FILE);
-    duck_geocoder::stac_geoparquet::write(&items_path, &built.items)?;
+    let items_path = dir.join(japan_geodata_pipeline::stac_geoparquet::ITEMS_FILE);
+    japan_geodata_pipeline::stac_geoparquet::write(&items_path, &built.items)?;
 
     // 作り直すたびに古い文書が残らないよう、一度消してから書く。データセットを減らしたときに、
     // 消えたはずのCollectionが配信され続けるのを防ぐ。**サブカタログのディレクトリの中も消す**
@@ -84,7 +84,7 @@ fn main() -> Result<()> {
         datasets.len(),
         collections,
         documents.len(),
-        duck_geocoder::stac_geoparquet::ITEMS_FILE,
+        japan_geodata_pipeline::stac_geoparquet::ITEMS_FILE,
         built.items.len(),
         dir.display(),
     );

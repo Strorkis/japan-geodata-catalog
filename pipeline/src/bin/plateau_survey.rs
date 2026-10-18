@@ -1,6 +1,6 @@
 use anyhow::{Context, Result, bail};
-use duck_geocoder::plateau_catalog::{self, City};
-use duck_geocoder::remote_zip::{HttpRange, RangeReader};
+use japan_geodata_pipeline::plateau_catalog::{self, City};
+use japan_geodata_pipeline::remote_zip::{HttpRange, RangeReader};
 use std::time::Instant;
 
 /// PLATEAUの各都市に建物がどれだけ入っているかを、**変換せずに**測る。

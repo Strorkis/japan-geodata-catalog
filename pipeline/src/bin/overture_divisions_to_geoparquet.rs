@@ -1,6 +1,8 @@
 use anyhow::{Context, Result, bail};
-use duck_geocoder::geoparquet::{CoveringBbox, geo_metadata_json, geoparquet_geometry_type};
-use duck_geocoder::overture::{build_admin_sql, build_admin_stats_sql};
+use japan_geodata_pipeline::geoparquet::{
+    CoveringBbox, geo_metadata_json, geoparquet_geometry_type,
+};
+use japan_geodata_pipeline::overture::{build_admin_sql, build_admin_stats_sql};
 use std::path::PathBuf;
 use std::process::Command;
 

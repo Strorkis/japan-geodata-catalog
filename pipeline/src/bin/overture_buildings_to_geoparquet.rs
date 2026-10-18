@@ -1,10 +1,12 @@
 use anyhow::{Context, Result, bail};
-use duck_geocoder::geoparquet::{CoveringBbox, geo_metadata_json, geoparquet_geometry_type};
-use duck_geocoder::overture::{
+use japan_geodata_pipeline::geoparquet::{
+    CoveringBbox, geo_metadata_json, geoparquet_geometry_type,
+};
+use japan_geodata_pipeline::overture::{
     DEFAULT_RELEASE, build_building_tile_sql, build_buildings_keyed_sql,
     build_buildings_partition_sql, build_japan_tiles_sql,
 };
-use duck_geocoder::quadkey;
+use japan_geodata_pipeline::quadkey;
 use std::collections::BTreeMap;
 use std::collections::BTreeSet;
 use std::path::PathBuf;
