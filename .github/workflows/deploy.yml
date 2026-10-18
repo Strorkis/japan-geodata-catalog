@@ -38,7 +38,7 @@ jobs:
         working-directory: web
     steps:
       # Node.js 20 で動くアクションは非推奨になっているので、
-      # Node.js 24 で動くメジャーバージョンを使う。
+      # Node.js 24 で動くメジャーバージョンを使う (どれも action.yml の `using: node24` を確かめた。2026-10-18)。
       - uses: actions/checkout@v7
 
       # package.json に packageManager を書いていないので、ここでメジャーを指定する
@@ -61,7 +61,7 @@ jobs:
       # duckdb-wasm (pnpm-lock.yaml) に紐づくので、それをキーにする。
       # 無ければ vite build 時に取得されるが、キャッシュがあれば約47MBの
       # ダウンロードを毎回省ける。
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: web/.duckdb-extensions
           key: duckdb-extensions-${{ hashFiles('web/pnpm-lock.yaml') }}
@@ -120,7 +120,8 @@ jobs:
           SB_catalogUrl: ${{ vars.DATA_BASE_URL }}/catalog.json
           SB_pathPrefix: /${{ github.event.repository.name }}/catalog/
 
-      - uses: actions/upload-pages-artifact@v3
+      # v4 から、名前が `.` で始まるファイルは入らない。dist には無い (2026-10-18 に確かめた)。足すときは気を付ける。
+      - uses: actions/upload-pages-artifact@v5
         if: github.event_name != 'pull_request'
         with:
           path: web/dist
@@ -138,4 +139,4 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
