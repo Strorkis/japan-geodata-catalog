@@ -241,7 +241,7 @@
       <div class="card kpi">
         <div class="label">公開待ちのコミット</div>
         <div class="value">2 <small>件</small></div>
-        <span class="status you">ブランチ pr-workflow の push 待ち</span>
+        <span class="status you">ブランチ ci/pr-workflow の push 待ち</span>
       </div>
       <div class="card kpi">
         <div class="label">R2 の配信データ (手元の data/output)</div>
@@ -258,9 +258,9 @@
       <h2>公開までの残り</h2>
       <ol class="steps">
         <li class="current">
-          <b>ブランチ <code>pr-workflow</code> を push → PR を見てマージ</b><span class="status you">あなたの番</span>
+          <b>ブランチ <code>ci/pr-workflow</code> を push → PR を見てマージ</b><span class="status you">あなたの番</span>
           <span class="sub">
-            これからは<b>ブランチで作業し、PR で main に入れる</b> (main への push が公開の引き金なので)。<code>git push -u origin pr-workflow</code>
+            これからは<b>ブランチで作業し、PR で main に入れる</b> (main への push が公開の引き金なので)。<code>git push -u origin ci/pr-workflow</code>
             のあと私が PR を作る。PR の「読むべき所」(依存・CI・手元で自動で動くもの・通信先) を見てから、<b>マージコミット</b>でマージ。
             Settings → General → Pull Requests → Allow merge commits の既定のメッセージを「Pull request title」にすると、公開の CI の題名が PR の題名になる
           </span>

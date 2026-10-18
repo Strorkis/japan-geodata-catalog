@@ -176,6 +176,9 @@ CI は型・単体テスト・ビルドと、R2 の CORS と Range の確認 (�
 
 **作業はブランチで行い、PR で main に入れる。** main への push は公開の引き金なので、main で直接コミットしない。
 
+- **ブランチの名前は `種類/内容`** (`feat/library-split`・`fix/navara-attribution`・`ci/pr-workflow`)。種類はコミットと同じ
+  Conventional Commits (`feat`・`fix`・`perf`・`refactor`・`docs`・`test`・`ci`・`chore`)。内容は英小文字とハイフン
+
 - **push と PR のマージは利用者がする** (公開の引き金は人が引く)。エージェントはブランチを作ってコミットし、
   利用者が push したら `gh pr create` で PR を作る (`gh` は token で入っている。権限は PR・Actions の読み書き程度)
 - **マージはマージコミットで** (スカッシュしない)。コミットの本文に判断の根拠を書いているので、main に残す
