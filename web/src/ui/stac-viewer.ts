@@ -19,7 +19,7 @@ import {
   resolveHref,
   type StacAsset,
   type StacLink,
-} from '../lib/stac';
+} from '@japan-geodata-catalog/core/stac';
 import { externalLink } from './credits';
 import { m } from '../i18n';
 

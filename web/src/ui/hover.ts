@@ -9,9 +9,9 @@
  * **指で押しても同じものを出す** (スマホにはホバーが無い)。
  */
 import { Popup, type Map as MapLibreMap } from 'maplibre-gl';
-import type { Collection } from '../lib/stac';
-import { LINE_KINDS } from '../lib/sources';
-import { MESH_SIZE_LABELS } from '../lib/mesh';
+import type { Collection } from '@japan-geodata-catalog/core/stac';
+import { LINE_KINDS } from '@japan-geodata-catalog/core/sources';
+import { MESH_SIZE_LABELS } from '@japan-geodata-catalog/core/mesh';
 import type { VectorOverlay } from '../lib/tiles';
 import { BUILDING_TILES_PREFIX, buildingTilesLayerId } from './map';
 import { hoverContent, text, vectorHover, type Hover, type HoverRows } from './hover-rows';

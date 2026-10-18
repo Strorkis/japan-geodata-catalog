@@ -5,8 +5,8 @@
  * 束ねて簡略化したもの) を引く。上限は道路と共有する (同じ太さの線なので)。
  */
 import type { GeoJSONSource } from 'maplibre-gl';
-import { COARSE_LOD, lodForZoom, lodNote, type LineSource } from '../../lib/sources';
-import { fetchLinesInView } from '../../lib/queries';
+import { COARSE_LOD, lodForZoom, lodNote, type LineSource } from '@japan-geodata-catalog/core/sources';
+import { fetchLinesInView } from '@japan-geodata-catalog/core/queries';
 import { EMPTY_FEATURE_COLLECTION, LINE_CLASS_LABELS } from '../map';
 import { requester, type DrawContext } from './context';
 import { m } from '../../i18n';

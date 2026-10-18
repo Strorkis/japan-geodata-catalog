@@ -166,7 +166,7 @@ tippecanoe -q -o plateau_overview.pmtiles -Z12 -z14 -l buildings -T lod:int \
 
 ## 測ったこと: COG を読む (AW3D30、2026-10-10)
 
-JAXA Earth API の AW3D30 (COG) を、ブラウザで地形のタイルにして描いた (web/src/lib/cog-dem.ts)。
+JAXA Earth API の AW3D30 (COG) を、ブラウザで地形のタイルにして描いた (packages/core/src/cog-dem.ts)。
 **Range で直接読める COG なら、置き場所 (R2) を通さずにカタログから描ける**ことを確かめた。
 
 **COG の中身** (読んで確かめた。STAC の情報だけでは画素数が分からない):

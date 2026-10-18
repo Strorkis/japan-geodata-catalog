@@ -15,7 +15,7 @@
 > 使う人はどれか1つの地図ライブラリを使うので、**地図ライブラリごとに分け、共通部分を切り出す。**
 > いまの Web サイトは**日本のカタログビジュアライザー** (ライブラリの使い方の見本も兼ねる)。
 
-**分ける形 (案)。今回は方針を書くだけで、分ける作業はしない** (利用者の判断):
+**分ける形 (案)。今回は方針を書くだけで、分ける作業はしない** (利用者の判断。10-18 に着手した。下の「ライブラリに分ける」):
 
 | 部品 | 中身 | いまの在りか |
 | --- | --- | --- |
@@ -37,6 +37,43 @@
 4. **リポジトリの名前**は `japan-geodata-catalog` に決めた (2026-10-14。下の「名前について」)
 
 形式は自前で作らず、Portolan・stac-geoparquet に寄せる (下の「Portolan について」)。
+
+### ライブラリに分ける (2026-10-18 に計画を決めた。利用者)
+
+**作るのは、地図ライブラリの使い方の見本になる薄い部品。** 新しい GIS や枠組みは作らない。AI で独自のサイトが作りやすくなった今、
+その質を支える見本という位置づけ (利用者)。コミュニティには「新しく作るより既存の基盤 (QGIS・STAC) で」という空気があり、
+**指示ではないが判断材料として気にかける** (既存の道具でも開けるカタログにしておく、など)。
+
+**手本は GeoLibre** (`.reference/github.com/opengeos/GeoLibre`、MIT)。MapLibre + DuckDB-WASM + deck.gl で、1つの層の一覧を4つのエンジンで描く。
+
+- **エンジンとの口を1つの型に** (`packages/map/src/map-engine.ts` の `MapEngine`)。今の `CesiumRow`・`NavaraRow` を core の1つの型に寄せる
+- **エンジンの名前ではなく「できること」の表で灰色を決める** (`layer-kind.ts` の、エンジンごとの描ける種類の表。漏れは型で落ちる)。
+  今の一覧の定義にある `NOT_IN_SWAPPED`・`NOT_IN_NAVARA` (エンジンの名前ごとの灰色) を置き換える
+- パッケージは **TypeScript のまま**読み込む (パッケージごとのビルドは無し)
+
+| PR | やること | 状態 |
+| --- | --- | --- |
+| A `refactor/workspace-core` | ワークスペースの起点を直下へ (`pnpm-workspace.yaml`・lockfile・`.pnpmfile.cjs`)。`packages/core` を切り出す | 10-18 |
+| B `refactor/engine-packages` | `packages/{deckgl,three,cesium,navara}`。**エンジンの実行時の資産を写す Vite のプラグイン**も部品に入れる。「できること」の表 | |
+| C `refactor/maplibre-package` | `packages/maplibre` (タイル・データの行の描き方・吹き出しの中身) | |
+| D `refactor/pipeline-crate-name` | Rust のクレート名を `duck-geocoder` から付け直す | |
+
+置き場所は **`web/` はそのまま、直下に `packages/*`** (`web/` を動かすと文書・CI のパスの直しが大きい)。名前は `@japan-geodata-catalog/*`
+(npm には出さない)。**各 PR の前に本番ビルドの E2E を全件流す。**
+
+**A でしたこと:**
+
+- lockfile は `web/` から直下へ移し、中の起点の名前 (`.` → `web`) だけを直した。**解決した版は1つも変わっていない** (packages の部分の差分が0行)
+- `core` は**アプリのビルドの設定 (`import.meta.env`) を読まない。** データと DuckDB-WASM の置き場所は、使う側が起動時に
+  `configureData`・`configureDuckDb` で渡す (Web サイトは `VITE_DATA_BASE_URL` などを渡す)。ほかのアプリでも使えるように
+- 言語の決め方 (`detectLang`・`lang`) は core が持ち、Web サイトはそれを使う (core の文言と画面の文言で言語がずれない)。
+  core が使う文言 (注記・CityGML の種類の呼び名など) は core の `i18n.ts` に移した
+- `igrc.ts` (SORA の表)・`detail.ts` (表示量の段。localStorage)・`view-params.ts` (URL) は Web サイトに残した。
+  `tiles.ts` (MapLibre) は C、`engines/*`・`cesium-pmtiles.ts` は B で動かす
+- 単体テストはワークスペースで流す (`pnpm -w run test:unit`。core 25件・Web サイト 12件)
+
+**このあと (分けたあと):** スタイル (Portolan の `style` アセット) を core に足す。ジオコーダーの口。既存の道具 (QGIS・GeoLibre) で開けるかの確認と
+Item の JSON (TOBE)。各パッケージの README (使い方の見本) は口が落ち着いてから。
 
 ### エンジン (2026-10-12)
 
@@ -65,9 +102,9 @@ MapLibre・MapLibre + deck.gl・MapLibre + Three.js・Cesium・Navara の5つ (2
 - **`@deck.gl/geo-layers` (TerrainLayer) が脆弱性のある部品を3つ引き込み、コミット前の確認 (`scripts/audit.sh`) で止まった** (2026-10-13)。
   `fflate` は直った版 (0.7.5) に固定した。`image-size`・`sprintf-js` は Node で画像を圧縮する道具 (`texture-compressor`) の依存で、
   **ブラウザに配る中身には入らない** (本番ビルドの出力で確かめた) ので、理由と外せる条件を添えて受け入れた (`sprintf-js` は直った版がまだ無い)。
-  設定は `web/pnpm-workspace.yaml` (pnpm 11 は `package.json` の `pnpm` を読まない)
+  設定は `pnpm-workspace.yaml` (10-18 からリポジトリの直下。pnpm 11 は `package.json` の `pnpm` を読まない)
   - **(10-16) 受け入れをやめ、依存から消した。** Dependabot は audit の受け入れを知らず、直せないまま失敗し続けた。
-    texture-compressor は @loaders.gl/textures が import せず Node の別のプロセスとして動かすだけなので、`web/.pnpmfile.cjs` で外した
+    texture-compressor は @loaders.gl/textures が import せず Node の別のプロセスとして動かすだけなので、`.pnpmfile.cjs` (10-18 からリポジトリの直下) で外した
     (任意の peer なので overrides の `-` は効かなかった)。配る中身 (dist の JS・WASM) は外す前と同じだった
 
 **MapLibre + Three.js をざっと入れた (2026-10-13、`web/src/lib/engines/three.ts`):**
@@ -94,7 +131,7 @@ MapLibre・MapLibre + deck.gl・MapLibre + Three.js・Cesium・Navara の5つ (2
 - **PLATEAU 配信サービスは LOD とテクスチャを URL で選べる** (`/datacatalog/3dtiles/<範囲>-<種類>-<LOD>[-interior][-<テクスチャ>]-<年>/tileset.json`。
   [API の説明](https://docs.plateauview.mlit.go.jp/api/rest/operations/datacatalog3dtilesspectilesetjson/))。カタログの `all-bldg-maxlod2-latest` は
   「LOD2 まで・テクスチャ優先」でいちばん重い組み合わせだった。**行の設定で LOD (1・2まで・3まで・4まで) とテクスチャ (あれば付ける・付けない) を選べる**ようにした
-  (`web/src/lib/plateau-tiles.ts`。カタログはそのまま、URL の spec を組み替える)
+  (`packages/core/src/plateau-tiles.ts`。カタログはそのまま、URL の spec を組み替える)
 - **利用者のブラウザで確かめた (10-15):** 既定の組み合わせではコンソールに `[three] tile cache full` が出た (**原因はキャッシュの上限で確定**)。
   「LOD2 まで・テクスチャ無し」と「LOD1」なら全部出る。あわせて出る `TilesRenderer: tiles versions at 1.1 or higher have limited support` は、
   PLATEAU が 3D Tiles 1.1 なので出る描き手の注意書き (描けてはいる)
@@ -675,6 +712,12 @@ Collection とは分けて扱う。いまは UI のコードに入っている (
   | `lib/tiles.ts` | 地図タイル: 背景地図・地形 (地理院の標高の変換)・外部のベクタータイル |
   | `lib/detail.ts` / `lib/igrc.ts` | 表示量の段 / SORA の地上リスクの表 |
   | `lib/wkb.ts` | ジオメトリ (GeoArrow の WKB) を GeoJSON に読む。`tests-unit/` に単体テスト |
+
+  (10-18 追記) `lib/` のうち地図に依らないもの (stac・sources・duckdb・queries・search・nearby・mesh・plateau-api・wkb など) は
+  `packages/core/src/` に移った (上の「全体方針」の「ライブラリに分ける」)。`tiles.ts`・`detail.ts`・`igrc.ts` は `web/src/lib/` のまま
+
+  | モジュール | 中身 |
+  | --- | --- |
   | `ui/map.ts` | 地図の初期化と、データの描き方 (色・太さ・層の並び) |
   | `ui/layers/` | データの種類ごとの描き方 (建物・人口メッシュ・鉄道・道路・送電線と川)。共通の道具は `DrawContext` |
   | `ui/collection-card.ts` | ⓘ のカード (カタログの中身・この範囲を取得・CityGML) |
@@ -828,7 +871,7 @@ Re:Earth Terrain (Terrarium) ＋ 地理院の写真 ＋ Re:Earth Buildings (3D T
   国全体 × z16 は作れない。見ている場所から半分以上離れたら作り直す。
   `origin/DanielZ/feat/MVT_implicit_tile` (9/30、未マージ) が「根だけ作り、下は要るときに作る」に変えるので、入ったら絞りは要らない
 - 層ごとの色は地物の `_layer` (MVT の層の名前) で `Cesium3DTileStyle` に分ける (層ごとのスタイルは `MVT_per-layer_styling` が未マージ)。
-  色は地図と共用 (`web/src/lib/vector-looks.ts`)
+  色は地図と共用 (`packages/core/src/vector-looks.ts`)
 - **確かめたこと:** E2E で、選ぶまで読まず、選ぶと PMTiles がヘッダのあとも Range で読まれ、外すと取り除かれる
   (地理院の PMTiles は叩かず、手元の別の PMTiles を代わりに返した)。**見た目 (地形や PLATEAU の上に貼られるか) は目で確かめていない**
 - **TOBE:** Cesium に PMTiles を渡す口ができれば、中継は要らない。投稿はしない
@@ -961,7 +1004,7 @@ JAXA の条件は「商用は事前に連絡」なので、`duck:terms` の `com
 
 - **JAXA の COG を UI が直接読む** (R2 には置かない)。独自のプロトコル (`cogdem://`) で地図のタイルを頼まれたら、
   表示の細かさに見合う段と縮小版を選び、掛かる COG (1〜4個) から要る窓だけを読み、Web メルカトルに並べ直して
-  Terrarium の画像にして返す (web/src/lib/cog-dem.ts)。地形も陰影も MapLibre の仕組みのまま
+  Terrarium の画像にして返す (packages/core/src/cog-dem.ts)。地形も陰影も MapLibre の仕組みのまま
 - 並べ方 (段ごとのファイルの広さ・画素数・URL の組み立て方) はカタログの `duck:dem` の `grid` に書く
   (UI に決め打ちしない)。**段 0 は 900 画素、段 1〜3 は 3,600 画素四方** (最初は段 1・2 も 900 と思い込み、
   引いた表示が東へずれた)。UI は画素の大きさをファイルの実際の幅から求める

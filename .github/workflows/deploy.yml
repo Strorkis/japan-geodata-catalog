@@ -52,7 +52,8 @@ jobs:
         with:
           node-version: lts/*
           cache: pnpm
-          cache-dependency-path: web/pnpm-lock.yaml
+          # lockfile はワークスペースの起点 (リポジトリの直下) に1つ。
+          cache-dependency-path: pnpm-lock.yaml
 
       - run: pnpm install --frozen-lockfile
 
@@ -64,11 +65,12 @@ jobs:
       - uses: actions/cache@v6
         with:
           path: web/.duckdb-extensions
-          key: duckdb-extensions-${{ hashFiles('web/pnpm-lock.yaml') }}
+          key: duckdb-extensions-${{ hashFiles('pnpm-lock.yaml') }}
 
       - run: pnpm exec tsc --noEmit
       # 画面も地図も要らない部品の単体テスト (WKB の読み取りなど)。Node が TypeScript をそのまま読む。
-      - run: pnpm test:unit
+      # ワークスペース全体 (Web サイトと packages/*) の単体テスト。web/ で `pnpm test:unit` だと web の分しか流れない。
+      - run: pnpm -w run test:unit
 
       # 未設定のままだとデータのURLが空でビルドされ、公開したアプリが何も読めない。ここで止める。
       - name: データの配信先が設定されているか確認

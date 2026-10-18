@@ -152,7 +152,7 @@ R2へのアップロードが要るとき) に更新すること。経緯や根�
 - **利用者に確かめてほしいことは、ボードの「確かめてほしいこと」に具体的な手順で書く** (開く URL・押すもの・見るべき点)。
   返答の中だけに書かない。確かめてもらったら消す
 - **全体が一目で分かるよう、判断と行動に要るものだけを載せる** (2026-10-12)。あなたの番・次にやること (5つまで。
-  ほかは roadmap)・待ち・未決の問い、数字は行動に結び付くもの (公開待ちのコミット・R2 の無料枠) だけ。
+  ほかは roadmap)・待ち・未決の問い、数字は行動に結び付くもの (公開待ちの PR・R2 の無料枠) だけ。
   1画面に収まるかを見る
 
 **コードの読みどころは読み物 [docs/tour.html](docs/tour.html) にまとめる** (ボードには載せず、見出しのリンクだけ)。
@@ -164,8 +164,12 @@ R2へのアップロードが要るとき) に更新すること。経緯や根�
 
 ```sh
 cd pipeline && cargo fmt && cargo clippy --all-targets -- -D warnings && cargo test
-cd web && pnpm exec tsc --noEmit && pnpm test && pnpm test:dist
+cd web && pnpm exec tsc --noEmit && pnpm -w run test:unit && pnpm test && pnpm test:dist
 ```
+
+**pnpm のワークスペースの起点はリポジトリの直下** (`pnpm-workspace.yaml`・`pnpm-lock.yaml`・`.pnpmfile.cjs`)。Web サイト (`web/`) と
+地図ライブラリごとの部品 (`packages/*`) が1つの lockfile を使う。単体テストは `pnpm -w run test:unit` で全部流れる
+(`web/` で `pnpm test:unit` だと web の分だけ)。
 
 **Web の E2E は CI では流さない** (2026-10-16、利用者の判断)。CI のランナーは GPU が無く、地図をソフトウェアで描いて
 時間切れになり、公開が止まったため。**push の前に手元で `pnpm test:dist` を全件流す** (1回30分前後)。

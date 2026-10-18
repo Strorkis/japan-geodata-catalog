@@ -4,11 +4,16 @@
  * **カタログに書いてあることだけを出す。** 絞り込みだけでは、行の裏にあるのがどの
  * Collection で、何ファイルあって、元の JSON はどこか、が画面から辿れない。
  */
-import type { Conn } from '../lib/duckdb';
-import { dataUrl, itemFile, type Bbox, type Collection, type DatasetKind } from '../lib/stac';
-import { EXACT_LOD, bboxOverlaps, type ViewBounds } from '../lib/sources';
-import { meshCodesInView } from '../lib/mesh';
-import { CITYGML_TYPES, fetchCityGmlFiles, packCityGml, type CityGmlFile } from '../lib/plateau-api';
+import type { Conn } from '@japan-geodata-catalog/core/duckdb';
+import { dataUrl, itemFile, type Bbox, type Collection, type DatasetKind } from '@japan-geodata-catalog/core/stac';
+import { EXACT_LOD, bboxOverlaps, type ViewBounds } from '@japan-geodata-catalog/core/sources';
+import { meshCodesInView } from '@japan-geodata-catalog/core/mesh';
+import {
+  CITYGML_TYPES,
+  fetchCityGmlFiles,
+  packCityGml,
+  type CityGmlFile,
+} from '@japan-geodata-catalog/core/plateau-api';
 import { DEM_ENCODING_LABELS, DEM_VERTICAL_LABELS, GEOMETRY_LABELS } from '../lib/tiles';
 import { externalLink, termsBadges } from './credits';
 import { formatBytes, saveBytes } from './download';

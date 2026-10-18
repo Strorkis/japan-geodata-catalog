@@ -11,7 +11,18 @@ pnpmfileChecksum: sha256-gbiOGM63zjpB5tMg2f8rwp1r6qY4i8THb1ao79Gvbds=
 
 importers:
 
-  .:
+  .: {}
+
+  packages/core:
+    dependencies:
+      '@duckdb/duckdb-wasm':
+        specifier: 1.33.1-dev57.0
+        version: 1.33.1-dev57.0
+      geotiff:
+        specifier: ^3.0.5
+        version: 3.0.5
+
+  web:
     dependencies:
       3d-tiles-renderer:
         specifier: ^0.5.3
@@ -31,6 +42,9 @@ importers:
       '@duckdb/duckdb-wasm':
         specifier: 1.33.1-dev57.0
         version: 1.33.1-dev57.0
+      '@japan-geodata-catalog/core':
+        specifier: workspace:*
+        version: link:../packages/core
       '@navaramap/three':
         specifier: ^0.2.1
         version: 0.2.1(@react-three/fiber@9.8.1(@types/react@19.3.0)(react@19.3.0)(three@0.186.1))(postprocessing@6.39.5(three@0.186.1))(react@19.3.0)(three@0.186.1)
@@ -40,9 +54,6 @@ importers:
       cesium:
         specifier: ^1.146.0
         version: 1.146.0
-      geotiff:
-        specifier: ^3.0.5
-        version: 3.0.5
       maplibre-gl:
         specifier: ^6.14.0
         version: 6.14.0

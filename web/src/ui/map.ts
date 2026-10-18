@@ -11,8 +11,8 @@ import {
   TerrainControl,
   type ExpressionSpecification,
 } from 'maplibre-gl';
-import type { Collection } from '../lib/stac';
-import { LINE_KINDS, type LineKind } from '../lib/sources';
+import type { Collection } from '@japan-geodata-catalog/core/stac';
+import { LINE_KINDS, type LineKind } from '@japan-geodata-catalog/core/sources';
 import { TERRAIN_SOURCE, baseStyle } from '../lib/tiles';
 import { buildDataCredits, collapseAttribution, watchAttributionHeight } from './credits';
 import { LAYER_ANCHORS } from './layer-list';

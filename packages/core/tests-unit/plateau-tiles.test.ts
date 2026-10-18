@@ -1,7 +1,7 @@
 // PLATEAU 配信サービスの 3D Tiles の spec (`<範囲>-<種類>-<LOD>[-interior][-<テクスチャ>]-<年>`) の組み替え。
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { plateauTilesChoice, plateauTilesetUrl } from '../src/lib/plateau-tiles.ts';
+import { plateauTilesChoice, plateauTilesetUrl } from '../src/plateau-tiles.ts';
 
 const API = 'https://api.plateauview.mlit.go.jp/datacatalog/3dtiles';
 

@@ -183,7 +183,7 @@ HTTP Range で末尾を読み、目次から欲しいファイルの位置だけ
 <p>Item は stac-geoparquet から、<b>その Collection の行グループだけ</b>を読む。行グループの統計で Collection の名前を比べたいが、
 DuckDB は文字列の統計を頭の数文字でしか比べないため、<code>parquet_metadata</code> から Collection ごとの行番号の範囲を求め、
 <code>file_row_number</code> で絞る。</p>`,
-        code: [{ file: 'web/src/lib/duckdb.ts', anchor: 'const collectionRows' }],
+        code: [{ file: 'packages/core/src/duckdb.ts', anchor: 'const collectionRows' }],
       },
       {
         id: 'files-in-view',
@@ -194,8 +194,8 @@ DuckDB は文字列の統計を頭の数文字でしか比べないため、<cod
 収録範囲が分からないファイルは落とさない (判断材料が無いので読む)。</p>
 <p>線の粗い段を使うズームは、カタログにある許容誤差から求める: 誤差が2画素以下に収まるズームまでは粗い段で足りる。</p>`,
         code: [
-          { file: 'web/src/lib/sources.ts', anchor: 'export function filesInView(' },
-          { file: 'web/src/lib/sources.ts', anchor: 'export function coarseLodUntilZoom(' },
+          { file: 'packages/core/src/sources.ts', anchor: 'export function filesInView(' },
+          { file: 'packages/core/src/sources.ts', anchor: 'export function coarseLodUntilZoom(' },
         ],
       },
       {
@@ -228,9 +228,9 @@ DuckDB は文字列の統計を頭の数文字でしか比べないため、<cod
 <p>鉄道を起点にしたときは<b>押した地点の前後1.5km</b>だけを起点にする。路線全体の沿線を丸ごと調べると R2 で1分半かかり、
 知りたいのはふつう駅や駅と駅の間くらい (利用者の判断)。行グループは都心で約2km四方あり、それより細い範囲は並べ方を変えないと絞れない。</p>`,
         code: [
-          { file: 'web/src/lib/nearby.ts', anchor: 'export function nearbyFrame(' },
-          { file: 'web/src/lib/nearby.ts', anchor: 'function nearbyCondition(' },
-          { file: 'web/src/lib/clip.ts', anchor: 'export function clipLines(' },
+          { file: 'packages/core/src/nearby.ts', anchor: 'export function nearbyFrame(' },
+          { file: 'packages/core/src/nearby.ts', anchor: 'function nearbyCondition(' },
+          { file: 'packages/core/src/clip.ts', anchor: 'export function clipLines(' },
         ],
       },
       {
@@ -265,8 +265,8 @@ R2 には何も置かない (カタログから公開元を直接読む)。</p>
 <li>geotiff.js は <code>blockSize</code> を渡さないと、内部タイルの位置の表を4バイトずつ読みに行く。64KB のブロックにまとめて、富士山 z11 で 1,403回 → 92回</li>
 </ul>`,
         code: [
-          { file: 'web/src/lib/cog-dem.ts', anchor: 'export function chooseCog(' },
-          { file: 'web/src/lib/cog-dem.ts', anchor: 'const open = (url: string) =>' },
+          { file: 'packages/core/src/cog-dem.ts', anchor: 'export function chooseCog(' },
+          { file: 'packages/core/src/cog-dem.ts', anchor: 'const open = (url: string) =>' },
         ],
         docs: [['format-survey.md', 'format-survey.md の「測ったこと: COG を読む」']],
       },
@@ -277,7 +277,7 @@ R2 には何も置かない (カタログから公開元を直接読む)。</p>
         body: `
 <p>DuckDB-WASM はジオメトリの列をそのまま返すと GeoArrow (WKB) で返す。<b>WKB を直接 GeoJSON のジオメトリに読む</b>小さな読み手を書いた。
 単体テストの見本は DuckDB の spatial で作った (WKB と GeoJSON の組)。</p>`,
-        code: [{ file: 'web/src/lib/wkb.ts', anchor: '  geometry(): GeoJSON.Geometry {', maxLines: 40 }],
+        code: [{ file: 'packages/core/src/wkb.ts', anchor: '  geometry(): GeoJSON.Geometry {', maxLines: 40 }],
       },
       {
         id: 'draw-shape',
@@ -295,7 +295,7 @@ R2 には何も置かない (カタログから公開元を直接読む)。</p>
         body: `
 <p>DuckDB-WASM の <code>COPY … TO</code> でブラウザの中で GeoParquet を書き、<b>出典・規約・配布元を KV メタデータに入れる</b>。
 ライセンスを持ち回れるようにするのが、このリポジトリの軸の1つ。</p>`,
-        code: [{ file: 'web/src/lib/duckdb.ts', anchor: 'const exportParquet = async' }],
+        code: [{ file: 'packages/core/src/duckdb.ts', anchor: 'const exportParquet = async' }],
       },
       {
         id: 'layer-order',

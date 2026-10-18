@@ -10,7 +10,8 @@ import {
   setStyleBasemapOpacity,
   type VectorOverlay,
 } from './lib/tiles';
-// データの出所 (GeoParquet のファイル群) と、表示範囲から読むファイルを選ぶ部品は lib/sources.ts。
+// **地図に依らない部品は `@japan-geodata-catalog/core`** (packages/core)。
+// データの出所 (GeoParquet のファイル群) と、表示範囲から読むファイルを選ぶ部品は sources。
 import {
   unionBbox,
   type BuildingSource,
@@ -19,11 +20,11 @@ import {
   type RailwaySource,
   type RoadSource,
   type ViewBounds,
-} from './lib/sources';
-// DuckDB-WASM の初期化とデータの出所の組み立ては lib/duckdb.ts、
-// 表示範囲の問い合わせは lib/queries.ts、検索は lib/search.ts (検索欄は ui/search-box.ts)。
-import { initDuckDb, type Conn } from './lib/duckdb';
-import { coverageInView } from './lib/queries';
+} from '@japan-geodata-catalog/core/sources';
+// DuckDB-WASM の初期化とデータの出所の組み立ては duckdb、
+// 表示範囲の問い合わせは queries、検索は search (検索欄は ui/search-box.ts)。
+import { configureDuckDb, initDuckDb, type Conn } from '@japan-geodata-catalog/core/duckdb';
+import { coverageInView } from '@japan-geodata-catalog/core/queries';
 import { DETAIL_LEVELS, loadDetailLevel, saveDetailLevel, type DetailLevel, type DetailSettings } from './lib/detail';
 // 画面の部品は ui/。地図の初期化と描き方は map.ts、左下の一覧とカタログのダイアログは layer-list.ts。
 import { EMPTY_FEATURE_COLLECTION, buildingTilesLayerId, initMap } from './ui/map';
@@ -38,7 +39,7 @@ import { LAYER_ANCHORS, createLayerList, selectField, sliderSettings, type Layer
 import { renderCredits, renderTechCredits, renderTermsSummary } from './ui/credits';
 import { createStacViewer } from './ui/stac-viewer';
 import { createHover } from './ui/hover';
-// 周辺検索のパネルは ui/nearby-panel.ts (問い合わせは lib/nearby.ts)。
+// 周辺検索のパネルは ui/nearby-panel.ts (問い合わせは core の nearby)。
 import { createNearbyPanel } from './ui/nearby-panel';
 import { createCollectionCards } from './ui/collection-card';
 import { createSearchBox } from './ui/search-box';
@@ -56,9 +57,9 @@ import {
   textureSelectable,
   type PlateauLod,
   type PlateauTilesChoice,
-} from './lib/plateau-tiles';
+} from '@japan-geodata-catalog/core/plateau-tiles';
 import { hoverContent, vectorHover } from './ui/hover-rows';
-import { vectorThemeLook } from './lib/vector-looks';
+import { vectorThemeLook } from '@japan-geodata-catalog/core/vector-looks';
 import type { View } from './lib/view-params';
 import { applyHtmlText, lang, m, urlWithLang } from './i18n';
 // MapLibreは既定では new URL(`./${名前}`, import.meta.url) でワーカーを探すが、
@@ -70,8 +71,9 @@ import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&ur
 
 setWorkerUrl(maplibreWorkerUrl);
 
-// カタログ (STAC) を読む部分は lib/stac.ts。画面にも地図にも依存しない。
+// カタログ (STAC) を読む部分は core の stac。画面にも地図にも依存しない。
 import {
+  configureData,
   dataUrl,
   fetchCollections,
   itemsLoaded,
@@ -80,7 +82,13 @@ import {
   type Bbox,
   type Collection,
   type DatasetKind,
-} from './lib/stac';
+} from '@japan-geodata-catalog/core/stac';
+
+// **データと DuckDB-WASM の置き場所を core に渡す** (core はこのアプリのビルドの設定を読まない)。
+// 公開時はオブジェクトストレージの URL を VITE_DATA_BASE_URL で渡す。DuckDB-WASM は同じオリジンの duckdb/
+// (vite.config.ts が配る)。どちらも、ほかのモジュールがカタログを読むより前に決める。
+configureData(import.meta.env.VITE_DATA_BASE_URL ?? `${import.meta.env.BASE_URL}data`);
+configureDuckDb(import.meta.env.VITE_DUCKDB_BASE_URL ?? `${import.meta.env.BASE_URL}duckdb`);
 
 /** E2Eテストのために公開するもの。アプリ本体はこれを参照しない。 */
 interface TestHooks {
@@ -553,7 +561,7 @@ async function main() {
     return choice ? plateauTilesetUrl(href, choice) : href;
   };
   /**
-   * 3D Tiles の行の設定。**PLATEAU の配信なら LOD とテクスチャを選べる** (重さが大きく違う。lib/plateau-tiles.ts)。
+   * 3D Tiles の行の設定。**PLATEAU の配信なら LOD とテクスチャを選べる** (重さが大きく違う。core の plateau-tiles.ts)。
    * ほかの 3D Tiles には選ぶものが無いので空 (設定のボタンも出ない)。
    */
   const tilesSettings = (collection: Collection) => {
@@ -572,7 +580,7 @@ async function main() {
       (texture) => choose({ texture }),
     );
     const textureSelect = texture.querySelector('select')!;
-    // LOD1 ではテクスチャを選べない (配信の登録の都合で、指定すると何も出ない。lib/plateau-tiles.ts)。
+    // LOD1 ではテクスチャを選べない (配信の登録の都合で、指定すると何も出ない。core の plateau-tiles.ts)。
     const reflectLod = (lod: PlateauLod) => {
       textureSelect.disabled = !textureSelectable(lod);
       textureSelect.title = textureSelect.disabled ? m.tilesTextureNotForLod1 : '';

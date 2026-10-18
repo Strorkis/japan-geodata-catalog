@@ -1,7 +1,7 @@
 // COG の標高 (AW3D30) の並べ方から、読むファイルと段を選ぶ部品の単体テスト。
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { chooseCog, cogUrl, tileBounds, type CogGrid } from '../src/lib/cog-dem.ts';
+import { chooseCog, cogUrl, tileBounds, type CogGrid } from '../src/cog-dem.ts';
 
 /** JAXA Earth API の AW3D30 と同じ並べ方。 */
 const GRID: CogGrid = {

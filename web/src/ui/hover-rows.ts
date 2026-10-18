@@ -4,7 +4,7 @@
  */
 // 拡張子を付けておく (単体テストが Node から直接読むため。Node は拡張子を補わない)。
 import { m } from '../i18n/index.ts';
-import type { Collection } from '../lib/stac.ts';
+import type { Collection } from '@japan-geodata-catalog/core/stac';
 
 /** [項目名, 値]。**項目名が空なら見出し**。値が null の行は出さない。 */
 export type HoverRows = [string, string | null][];

@@ -1,0 +1,17 @@
+{
+  "name": "@japan-geodata-catalog/core",
+  "description": "地図に依らない部品: カタログ (STAC) を読む・DuckDB-WASM で引く・問い合わせ・WKB・出典の取りまとめ",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "test:unit": "node --test 'tests-unit/*.test.ts'"
+  },
+  "dependencies": {
+    "@duckdb/duckdb-wasm": "1.33.1-dev57.0",
+    "geotiff": "^3.0.5"
+  }
+}

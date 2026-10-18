@@ -3,7 +3,7 @@
  * 問い合わせ (DuckDB) からも画面からも使う。地図には依存しない。
  */
 import { dataUrl, type Bbox, type Collection, type ItemFile, type Tiers } from './stac';
-import { m } from '../i18n';
+import { m } from './i18n';
 
 /** 地図の表示範囲。 */
 export interface ViewBounds {

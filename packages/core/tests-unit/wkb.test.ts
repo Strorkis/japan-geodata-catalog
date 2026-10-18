@@ -3,7 +3,7 @@
 // 起動が要らないので、E2E ではなくここで確かめる。
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseWkb } from '../src/lib/wkb.ts';
+import { parseWkb } from '../src/wkb.ts';
 
 const hex = (text: string) => Uint8Array.from(text.match(/../g)!.map((byte) => parseInt(byte, 16)));
 

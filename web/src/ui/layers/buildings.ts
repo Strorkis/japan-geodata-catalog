@@ -8,15 +8,15 @@
  * ズームで出し方が変わる: 全部 / 重要な段だけ (間引き) / 整備範囲のメッシュ ([`buildingDepth`])。
  */
 import type { ExpressionSpecification, FilterSpecification, GeoJSONSource } from 'maplibre-gl';
-import { sourceLodNote, type BuildingSource } from '../../lib/sources';
+import { sourceLodNote, type BuildingSource } from '@japan-geodata-catalog/core/sources';
 import { registerPmtiles } from '../../lib/tiles';
-import { MESH_SIZE_LABELS, meshDigits } from '../../lib/mesh';
+import { MESH_SIZE_LABELS, meshDigits } from '@japan-geodata-catalog/core/mesh';
 import {
   coverageFeatureCollection,
   fetchBuildingsInView,
   fetchCoverageInView,
   type BuildingFilter,
-} from '../../lib/queries';
+} from '@japan-geodata-catalog/core/queries';
 import {
   BUILDING_COLOR_BY_HEIGHT,
   BUILDING_COLOR_BY_TIER,

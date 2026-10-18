@@ -5,7 +5,7 @@
  * ものとずれる。表示義務のある出典が抜けるのはライセンス違反になるため、データ側に追随させる。
  */
 import type { Map as MapLibreMap } from 'maplibre-gl';
-import type { Collection, Terms } from '../lib/stac';
+import type { Collection, Terms } from '@japan-geodata-catalog/core/stac';
 import { lang, m } from '../i18n';
 
 /** 外部へのリンク。別タブで開き、参照元を渡さない。 */

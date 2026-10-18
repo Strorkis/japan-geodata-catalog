@@ -9,7 +9,7 @@
 import type { Conn } from './duckdb';
 import { tierExpression, type ItemFile } from './stac';
 import { geometryOf } from './wkb';
-import { m } from '../i18n';
+import { m } from './i18n';
 import {
   EXACT_LOD,
   filesInView,

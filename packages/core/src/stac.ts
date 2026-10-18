@@ -392,18 +392,24 @@ export interface Collection {
  * GeoParquetの置き場所。
  *
  * 開発時は同一オリジンの /data/ (vite.config.ts が data/output/ を配信する)。
- * 公開時はオブジェクトストレージのURLを VITE_DATA_BASE_URL で渡す。
+ * 公開時はオブジェクトストレージの URL。
  * 別オリジンになるので、置き場所側のCORSで
  * `Access-Control-Expose-Headers: Content-Range, Content-Length, Accept-Ranges`
  * を返すこと。これが無いとDuckDB-WASMがファイルサイズを取得できず、
  * 部分取得に失敗して黙って全件ダウンロードに落ちる。
+ *
+ * **置き場所は使う側が [`configureData`] で渡す** (core はアプリのビルドの設定を読まない)。渡さなければ、
+ * ページと同じ場所の `data/`。Web サイトは `VITE_DATA_BASE_URL` (無ければ `<base>/data`) を渡す。
  */
-const DATA_BASE_URL = (
-  import.meta.env.VITE_DATA_BASE_URL ?? `${import.meta.env.BASE_URL}data`
-).replace(/\/$/, '');
+let dataBaseUrl = 'data';
+
+/** カタログとデータの置き場所 (起点) を決める。**カタログを読む前に**呼ぶ。 */
+export function configureData(baseUrl: string): void {
+  dataBaseUrl = baseUrl.replace(/\/$/, '');
+}
 
 export function dataUrl(file: string): string {
-  return new URL(`${DATA_BASE_URL}/${file}`, window.location.href).toString();
+  return new URL(`${dataBaseUrl}/${file}`, window.location.href).toString();
 }
 
 /**

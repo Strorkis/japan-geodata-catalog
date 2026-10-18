@@ -1,14 +1,14 @@
 /**
  * **検索と逆ジオコーディングの問い合わせ** (DuckDB)。画面にも地図にも依存しない。
  *
- * 引く先は、初期化 (lib/duckdb.ts) が作るビュー: `admin` `admin_names` `isj_oaza`
+ * 引く先は、初期化 (duckdb.ts) が作るビュー: `admin` `admin_names` `isj_oaza`
  * `station` `section` `road_route` `road`。地名・駅・路線は検索するまでビューを作らない
  * (`ensureOaza` などを先に呼ぶ)。
  */
 import type { Conn } from './duckdb';
 import type { Bbox } from './stac';
 import { geometryOf } from './wkb';
-import { m } from '../i18n';
+import { m } from './i18n';
 
 /**
  * 検索結果。
