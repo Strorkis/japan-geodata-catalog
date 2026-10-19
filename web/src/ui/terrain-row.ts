@@ -74,7 +74,7 @@ export function createTerrainRow({ map, collections, openDetails, mapLibreDrawsT
     showHillshade();
     apply();
   });
-  // 起伏の強調は ⚙ で行の下に開く (地図を見ながら動かすもの)。
+  // 起伏の強調は ▸ で行の下に開く (地図を見ながら動かすもの)。
   slotEl.append(
     sliderSettings(m.exaggeration, 1, 3, 0.5, 1, (v) => `×${v}`, (v) => {
       exaggeration = v;
@@ -105,6 +105,7 @@ export function createTerrainRow({ map, collections, openDetails, mapLibreDrawsT
   settingsButton.addEventListener('click', () => {
     slotEl.hidden = !slotEl.hidden;
     settingsButton.setAttribute('aria-expanded', String(!slotEl.hidden));
+    settingsButton.textContent = slotEl.hidden ? '▸' : '▾';
   });
   detailButton.addEventListener('click', () => {
     if (choice) openDetails(choice);

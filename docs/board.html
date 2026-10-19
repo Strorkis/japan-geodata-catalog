@@ -225,7 +225,7 @@
   <body>
     <header>
       <h1>japan-geodata-catalog ダッシュボード</h1>
-      <span class="meta">更新 2026-10-18 22:30 (日本時間)</span>
+      <span class="meta">更新 2026-10-19 22:05 (日本時間)</span>
       <span class="meta">
         <a href="https://strorkis.github.io/japan-geodata-catalog/">公開サイト (改名後の URL)</a> ·
         <a href="roadmap.md">方針 (roadmap)</a> ·
@@ -241,7 +241,7 @@
       <div class="card kpi">
         <div class="label">公開待ちの PR</div>
         <div class="value">1 <small>件</small></div>
-        <span class="status you">ライブラリに分ける D (refactor/pipeline-crate-name)</span>
+        <span class="status you">一覧の使いやすさ (fix/layer-list-usability)</span>
       </div>
       <div class="card kpi">
         <div class="label">R2 の配信データ (手元の data/output)</div>
@@ -258,15 +258,11 @@
       <h2>公開までの残り</h2>
       <ol class="steps">
         <li class="current">
-          <b>ブランチ <code>refactor/pipeline-crate-name</code> を push → PR を見てマージ</b><span class="status you">あなたの番</span>
+          <b>ブランチ <code>fix/layer-list-usability</code> を push → PR を見てマージ</b><span class="status you">あなたの番</span>
           <span class="sub">
-            ライブラリに分ける作業の最後 (Rust のクレートを <code>japan-geodata-pipeline</code> に。pyproject の名前と表示量を覚える鍵も)。画面は変わらない。
+            気付いてもらった4点のうち3点 (バーと検索欄の重なり・区分の名前と説明・歯車を ▸/▾ に) と、ブラウザーの拡張の案を roadmap に。
             push のあと私が PR を作る。PR の「読むべき所」を見てから、マージコミットでマージ
           </span>
-        </li>
-        <li>
-          <b>公開を確かめる</b><span class="status you">あなたの番</span>
-          <span class="sub">新しい URL の実サイトで間引き・地理院・周辺検索・バーでの切り替えを触る</span>
         </li>
       </ol>
     </section>
@@ -277,11 +273,19 @@
         <h2>次にやること</h2>
         <ol class="tasks">
           <li>
-            <b>ライブラリに分ける</b> <span class="status todo">D を PR に</span>
+            <b>背景地図の欄</b> <span class="status todo">次の PR</span>
+            <span class="sub">地形と同じ形 (チェック + 選択) で、選ぶだけで切り替える。重ねたい地図は今までどおり「＋ 追加」(利用者が選んだ)</span>
+          </li>
+          <li>
+            <b>スタイルと 3D Tiles の不透明度</b>
             <span class="sub">
-              A ワークスペースと core・B エンジン・C 地図タイル (済み) → D Rust のクレート名。このあとはスタイル (Portolan の
-              <code>style</code> アセット)・3D Tiles の不透明度。データの行の描き方を部品にするのは TOBE (roadmap「ライブラリに分ける」)
+              スタイルを Portolan の <code>style</code> アセットとして持つ。ライブラリに分ける作業 (A〜D) は済んだ。
+              データの行の描き方を部品にするのは TOBE (roadmap「ライブラリに分ける」)
             </span>
+          </li>
+          <li>
+            <b>触って気付いたこと (10-19)</b>
+            <span class="sub">吹き出しを出さないモード・PLATEAU の整備範囲を細かく・表示量を項目ごとに (建物を中心から ○ m まで、など)。roadmap「触って気付いたこと」</span>
           </li>
           <li>
             <b>ジオコーダーを並べる</b>

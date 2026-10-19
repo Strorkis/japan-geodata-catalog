@@ -93,20 +93,22 @@
                  外すのは行の ✕。チェックを外しても一覧からは消えない。
                  どちらの区分も、上の行が上に重なる (行の ⋮⋮ を掴んで並べ替える)。
                  重なりの説明は区分の見出しには書かない (短く言うと「上ほど上」になり、かえって読めない)。 -->
-            <!-- **データ**: GeoParquet。検索や周辺検索の対象になる。 -->
+            <!-- **区分の名前は、できることで言う** (2026-10-19、利用者。「データ」「地図タイル」では、地図タイルもデータで見るだけだと読めた)。
+                 見出しの吹き出し (title) に、何を指すかを書く (カタログのダイアログのタブの下と同じ文)。 -->
+            <!-- **問い合わせできるデータ**: このカタログが変換して置いた GeoParquet。検索や周辺検索の対象になる。 -->
             <section id="data-section" class="layer-section">
               <div class="layer-section-title">
-                <span data-i18n="sectionData">データ</span>
+                <span data-i18n="sectionData" title="このカタログが変換して置いているデータです。表示している範囲だけを読み、検索・周辺検索・範囲の取得に使えます。" data-i18n-title="sectionDataNote">問い合わせできるデータ</span>
                 <button type="button" class="layer-add-button" data-section="data" title="カタログからデータを追加" data-i18n-title="addDataTitle" data-i18n="add">＋ 追加</button>
               </div>
               <div id="layer-rows"></div>
               <p id="layer-empty" class="layer-empty" data-i18n="layerEmpty" hidden>「＋ 追加」から使うデータを選んでください</p>
             </section>
-            <!-- **地図タイル**: 見るだけのもの (ベクタータイル・背景地図・標高)。調べられないことを見出しで言う。 -->
+            <!-- **表示するだけの地図**: 公開元の配信をそのまま描くもの (ベクタータイル・背景地図・標高・3D Tiles)。調べられないことを名前で言う。 -->
             <section id="tile-section" class="layer-section">
               <div class="layer-section-title">
-                <span><span data-i18n="sectionTile">地図タイル</span> <span class="layer-section-note" data-i18n="viewOnlyNote">表示のみ</span></span>
-                <button type="button" class="layer-add-button" data-section="tile" title="カタログから地図タイルを追加" data-i18n-title="addTileTitle" data-i18n="add">＋ 追加</button>
+                <span data-i18n="sectionTile" title="公開元の配信 (地図タイル・ベクトルタイル・標高・3D Tiles) を、そのまま表示します。問い合わせには使えません。" data-i18n-title="sectionTileNote">表示するだけの地図</span>
+                <button type="button" class="layer-add-button" data-section="tile" title="カタログから地図を追加" data-i18n-title="addTileTitle" data-i18n="add">＋ 追加</button>
               </div>
               <div id="tile-rows"></div>
               <p id="tile-empty" class="layer-empty" data-i18n="tileEmpty" hidden>「＋ 追加」から背景地図などを選んでください</p>
@@ -115,7 +117,7 @@
                 <div class="layer-head">
                   <input type="checkbox" id="terrain-toggle" />
                   <label class="layer-name" for="terrain-toggle" data-i18n="terrain3d">地形 (立体)</label>
-                  <button type="button" id="terrain-settings" class="layer-settings-button" title="起伏の強調" data-i18n-title="terrainExaggeration" aria-expanded="false">⚙</button>
+                  <button type="button" id="terrain-settings" class="layer-settings-button" title="起伏の強調" data-i18n-title="terrainExaggeration" aria-expanded="false">▸</button>
                   <button type="button" id="terrain-detail" class="layer-detail-button" title="この標高について (形式・出所)" data-i18n-title="terrainDetailTitle">ⓘ</button>
                 </div>
                 <!-- どの標高を使うか。2段目に置く (1段目に詰めると「地形」が押し潰された)。 -->
@@ -128,7 +130,7 @@
               </div>
             </section>
             <div id="view-settings">
-              <!-- 表示量もレイヤーをまたぐ設定なので、個別の⚙ではなくここに置く。 -->
+              <!-- 表示量もレイヤーをまたぐ設定なので、個別の▸ではなくここに置く。 -->
               <div id="detail-section">
                 <p class="layer-heading" data-i18n="detailLevel">表示量</p>
                 <select id="detail-level" title="出しきれないときは上げ、重いときは下げてください" data-i18n-title="detailLevelTitle"></select>
@@ -136,15 +138,15 @@
             </div>
             </div>
           </div>
-          <!-- 絞り込み・色分けの置き場。**一覧の行の ⚙ を押すと、その行の下へ移す**
+          <!-- 絞り込み・色分けの置き場。**一覧の行の ▸ を押すと、その行の下へ移す**
                (地図を見ながら動かすものなので、地図を覆うダイアログには入れない)。
                閉じているあいだはここで隠しておく。 -->
           <div id="layer-settings-store" hidden></div>
         </div>
-        <!-- 建物の設定。一覧の行の ⚙ で、その行の下へ移す。 -->
+        <!-- 建物の設定。一覧の行の ▸ で、その行の下へ移す。 -->
         <div id="buildings-section" hidden>
           <!-- 出所 (PLATEAU / Overture) の選択欄はもう無い。一覧で出所ごとに
-               行が分かれ、どちらの ⚙ から開いたかでこのパネルの向き先が決まる。
+               行が分かれ、どちらの ▸ から開いたかでこのパネルの向き先が決まる。
                「建物のある範囲へ移動」と「収録範囲を枠で示す」もやめた。どこに
                あるかは整備範囲のメッシュと一覧の「この範囲には無い」が示す。 -->
           <!-- **重要度の段。** 用途 (十数個) を3段にまとめたもの。段の規則はカタログの
@@ -299,7 +301,7 @@
           <ul>
             <li><b>＋ 追加</b>から、データや背景地図を選びます。語を入れて<b>絞り込</b>めます</li>
             <li>チェックで表示を切り替え、<b>⋮⋮</b> をドラッグして重ね順を変えます</li>
-            <li><b>⚙</b> は絞り込みと色分け、<b>▸</b> は中の層の出し入れ、<b>ⓘ</b> はデータの説明と<b>この範囲を取得</b>です</li>
+            <li><b>▸</b> は行の下に絞り込み・色分け (地図のテーマでは中の層) を開き、<b>ⓘ</b> はデータの説明と<b>この範囲を取得</b>です</li>
             <li>地図の上の建物などに<b>カーソルを合わせる</b>と (スマホでは押すと)、名前などが出ます</li>
           </ul>
           <h3>困ったとき</h3>
@@ -334,11 +336,13 @@
         <!-- タブ・絞り込み・目次は、下へ送っても上に残す (長くなっても見失わない)。 -->
         <div class="catalog-controls">
           <div class="catalog-tabs" role="tablist">
-            <button type="button" class="catalog-tab" role="tab" data-section="data">データ</button>
-            <button type="button" class="catalog-tab" role="tab" data-section="tile">地図タイル</button>
-            <!-- この地図では描けないもの (3D Tiles・配っていない元データ)。足せないので分ける。 -->
-            <button type="button" class="catalog-tab" role="tab" data-section="view">見るだけ・元データ</button>
+            <button type="button" class="catalog-tab" role="tab" data-section="data">問い合わせできるデータ</button>
+            <button type="button" class="catalog-tab" role="tab" data-section="tile">表示するだけの地図</button>
+            <!-- 配っていない元データ (出所と使う条件だけ)。足せないので分ける。 -->
+            <button type="button" class="catalog-tab" role="tab" data-section="view">出所だけ</button>
           </div>
+          <!-- 選んでいるタブが何を指すか (ui/layer-list.ts が書く)。 -->
+          <p id="catalog-tab-note" class="catalog-tab-note"></p>
           <!-- 出所の並びのまま、同じ種類のものを横断して探す (「送電」で両方の送電線)。
                中の層の名前でも当たり、当たった層だけを足せる (「水部」)。 -->
           <input

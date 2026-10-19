@@ -158,7 +158,7 @@ async function openInfoDialog(
 }
 
 /**
- * レイヤーの設定を開く。一覧の ⚙ を押すと、**パネルの中身が入れ替わる**
+ * レイヤーの設定を開く。一覧の ▸ を押すと、**パネルの中身が入れ替わる**
  * (重ねて出すと結局縦に伸びるため)。
  */
 /**
@@ -216,7 +216,7 @@ async function revealLayer(page: Page, layer: string) {
 }
 
 /**
- * 行の ⚙ で、絞り込み・色分けを**その行の下に**開く (地図を覆わない)。
+ * 行の ▸ で、絞り込み・色分けを**その行の下に**開く (地図を覆わない)。
  * 開いていればそのまま。
  */
 async function openLayerSettings(page: Page, layer: string) {
@@ -355,6 +355,23 @@ test('初期化が完了し、地図と検索欄が使える状態になる', as
   await expect(page.locator('#search-input')).toBeFocused();
 });
 
+/** **エンジンのバーは、どの幅でも検索欄と重ならない** (間の幅で重なっていた。2026-10-19、利用者)。 */
+test('エンジンのバーは画面の幅によらず検索欄と重ならない', async ({ page }) => {
+  for (const width of [1400, 1241, 1240, 1000, 760, 400]) {
+    await page.setViewportSize({ width, height: 800 });
+    const [bar, search] = await Promise.all([
+      page.locator('#engine-bar').boundingBox(),
+      page.locator('#search-panel').boundingBox(),
+    ]);
+    const overlaps =
+      bar!.x < search!.x + search!.width &&
+      search!.x < bar!.x + bar!.width &&
+      bar!.y < search!.y + search!.height &&
+      search!.y < bar!.y + bar!.height;
+    expect(overlaps, `幅 ${width}px`).toBe(false);
+  }
+});
+
 // 検索欄と地図しか無いと、クリックやホバーで何が起きるのか分からない。
 // 公開して最初に触る人がここで止まるので、操作は画面に書いておく。
 test('使い方に操作が一通り書かれている', async ({ page }) => {
@@ -365,7 +382,9 @@ test('使い方に操作が一通り書かれている', async ({ page }) => {
   await expect(help).toContainText('クリック');
   await expect(help).toContainText('カーソルを合わせる');
   // 画面のボタンは、同じ記号で全部説明されていること。
-  for (const mark of ['📍', '◎', '⚙', 'ⓘ', '▸']) await expect(help).toContainText(mark);
+  for (const mark of ['📍', '◎', 'ⓘ', '▸']) await expect(help).toContainText(mark);
+  // 歯車はもう使わない (開閉の印 ▸ にそろえた)。使い方に残っていると、画面に無い印を探させる。
+  await expect(help).not.toContainText('⚙');
   await expect(help).toContainText('背景地図');
   await expect(help).toContainText('周り');
   await expect(help).toContainText('絞り込');
@@ -392,7 +411,8 @@ test('英語の画面に切り替えられ、日本語へ戻れる', async ({ pa
   await expect(page.locator('#help')).toContainText('Esc');
   await page.locator('#help-dialog .info-dialog-close').click();
   await page.locator('.layer-add-button[data-section="data"]').click();
-  await expect(page.locator('.catalog-tab[data-section="view"]')).toContainText('View only');
+  await expect(page.locator('.catalog-tab[data-section="view"]')).toContainText('Sources only');
+  await expect(page.locator('#catalog-tab-note')).toContainText('Data this catalog converted');
   await expect(page.locator('[data-catalog-layer] .catalog-add').first()).toHaveText(/Add|Added/);
   // 見出しは英語版のカタログの題名 (「国土数値情報」ではなく National Land Numerical Information)。
   const groups = (await readBundle(page, 'collections.en.json'))['duck:catalogs'].map((c) => c.title);
@@ -1082,7 +1102,7 @@ test('背景地図はカタログから足すと上に重なり、隠しても�
   await dragRow(page, BASEMAP.pale, BASEMAP.photo, 'above');
   await expect.poll(() => visibleBasemaps(page)).toEqual([BASEMAP.photo, BASEMAP.pale]);
 
-  // 不透明度は行の ⚙ で変えられる (地図を見ながら動かすので、行の下に開く)。
+  // 不透明度は行の ▸ で変えられる (地図を見ながら動かすので、行の下に開く)。
   await openLayerSettings(page, BASEMAP.pale);
   await page.locator(`[data-layer="${BASEMAP.pale}"] .layer-settings-slot input[type="range"]`).fill('40');
   await expect
@@ -2747,7 +2767,7 @@ test('カタログのダイアログはカタログの階層で並ぶ', async ({
 });
 
 /**
- * ⚙ を開くと、**その行がカタログのどこから来ているか**が出る。
+ * ▸ を開くと、**その行がカタログのどこから来ているか**が出る。
  *
  * 絞り込みだけだと、行の裏にあるのがどのCollectionで、何ファイルあって、
  * 元のJSONはどこかが画面から辿れない。
@@ -2840,7 +2860,7 @@ test('設定を開いてもパネルは画面に収まる', async ({ page }) => 
 
   // 開いても**一覧はそのまま**触れる (他の行のチェックボックスが見える)。
   await expect(page.locator(`#layer-toggle-${LAYER.plateauBuildings}`)).toBeVisible();
-  // もう一度 ⚙ で閉じる。
+  // もう一度 ▾ で閉じる。
   await page.locator(`[data-layer="${LAYER.plateauBuildings}"] .layer-settings-button`).click();
   await expect(page.locator('.layer-settings-slot')).toHaveCount(0);
 });
@@ -4316,14 +4336,15 @@ test('地理院のベクトルタイルは、ズームを変えても層ごと�
 
 /**
  * **カタログが長くなっても探せる。** 足せないもの (配っていない元データ) は
- * 「見るだけ・元データ」のタブに分け、足せるものの間に混ぜない。出所が複数あれば目次から飛べる。
- * 3D Tiles は Cesium で描けるので、足せる側 (地図タイル) にある。
+ * 「出所だけ」のタブに分け、足せるものの間に混ぜない。出所が複数あれば目次から飛べる。
+ * 3D Tiles は Cesium で描けるので、足せる側 (表示するだけの地図) にある。**タブの下に、何を指すかが出る。**
  */
 test('足せないものは別のタブに分け、目次から出所へ飛べる', async ({ page }) => {
   await page.locator('.layer-add-button[data-section="tile"]').click();
   const dialog = page.locator('#layer-catalog-dialog');
   const tab = (section: string) => dialog.locator(`.catalog-tab[data-section="${section}"]`);
   const adds = dialog.locator('[data-catalog-layer] .catalog-add');
+  const note = dialog.locator('#catalog-tab-note');
 
   // 足せるタブには「描けません」が無い。
   for (const section of ['data', 'tile']) {
@@ -4331,12 +4352,14 @@ test('足せないものは別のタブに分け、目次から出所へ飛べ�
     await expect(adds.filter({ hasText: '描けません' })).toHaveCount(0);
   }
 
-  // 3D Tiles は地図タイルのタブで足せる (MapLibre では灰色、Cesium で描く)。
+  // 3D Tiles は表示するだけの地図のタブで足せる (MapLibre では灰色、Cesium で描く)。
   await tab('tile').click();
+  await expect(note).toContainText('そのまま表示します');
   await expect(dialog.locator('[data-catalog-layer="reearth-buildings"] .catalog-add')).toBeEnabled();
 
-  // 見るだけのタブは、どれも足せない (配っていない元データ)。
+  // 出所だけのタブは、どれも足せない (配っていない元データ)。
   await tab('view').click();
+  await expect(note).toContainText('配っていない');
   await expect(dialog.locator('[data-catalog-layer="reearth-buildings"]')).toHaveCount(0);
   for (const id of ['nasa-nasadem', 'gsi-dem-source', 'osm-standard-tiles']) {
     await expect(dialog.locator(`[data-catalog-layer="${id}"] .catalog-add`)).toBeDisabled();

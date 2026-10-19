@@ -932,7 +932,7 @@ body,
   color: #888;
 }
 
-/* テーマの中の層を開く。⚙ と同じく控えめなボタン。 */
+/* テーマの中の層を開く。絞り込みを開く ▸ と同じく控えめなボタン。 */
 .layer-expander {
   flex: none;
   border: none;
@@ -975,7 +975,7 @@ body,
   color: #999;
 }
 
-/* 絞り込み・色分け。**⚙ を押した行の下に開く** (地図を見ながら動かすので、地図を覆わない)。
+/* 絞り込み・色分け。**▸ を押した行の下に開く** (地図を見ながら動かすので、地図を覆わない)。
    行の字下げに合わせ、左の線で「この行の設定」と分かるようにする。 */
 .layer-settings-slot,
 #terrain-slot {
@@ -1008,12 +1008,12 @@ body,
   display: none;
 }
 
-/* 開いている設定の ⚙。押せば閉じることが分かるようにする。 */
+/* 開いている設定の ▾。押せば閉じることが分かるようにする。 */
 .layer-settings-button[aria-expanded='true'] {
   color: #14508c;
 }
 
-/* 「このデータについて」を開く。⚙ と同じ控えめなボタン。 */
+/* 「このデータについて」を開く。▸ と同じ控えめなボタン。 */
 .layer-detail-button {
   flex: none;
   border: none;
@@ -1054,6 +1054,13 @@ body,
   border-bottom-color: #14508c;
   font-weight: 700;
   color: #14508c;
+}
+
+/* 選んでいるタブが何を指すか。 */
+.catalog-tab-note {
+  margin: 0 0 0.4rem;
+  font-size: 0.8rem;
+  color: #555;
 }
 
 .catalog-group {
@@ -1831,13 +1838,6 @@ a.lang-option {
   color: #14508c;
 }
 
-.layer-section-note {
-  margin-left: 0.3rem;
-  font-weight: normal;
-  font-size: 0.7rem;
-  color: #667;
-}
-
 /* 区分の「＋ 追加」。カタログのダイアログを開く。区分の見出しの右端に置く。 */
 .layer-add-button {
   flex: none;
@@ -2192,8 +2192,11 @@ a.lang-option {
 #engine-bar ~ #busy {
   top: 3.4rem;
 }
-/* スマホ幅では検索欄が上端いっぱいなので、その下に置く。 */
-@media (max-width: 640px) {
+/*
+ * **検索欄と並べられない幅では、その下に置く。** バーは約444px あり、真ん中に置くと、左上の検索欄 (右端は 24rem = 384px) と
+ * 約1,230px より狭い画面で重なった (2026-10-19、利用者)。スマホ幅だけでなく、その間の幅でも下へずらす。
+ */
+@media (max-width: 1240px) {
   #engine-bar {
     top: 4.2rem;
   }

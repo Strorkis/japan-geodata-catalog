@@ -46,7 +46,7 @@ export interface Layer {
   mapLayerIds: () => string[];
   /** 出るのに要るズーム。**無ければどの縮尺でも出る。** */
   minZoom?: number;
-  /** 絞り込み・色分けの中身。⚙ で行の下に開く。**複数の行で共有することがある。** */
+  /** 絞り込み・色分けの中身。▸ で行の下に開く。**複数の行で共有することがある。** */
   settings: HTMLElement;
   /** 共有している設定パネルを、この行に向ける。 */
   onOpen?: () => void;
@@ -163,6 +163,12 @@ const SECTION_TITLES: Record<Section, string> = { data: m.sectionData, tile: m.s
  */
 type CatalogTab = Section | 'view';
 const CATALOG_TAB_TITLES: Record<CatalogTab, string> = { ...SECTION_TITLES, view: m.catalogTabView };
+/** タブが何を指すか (タブの下に出す。一覧の区分の見出しの吹き出しと同じ文)。 */
+const CATALOG_TAB_NOTES: Record<CatalogTab, string> = {
+  data: m.sectionDataNote,
+  tile: m.sectionTileNote,
+  view: m.catalogTabViewNote,
+};
 const tabOf = (layer: Layer): CatalogTab => (layer.viewOnly ? 'view' : layer.section);
 
 /** 「ズーム14から」。**行は消さない** — 消すと、寄れば出ることが分からない。 */
@@ -189,6 +195,7 @@ export function createLayerList(options: LayerListOptions): LayerList {
   const filterEmptyEl = document.querySelector<HTMLElement>('#layer-filter-empty')!;
   const indexEl = document.querySelector<HTMLElement>('#catalog-index')!;
   const tabs = [...dialog.querySelectorAll<HTMLButtonElement>('.catalog-tab')];
+  const tabNoteEl = dialog.querySelector<HTMLParagraphElement>('#catalog-tab-note')!;
 
   /** 一覧に置いている行ID。区分ごとに**先頭がいちばん上**。 */
   const order: Record<Section, string[]> = { data: [], tile: [] };
@@ -353,7 +360,7 @@ export function createLayerList(options: LayerListOptions): LayerList {
     return button;
   };
 
-  /** 中身のある設定か。送電線・川・地理院のテーマは絞り込みを持たない (⚙ を出さない)。 */
+  /** 中身のある設定か。送電線・川・地理院のテーマは絞り込みを持たない (▸ を出さない)。 */
   const hasSettings = (layer: Layer) => layer.settings.childElementCount > 0;
 
   /**
@@ -416,12 +423,14 @@ export function createLayerList(options: LayerListOptions): LayerList {
     });
     zoomIn.hidden = layer.minZoom === undefined || map.getZoom() >= layer.minZoom;
 
-    // **ボタンは性格で分ける。** ⚙ = 地図を見ながら動かすもの (絞り込み・色分け・不透明度) を
+    // **ボタンは性格で分ける。** ▸ = 地図を見ながら動かすもの (絞り込み・色分け・不透明度) を
     // この行の下に開く。ⓘ = 読むもの (カタログ・使う条件・取得) をダイアログで開く。
+    // **印は開閉 (▸/▾)。** 歯車だとメニューやダイアログが開くように見え、行の下に出るのが落ち着かなかった (2026-10-19、利用者)。
+    // テーマの中の層を開く印 (下の `appendParts`) と同じ印・同じ位置 (名前の右)。両方を持つ行は無い (テーマは絞り込みを持たない)。
     const settingsOpen = settingsRowId === layer.id;
     const settings = iconButton(
       'layer-settings-button',
-      '⚙',
+      settingsOpen ? '▾' : '▸',
       settingsOpen ? m.closeSettings : m.layerSettings(layer.title),
       () => {
         settingsRowId = settingsRowId === layer.id ? null : layer.id;
@@ -442,7 +451,7 @@ export function createLayerList(options: LayerListOptions): LayerList {
 
     const head = document.createElement('div');
     head.className = 'layer-head';
-    head.append(handle, toggle, name, zoomIn, settings, detail, removeButton);
+    head.append(handle, toggle, name, settings, zoomIn, detail, removeButton);
 
     // 2段目: 状態 (件数や「ズーム14から」)。**行に出す** — 設定の中に置くと開かない限り
     // 読めない。1行で切り、全文は吹き出し (`title`) で読む。
@@ -696,6 +705,7 @@ export function createLayerList(options: LayerListOptions): LayerList {
       const count = layers.filter((layer) => tabOf(layer) === section && hit(layer)).length;
       tab.textContent = `${CATALOG_TAB_TITLES[section]} (${count})`;
     }
+    tabNoteEl.textContent = CATALOG_TAB_NOTES[catalogSection];
     const rows = layers.filter((layer) => tabOf(layer) === catalogSection && hit(layer));
     const rowsOf = (collection: Collection) => rows.filter((layer) => layer.collections[0] === collection).length;
     const nodes: HTMLElement[] = [];
