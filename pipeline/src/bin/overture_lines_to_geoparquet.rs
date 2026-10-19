@@ -1,6 +1,8 @@
 use anyhow::{Context, Result, bail};
-use duck_geocoder::geoparquet::{CoveringBbox, geo_metadata_json, geoparquet_geometry_type};
-use duck_geocoder::overture::{
+use japan_geodata_pipeline::geoparquet::{
+    CoveringBbox, geo_metadata_json, geoparquet_geometry_type,
+};
+use japan_geodata_pipeline::overture::{
     DEFAULT_RELEASE, OvertureLine, build_lines_sql, build_lines_stats_sql,
 };
 use std::path::PathBuf;

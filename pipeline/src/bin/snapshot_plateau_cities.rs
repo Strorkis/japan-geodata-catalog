@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use duck_geocoder::plateau_catalog;
+use japan_geodata_pipeline::plateau_catalog;
 use std::path::PathBuf;
 
 /// PLATEAU の配信カタログ (公式 API) から、**都市ごとの名前・都道府県・年度・仕様の版**を写し取る。

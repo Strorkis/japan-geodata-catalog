@@ -1,5 +1,5 @@
 use anyhow::{Context, Result, bail};
-use duck_geocoder::overture::build_clip_ocean_sql;
+use japan_geodata_pipeline::overture::build_clip_ocean_sql;
 use std::path::PathBuf;
 use std::process::Command;
 

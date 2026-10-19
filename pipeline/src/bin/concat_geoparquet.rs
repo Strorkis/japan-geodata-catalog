@@ -1,6 +1,6 @@
 use anyhow::{Context, Result, bail};
 use arrow::compute::concat_batches;
-use duck_geocoder::geoparquet;
+use japan_geodata_pipeline::geoparquet;
 use parquet::arrow::arrow_reader::ParquetRecordBatchReaderBuilder;
 use parquet::arrow::arrow_writer::ArrowWriter;
 use parquet::basic::{Compression, ZstdLevel};

@@ -1,6 +1,6 @@
 use anyhow::{Context, Result, bail};
-use duck_geocoder::remote_zip::{HttpRange, RangeReader};
-use duck_geocoder::{peak_memory, plateau, plateau_catalog, repack};
+use japan_geodata_pipeline::remote_zip::{HttpRange, RangeReader};
+use japan_geodata_pipeline::{peak_memory, plateau, plateau_catalog, repack};
 use std::path::{Path, PathBuf};
 
 /// PLATEAU (3D都市モデル) の CityGML zip から建物を読み、GeoParquet に変換する。

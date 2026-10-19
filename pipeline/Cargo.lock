@@ -739,33 +739,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "duck-geocoder"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "arrow",
- "csv",
- "encoding_rs",
- "flate2",
- "geo-traits",
- "geo-types",
- "geojson",
- "nusamai-citygml",
- "nusamai-plateau",
- "parquet",
- "proj",
- "quick-xml",
- "remote-zip",
- "roxmltree",
- "serde",
- "serde_json",
- "ureq",
- "url",
- "wkb",
- "zip 9.0.4",
-]
-
-[[package]]
 name = "encoding_rs"
 version = "0.8.35"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1294,6 +1267,33 @@ name = "itoa"
 version = "1.0.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682"
+
+[[package]]
+name = "japan-geodata-pipeline"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "arrow",
+ "csv",
+ "encoding_rs",
+ "flate2",
+ "geo-traits",
+ "geo-types",
+ "geojson",
+ "nusamai-citygml",
+ "nusamai-plateau",
+ "parquet",
+ "proj",
+ "quick-xml",
+ "remote-zip",
+ "roxmltree",
+ "serde",
+ "serde_json",
+ "ureq",
+ "url",
+ "wkb",
+ "zip 9.0.4",
+]
 
 [[package]]
 name = "japan-geoid"

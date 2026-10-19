@@ -1,10 +1,10 @@
 use anyhow::{Context, Result, bail};
-use duck_geocoder::repack;
+use japan_geodata_pipeline::repack;
 use std::path::PathBuf;
 
 /// GeoParquetを、HTTP越しに部分読みしやすい形に並べ替えて書き直す。
 ///
-/// 中身は [`duck_geocoder::repack`] にある。**都市ごとのループからも同じものを呼ぶ**ので、
+/// 中身は [`japan_geodata_pipeline::repack`] にある。**都市ごとのループからも同じものを呼ぶ**ので、
 /// binにはコマンドラインの解釈と報告だけを置いてある。
 fn main() -> Result<()> {
     let args: Vec<String> = std::env::args().collect();

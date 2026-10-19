@@ -56,7 +56,7 @@
 | A `refactor/workspace-core` | ワークスペースの起点を直下へ (`pnpm-workspace.yaml`・lockfile・`.pnpmfile.cjs`)。`packages/core` を切り出す | 10-18 |
 | B `refactor/engine-packages` | `packages/{deckgl,three,cesium,navara}`。**エンジンの実行時の資産を写す Vite のプラグイン**も部品に入れる。「できること」の表 | 10-18 |
 | C `refactor/maplibre-package` | `packages/maplibre` (地図タイルと描ける種類の表。データの行の描き方は残した。下の「C でしたこと」) | 10-18 |
-| D `refactor/pipeline-crate-name` | Rust のクレート名を `duck-geocoder` から付け直す | |
+| D `refactor/pipeline-crate-name` | Rust のクレート名を `duck-geocoder` から `japan-geodata-pipeline` に付け直す (利用者が選んだ) | 10-18 |
 
 置き場所は **`web/` はそのまま、直下に `packages/*`** (`web/` を動かすと文書・CI のパスの直しが大きい)。名前は `@japan-geodata-catalog/*`
 (npm には出さない)。**各 PR の前に本番ビルドの E2E を全件流す。**
@@ -275,8 +275,11 @@ MapLibre・MapLibre + deck.gl・MapLibre + Three.js・Cesium・Navara の5つ (2
   名前は「場所 + 主題」の一般的な形 (registry でも `ireland-open-geodata`・`moldova-geodata` など)。ユーザー名が前に付くので、被っても構わない
 - **GeoParquet の部分は本来は外に出すもの** (docs の比重が大きいのは意図ではなく副次的、利用者)。TOBE
 
-**まだ古い名前のもの:** pipeline のクレート (`duck-geocoder`。ライブラリに分けるときに付け直す)、STAC の独自の項目の接頭辞 (`duck:`。
-変えるとデータの上げ直しが要る)、R2 のバケット (URL に出ないので変えない)、`pyproject.toml` の名前、画面の状態を覚える localStorage の鍵。
+**まだ古い名前のもの:** STAC の独自の項目の接頭辞 (`duck:`。変えるとデータの上げ直しが要る)、R2 のバケット (URL に出ないので
+変えない。独自ドメインと一緒に引っ越す)。
+
+2026-10-18 に付け直したもの: pipeline のクレート (`japan-geodata-pipeline`。コマンドの名前は同じ)、`pyproject.toml` の名前
+(`japan-geodata-catalog-reference`)、表示量を覚える localStorage の鍵 (`japan-geodata-catalog:detail`。古い鍵に覚えていたら1回だけ読み移す)。
 
 **改名の費用は小さい**ことは確認済み。CIは
 [deploy.yml](../.github/workflows/deploy.yml) が `github.event.repository.name` から
@@ -721,7 +724,7 @@ Collection とは分けて扱う。いまは UI のコードに入っている (
 
 ### リファクタリング (2026-10-04〜)
 
-- **Range で zip の一部だけ取る道具を `crates/remote-zip` に切り出した。** duck-geocoder に
+- **Range で zip の一部だけ取る道具を `crates/remote-zip` に切り出した。** パイプライン (いまは japan-geodata-pipeline) に
   依存しない単体のクレートで、`remote-zip ls/get` の CLI も持つ。別リポジトリへはまだ出さない
 - **表示部分のライブラリ化** (web/src/main.ts、7,741行 → 859行)。画面にも地図にも
   依存しない部分を `web/src/lib/` に、画面の部品を `web/src/ui/` に分けた:

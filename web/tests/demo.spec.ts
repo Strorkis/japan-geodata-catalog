@@ -3440,6 +3440,22 @@ test('表示量を上げると、同じ表示のまま閾値の手前のもの�
   await expect(detail).toHaveValue('high');
 });
 
+/** **改名の前の名前で覚えていた表示量も効く** (1回だけ新しい名前へ読み移し、古い方は消す。lib/detail.ts)。 */
+test('改名の前に覚えた表示量を読み移す', async ({ page }) => {
+  await page.evaluate(() => {
+    localStorage.removeItem('japan-geodata-catalog:detail');
+    localStorage.setItem('duck-geocoder:detail', 'low');
+  });
+  await page.reload();
+  await waitForReady(page);
+  await expect(page.locator('#detail-level')).toHaveValue('low');
+  const stored = await page.evaluate(() => [
+    localStorage.getItem('japan-geodata-catalog:detail'),
+    localStorage.getItem('duck-geocoder:detail'),
+  ]);
+  expect(stored).toEqual(['low', null]);
+});
+
 /**
  * 寄れば原寸に切り替わる。粗い段に留まると、細部が出ないまま気付けない。
  *

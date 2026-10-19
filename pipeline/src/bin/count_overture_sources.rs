@@ -1,6 +1,6 @@
 use anyhow::{Context, Result, bail};
-use duck_geocoder::overture::{DEFAULT_RELEASE, JAPAN_BBOX};
-use duck_geocoder::quadkey;
+use japan_geodata_pipeline::overture::{DEFAULT_RELEASE, JAPAN_BBOX};
+use japan_geodata_pipeline::quadkey;
 use std::path::PathBuf;
 use std::process::Command;
 

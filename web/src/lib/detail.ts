@@ -65,7 +65,13 @@ export const DETAIL_LEVELS: Record<DetailLevel, DetailSettings & { label: string
   },
 };
 
-const DETAIL_STORAGE_KEY = 'duck-geocoder:detail';
+/**
+ * 覚える場所の名前。localStorage はオリジン (`strorkis.github.io`) ごとなので、同じオリジンのほかのサイトと被らないよう
+ * リポジトリの名前を前に付ける。
+ */
+const DETAIL_STORAGE_KEY = 'japan-geodata-catalog:detail';
+/** 改名の前の名前 (2026-10-18 まで)。そこに覚えていたら1回だけ読み移す (選び直させない)。 */
+const LEGACY_DETAIL_STORAGE_KEY = 'duck-geocoder:detail';
 
 /**
  * 保存されている段。無い・読めない・知らない値なら標準。
@@ -75,6 +81,11 @@ const DETAIL_STORAGE_KEY = 'duck-geocoder:detail';
  */
 export function loadDetailLevel(): DetailLevel {
   try {
+    const legacy = localStorage.getItem(LEGACY_DETAIL_STORAGE_KEY);
+    if (legacy !== null) {
+      if (localStorage.getItem(DETAIL_STORAGE_KEY) === null) localStorage.setItem(DETAIL_STORAGE_KEY, legacy);
+      localStorage.removeItem(LEGACY_DETAIL_STORAGE_KEY);
+    }
     const saved = localStorage.getItem(DETAIL_STORAGE_KEY);
     if (saved && saved in DETAIL_LEVELS) return saved as DetailLevel;
   } catch {

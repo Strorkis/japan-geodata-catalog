@@ -5,7 +5,7 @@
 //! 漏れる (黙って欠ける)。
 //!
 //! `duckdb` が無い環境 (CI の Rust ジョブなど) ではスキップする。
-use duck_geocoder::quadkey;
+use japan_geodata_pipeline::quadkey;
 use std::process::Command;
 
 #[test]

@@ -7,7 +7,7 @@
 # Python の版は .python-version が、パッケージは uv.lock が固定する。
 # uv 自体は mise が管理する。
 [project]
-name = "duck-geocoder-reference"
+name = "japan-geodata-catalog-reference"
 version = "0.1.0"
 description = "参考資料 (PDFなど) を読むための道具"
 requires-python = ">=3.12"

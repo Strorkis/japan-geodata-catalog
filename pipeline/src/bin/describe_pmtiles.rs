@@ -1,7 +1,7 @@
 use anyhow::{Context, Result, bail};
-use duck_geocoder::external::Snapshot;
-use duck_geocoder::pmtiles;
-use duck_geocoder::remote_zip::{FetchRange, HttpRange};
+use japan_geodata_pipeline::external::Snapshot;
+use japan_geodata_pipeline::pmtiles;
+use japan_geodata_pipeline::remote_zip::{FetchRange, HttpRange};
 use std::path::PathBuf;
 
 /// 外部の PMTiles のヘッダとメタデータを HTTP Range で取り、スナップショットにする。

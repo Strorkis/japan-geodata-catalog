@@ -1,6 +1,6 @@
 use anyhow::{Context, Result, bail};
-use duck_geocoder::n03;
-use duck_geocoder::read_zip_entry;
+use japan_geodata_pipeline::n03;
+use japan_geodata_pipeline::read_zip_entry;
 use std::path::PathBuf;
 
 /// 国土数値情報 行政区域データ (N03) の GML/Shapefile zip に同梱された

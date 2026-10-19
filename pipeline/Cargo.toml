@@ -1,5 +1,5 @@
 [package]
-name = "duck-geocoder"
+name = "japan-geodata-pipeline"
 version = "0.1.0"
 edition = "2024"
 
@@ -39,5 +39,5 @@ wkb = "0.9"
 zip = "9.0.4"
 ureq = { version = "3.4.1", features = ["rustls"] }
 # **置いてある zip を Range で部分的に読む道具。** 単体の道具として切り出してある
-# (crates/remote-zip。いずれ別リポジトリへ)。`duck_geocoder::remote_zip` で再エクスポートする。
+# (crates/remote-zip。いずれ別リポジトリへ)。`japan_geodata_pipeline::remote_zip` で再エクスポートする。
 remote-zip = { path = "../crates/remote-zip" }

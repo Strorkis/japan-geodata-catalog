@@ -538,7 +538,8 @@ mod tests {
             vec!["a".to_string(), "b".to_string()].into_iter(),
         )];
 
-        let path = std::env::temp_dir().join("duck_geocoder_test_geoparquet_write_points.parquet");
+        let path = std::env::temp_dir()
+            .join("japan_geodata_pipeline_test_geoparquet_write_points.parquet");
         write(
             &path,
             columns,
