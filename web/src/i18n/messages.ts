@@ -46,9 +46,16 @@ const ja = {
   example: (text: string) => `例: ${text}`,
 
   // ---- 一覧とカタログのダイアログ (ui/layer-list.ts) ----
-  sectionData: 'データ',
-  sectionTile: '地図タイル',
-  catalogTabView: '見るだけ・元データ',
+  // 区分の名前は、できることで言う (2026-10-19、利用者)。説明は一覧の見出しの吹き出しと、カタログのタブの下に出す。
+  sectionData: '問い合わせできるデータ',
+  sectionTile: '表示するだけの地図',
+  catalogTabView: '出所だけ',
+  sectionDataNote:
+    'このカタログが変換して置いているデータです。表示している範囲だけを読み、検索・周辺検索・範囲の取得に使えます。',
+  sectionTileNote:
+    '公開元の配信 (地図タイル・ベクトルタイル・標高・3D Tiles) を、そのまま表示します。問い合わせには使えません。',
+  catalogTabViewNote:
+    '出所と使う条件だけを載せているものです。このサイトでは配っていないので、地図には足せません。ⓘ から配布元へ辿れます。',
   fromZoom: (zoom: number) => `ズーム${zoom}から`,
   drawnFromZoom: (zoom: number) => `ズーム${zoom}から描かれます`,
   zoomInTo: (zoom: number) => `ズーム${zoom}まで寄る`,
@@ -354,9 +361,15 @@ const en: Messages = {
   searchRoad: 'Roads (routes)',
   example: (text) => `e.g. ${text}`,
 
-  sectionData: 'Data',
-  sectionTile: 'Map tiles',
-  catalogTabView: 'View only / sources',
+  sectionData: 'Queryable data',
+  sectionTile: 'Display-only maps',
+  catalogTabView: 'Sources only',
+  sectionDataNote:
+    'Data this catalog converted and hosts. Only the part in view is read, and it can be searched, used for nearby search and downloaded by area.',
+  sectionTileNote:
+    'Feeds from their publishers (map tiles, vector tiles, elevation, 3D Tiles), shown as they are. They cannot be queried.',
+  catalogTabViewNote:
+    'Only the source and the terms of use are listed. This site does not host them, so they cannot be added to the map. ⓘ links to the publisher.',
   fromZoom: (zoom) => `From zoom ${zoom}`,
   drawnFromZoom: (zoom) => `Drawn from zoom ${zoom}`,
   zoomInTo: (zoom) => `Zoom in to ${zoom}`,
@@ -621,13 +634,16 @@ export const HTML_EN: Record<string, string> = {
   nearbyTitle: 'Press, then click a point, line or building on the map to see what is around it (Esc to cancel)',
   infoMenuTitle: 'Help, credits and more',
   dataAndMap: 'Data and map',
-  sectionData: 'Data',
+  sectionData: 'Queryable data',
+  sectionDataNote:
+    'Data this catalog converted and hosts. Only the part in view is read, and it can be searched, used for nearby search and downloaded by area.',
   add: '+ Add',
   addDataTitle: 'Add data from the catalog',
   layerEmpty: 'Choose data to use from “+ Add”',
-  sectionTile: 'Map tiles',
-  viewOnlyNote: 'display only',
-  addTileTitle: 'Add map tiles from the catalog',
+  sectionTile: 'Display-only maps',
+  sectionTileNote:
+    'Feeds from their publishers (map tiles, vector tiles, elevation, 3D Tiles), shown as they are. They cannot be queried.',
+  addTileTitle: 'Add maps from the catalog',
   tileEmpty: 'Choose a background map and more from “+ Add”',
   terrain3d: 'Terrain (3D)',
   terrainExaggeration: 'Relief exaggeration',
@@ -666,7 +682,7 @@ export const HTML_EN: Record<string, string> = {
     <ul>
       <li>Choose data and background maps from <b>+ Add</b>. Type a word to <b>filter</b> them</li>
       <li>Toggle with the checkbox, and drag <b>⋮⋮</b> to change the drawing order</li>
-      <li><b>⚙</b> filters and colors, <b>▸</b> shows the layers inside, and <b>ⓘ</b> describes the data and lets you <b>download this area</b></li>
+      <li><b>▸</b> opens filters and colors below the row (for map themes, the layers inside), and <b>ⓘ</b> describes the data and lets you <b>download this area</b></li>
       <li><b>Hover</b> over a building or other feature (tap on a phone) to see its name and more</li>
     </ul>
     <h3>If something goes wrong</h3>

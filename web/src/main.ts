@@ -135,7 +135,7 @@ async function main() {
   const loadingMessageEl = document.querySelector<HTMLParagraphElement>('#loading-message')!;
   const busyEl = document.querySelector<HTMLDivElement>('#busy')!;
   const busyLabelEl = document.querySelector<HTMLSpanElement>('#busy-label')!;
-  // 絞り込みのパネル。一覧の行の ⚙ で、その行の下へ移す。中身は ui/layers/ が作る。
+  // 絞り込みのパネル。一覧の行の ▸ で、その行の下へ移す。中身は ui/layers/ が作る。
   const buildingsSection = document.querySelector<HTMLDivElement>('#buildings-section')!;
   const railwaySectionEl = document.querySelector<HTMLDivElement>('#railway-section')!;
   const roadSectionEl = document.querySelector<HTMLDivElement>('#road-section')!;
@@ -434,7 +434,7 @@ async function main() {
   //
   // 行とCollectionは**ほぼ1対1**。例外は2つだけ。
   // - 人口メッシュは細かさ違いのCollection (125m / 1km) をズームで選ぶので1行に束ねる
-  // - 整備範囲は建物の「引いた姿」なので行にせず、建物の ⚙ の中に出す
+  // - 整備範囲は建物の「引いた姿」なので行にせず、建物の ▸ の中に出す
   //   (`duck:covers` で結ばれている)
 
   /**
@@ -758,7 +758,7 @@ async function main() {
       case 'waterway': {
         const source = lineSources.find((s) => s.id === collection.id);
         if (!source) break;
-        // 絞り込みが無いので、設定の中身は空 (⚙ ではCollectionの中身だけが出る)。
+        // 絞り込みが無いので、設定の中身は空 (▸ ではCollectionの中身だけが出る)。
         const settings = document.createElement('div');
         layers.push({ ...base, settings, refresh: requestLineRefresh(source) });
         break;
@@ -890,7 +890,7 @@ async function main() {
         break;
       }
       default:
-        // 検索の裏方と整備範囲は行にしない (「検索できるもの」と建物の ⚙ に出る)。
+        // 検索の裏方と整備範囲は行にしない (「検索できるもの」と建物の ▸ に出る)。
         break;
     }
   }
