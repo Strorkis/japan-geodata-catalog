@@ -170,12 +170,14 @@ export function initMap(collections: Collection[]): Promise<MapLibreMap> {
 
   map.on('error', (e) => console.error('[map] error', e.error ?? e));
 
+  // **スタイルが読めたら進む** (`style.load`)。`load` は最初の画面のタイルが揃って描き終えたときに来るので、
+  // 背景地図の配信が落ちていると「準備中」のまま進まないことがあった (2026-10-12 に見つけた。同じタブで2回目に開いたとき)。
+  // 層を足すのに要るのはスタイルだけ。タイルはあとから届けば描かれる。起動を外部サービスに握らせない。
   return new Promise((resolve) => {
-    map.on('load', () => {
+    map.once('style.load', () => {
       addDataLayers(map);
       addOverlayLayers(map);
-      // 地形は最後に有効にする。ここまで来ていれば、以降タイルが取れなくても
-      // 起伏が出ないだけで地図は使える。起動を外部サービスに握らせない。
+      // 地形は最後に有効にする。以降タイルが取れなくても、起伏が出ないだけで地図は使える。
       if (hasTerrain) map.setTerrain({ source: TERRAIN_SOURCE, exaggeration: 1 });
       resolve(map);
     });
