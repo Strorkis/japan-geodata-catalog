@@ -225,7 +225,7 @@
   <body>
     <header>
       <h1>japan-geodata-catalog ダッシュボード</h1>
-      <span class="meta">更新 2026-10-19 22:05 (日本時間)</span>
+      <span class="meta">更新 2026-10-20 19:30 (日本時間)</span>
       <span class="meta">
         <a href="https://strorkis.github.io/japan-geodata-catalog/">公開サイト (改名後の URL)</a> ·
         <a href="roadmap.md">方針 (roadmap)</a> ·
@@ -241,7 +241,7 @@
       <div class="card kpi">
         <div class="label">公開待ちの PR</div>
         <div class="value">1 <small>件</small></div>
-        <span class="status you">一覧の使いやすさ (fix/layer-list-usability)</span>
+        <span class="status you">背景地図の欄 (feat/basemap-row)</span>
       </div>
       <div class="card kpi">
         <div class="label">R2 の配信データ (手元の data/output)</div>
@@ -258,9 +258,9 @@
       <h2>公開までの残り</h2>
       <ol class="steps">
         <li class="current">
-          <b>ブランチ <code>fix/layer-list-usability</code> を push → PR を見てマージ</b><span class="status you">あなたの番</span>
+          <b>ブランチ <code>feat/basemap-row</code> を push → PR を見てマージ</b><span class="status you">あなたの番</span>
           <span class="sub">
-            気付いてもらった4点のうち3点 (バーと検索欄の重なり・区分の名前と説明・歯車を ▸/▾ に) と、ブラウザーの拡張の案を roadmap に。
+            気付いてもらった4点目: 背景地図を欄で選ぶだけで切り替える (地形の欄と同じ形)。重ねたい地図は今までどおり「＋ 追加」。
             push のあと私が PR を作る。PR の「読むべき所」を見てから、マージコミットでマージ
           </span>
         </li>
@@ -272,10 +272,6 @@
       <section class="card" aria-label="次にやること">
         <h2>次にやること</h2>
         <ol class="tasks">
-          <li>
-            <b>背景地図の欄</b> <span class="status todo">次の PR</span>
-            <span class="sub">地形と同じ形 (チェック + 選択) で、選ぶだけで切り替える。重ねたい地図は今までどおり「＋ 追加」(利用者が選んだ)</span>
-          </li>
           <li>
             <b>スタイルと 3D Tiles の不透明度</b>
             <span class="sub">

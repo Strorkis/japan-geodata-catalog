@@ -1934,20 +1934,29 @@ a.lang-option {
   color: #b00020;
 }
 
-#terrain-row[hidden] {
+#terrain-row[hidden],
+#basemap-row[hidden] {
   display: none;
 }
 
-/* 地形の行は並べ替えない (1つだけ選ぶ) ので ⋮⋮ が無い。その幅だけ字下げして、ほかの行と揃える。 */
-#terrain-row .layer-head {
+/* 背景地図と地形の欄は並べ替えない (1つだけ選ぶ) ので ⋮⋮ が無い。その幅だけ字下げして、ほかの行と揃える。 */
+#terrain-row .layer-head,
+#basemap-row .layer-head {
   padding-left: 1.2rem;
 }
 
-#terrain-row .layer-sub {
+#terrain-row .layer-sub,
+#basemap-row .layer-sub {
   padding-left: 2.5rem;
 }
 
-#terrain-source {
+/* 背景地図の欄は、描けないエンジンの理由を選ぶ欄の下に出す。 */
+#basemap-row .layer-sub {
+  flex-wrap: wrap;
+}
+
+#terrain-source,
+#basemap-source {
   max-width: 100%;
   margin-top: 0.15rem;
   padding: 0.15rem 0.25rem;

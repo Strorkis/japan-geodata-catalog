@@ -75,6 +75,11 @@ const ja = {
   partsList: (count: number, list: string) => `${count}層: ${list}`,
   cannotDraw: '描けません',
   added: '追加済み',
+  // 背景地図の欄 (ui/layer-list.ts)。地形の欄と同じく1つ選ぶ。
+  basemap: '背景地図',
+  basemapSourceLabel: '背景地図に使う地図',
+  basemapOverlaid: '(上に重ねています)',
+  basemapInUse: '背景地図で使用中',
   addButton: '追加',
   addParts: (count: number) => `${count}層を追加`,
   itemCount: (count: number) => `${count}件`,
@@ -389,6 +394,10 @@ const en: Messages = {
   partsList: (n, list) => `${count(n, 'layer', 'layers')}: ${list}`,
   cannotDraw: 'Cannot draw',
   added: 'Added',
+  basemap: 'Background map',
+  basemapSourceLabel: 'Map used as the background',
+  basemapOverlaid: '(overlaid above)',
+  basemapInUse: 'Used as background',
   addButton: 'Add',
   addParts: (n) => `Add ${count(n, 'layer', 'layers')}`,
   itemCount: (n) => count(n, 'item', 'items'),
@@ -644,7 +653,7 @@ export const HTML_EN: Record<string, string> = {
   sectionTileNote:
     'Feeds from their publishers (map tiles, vector tiles, elevation, 3D Tiles), shown as they are. They cannot be queried.',
   addTileTitle: 'Add maps from the catalog',
-  tileEmpty: 'Choose a background map and more from “+ Add”',
+  tileEmpty: 'Choose maps to overlay from “+ Add”',
   terrain3d: 'Terrain (3D)',
   terrainExaggeration: 'Relief exaggeration',
   terrainDetailTitle: 'About this elevation (format and source)',
@@ -680,7 +689,7 @@ export const HTML_EN: Record<string, string> = {
     </ul>
     <h3>View data</h3>
     <ul>
-      <li>Choose data and background maps from <b>+ Add</b>. Type a word to <b>filter</b> them</li>
+      <li>Switch the <b>background map</b> by choosing it in its row. Choose data and maps to overlay from <b>+ Add</b>. Type a word to <b>filter</b> them</li>
       <li>Toggle with the checkbox, and drag <b>⋮⋮</b> to change the drawing order</li>
       <li><b>▸</b> opens filters and colors below the row (for map themes, the layers inside), and <b>ⓘ</b> describes the data and lets you <b>download this area</b></li>
       <li><b>Hover</b> over a building or other feature (tap on a phone) to see its name and more</li>

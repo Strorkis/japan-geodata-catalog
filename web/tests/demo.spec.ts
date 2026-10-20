@@ -1074,41 +1074,52 @@ function visibleBasemaps(page: Page): Promise<string[]> {
 }
 
 /**
- * **背景地図も一覧の行** (QGISと同じく、重ねられるレイヤーの1つ)。既定では淡色地図だけ。
- * カタログから足すと実際にそのタイルを取りに行き、**いちばん上に入る** (足したものが見えるように)。
- * **隠しても一覧からは消えず、重ね順も変わらない** (以前は隠すと一覧から外れ、出し直すと
- * いちばん上へ動いた)。順番は並べ替え (ドラッグ) だけが変える。
+ * **背景地図は欄で1つ選ぶ** (地形の欄と同じ形)。選び直すだけで切り替わり、いつもいちばん下に敷く
+ * (前は背景地図も行で、外してから足し直す必要があった。2026-10-19、利用者)。既定は淡色地図。
+ * **上に重ねたい地図は「＋ 追加」で行として足せる。** 同じ地図は背景と重ねる行の両方には置けない。
  */
-test('背景地図はカタログから足すと上に重なり、隠しても一覧と順番に残る', { tag: '@map' }, async ({ page }) => {
+test('背景地図は欄で選ぶだけで切り替わり、ほかの地図は上に重ねられる', { tag: '@map' }, async ({ page }) => {
+  const basemapRow = page.locator('#basemap-row');
+  const source = page.locator('#basemap-source');
   expect(await visibleBasemaps(page)).toEqual([BASEMAP.pale]);
+  await expect(source).toHaveValue(BASEMAP.pale);
+  // 背景地図は行ではない (重ねる地図の行は無い)。
+  expect(await shownTiles(page)).toEqual([]);
+  await expect(page.locator('#tile-empty')).toBeHidden();
+
   const requested: string[] = [];
   page.on('request', (request) => {
     if (request.url().includes('cyberjapandata.gsi.go.jp')) requested.push(request.url());
   });
 
-  await showLayer(page, BASEMAP.photo);
+  // 選ぶだけで切り替わる (淡色地図は隠れる)。
+  await source.selectOption(BASEMAP.photo);
   await expect.poll(() => requested.some((url) => url.includes('/seamlessphoto/'))).toBe(true);
-  // 淡色地図の上に写真。
-  expect(await visibleBasemaps(page)).toEqual([BASEMAP.pale, BASEMAP.photo]);
-  expect(await shownTiles(page)).toEqual([BASEMAP.photo, BASEMAP.pale]);
+  await expect.poll(() => visibleBasemaps(page)).toEqual([BASEMAP.photo]);
 
-  // 隠して出し直しても、行は残り、順番は変わらない。
-  await hideLayer(page, BASEMAP.pale);
-  expect(await shownTiles(page)).toEqual([BASEMAP.photo, BASEMAP.pale]);
+  // チェックを外すと隠れ、入れると戻る (選んだものは覚えている)。
+  await page.locator('#basemap-toggle').uncheck();
+  await expect.poll(() => visibleBasemaps(page)).toEqual([]);
+  await page.locator('#basemap-toggle').check();
+  await expect.poll(() => visibleBasemaps(page)).toEqual([BASEMAP.photo]);
+
+  // 淡色地図を「＋ 追加」で上に重ねる。背景の写真より上に入る。
   await showLayer(page, BASEMAP.pale);
-  expect(await visibleBasemaps(page)).toEqual([BASEMAP.pale, BASEMAP.photo]);
-
-  // 淡色地図を写真の上へドラッグ。
-  await dragRow(page, BASEMAP.pale, BASEMAP.photo, 'above');
   await expect.poll(() => visibleBasemaps(page)).toEqual([BASEMAP.photo, BASEMAP.pale]);
+  expect(await shownTiles(page)).toEqual([BASEMAP.pale]);
+  // 重ねている地図は背景には選べず、背景の地図はカタログで足せない。
+  await expect(source.locator(`option[value="${BASEMAP.pale}"]`)).toBeDisabled();
+  await openCatalogFor(page, BASEMAP.photo);
+  await expect(page.locator(`[data-catalog-layer="${BASEMAP.photo}"] .catalog-add`)).toHaveText('背景地図で使用中');
+  await closeCatalog(page);
 
-  // 不透明度は行の ▸ で変えられる (地図を見ながら動かすので、行の下に開く)。
-  await openLayerSettings(page, BASEMAP.pale);
-  await page.locator(`[data-layer="${BASEMAP.pale}"] .layer-settings-slot input[type="range"]`).fill('40');
+  // 不透明度は欄の ▸ で変えられる (地図を見ながら動かすので、欄の下に開く)。
+  await basemapRow.locator('.layer-settings-button').click();
+  await basemapRow.locator('.layer-settings-slot input[type="range"]').fill('40');
   await expect
     .poll(() =>
       page.evaluate(() =>
-        (window as unknown as TestWindow).__map!.getPaintProperty('basemap/gsi-pale', 'raster-opacity'),
+        (window as unknown as TestWindow).__map!.getPaintProperty('basemap/gsi-photo', 'raster-opacity'),
       ),
     )
     .toBe(0.4);
@@ -1389,6 +1400,14 @@ test('世界の背景地図はスタイルを読んで層を差し込み、ま�
   await showLayer(page, id);
   await expect.poll(visibility).toBe('visible');
   expect(styleRequests).toBe(1);
+
+  // 背景地図の欄でも選べる (上に重ねている間は選べないので、行を外してから)。淡色地図は隠れる。
+  await page.locator(`[data-layer="${id}"] .layer-remove-button`).click();
+  await expect.poll(visibility).toBe('none');
+  await page.locator('#basemap-source').selectOption(id);
+  await expect.poll(visibility).toBe('visible');
+  await expect.poll(() => visibleBasemaps(page)).not.toContain(BASEMAP.pale);
+  expect(styleRequests).toBe(1);
 });
 
 /**
@@ -1448,7 +1467,9 @@ test.describe('地図のエンジン (Cesium)', { tag: '@engine' }, () => {
     const buildings = page.locator(`.layer-row[data-layer="${LAYER.plateauBuildings}"]`);
     await expect(buildings).toHaveClass(/unsupported/);
     await expect(buildings).toContainText('Cesium ではまだ描けません');
-    await expect(page.locator('.layer-row[data-layer="gsi-pale"]')).not.toHaveClass(/unsupported/);
+    // 背景地図の欄 (淡色地図) は描ける。
+    await expect(page.locator('#basemap-source')).toHaveValue('gsi-pale');
+    await expect(page.locator('#basemap-row')).not.toHaveClass(/unsupported/);
     // 検索は MapLibre の間だけ (結果の描き方が MapLibre のもの)。
     await expect(page.locator('#search-input')).toBeDisabled();
     // 地形は、選んでいる標高 (海面からの高さ) の代わりに楕円体高のものを使い、そう言う。
@@ -1629,7 +1650,9 @@ test.describe('地図のエンジン (Cesium)', { tag: '@engine' }, () => {
     const buildings = page.locator(`.layer-row[data-layer="${LAYER.plateauBuildings}"]`);
     await expect(buildings).toContainText('Navara ではまだ描けません');
     await expect(page.locator('.layer-row[data-layer="plateau-3dtiles"]')).not.toHaveClass(/unsupported/);
-    await expect(page.locator('.layer-row[data-layer="gsi-pale"]')).not.toHaveClass(/unsupported/);
+    // 背景地図の欄 (淡色地図) は描ける。
+    await expect(page.locator('#basemap-source')).toHaveValue('gsi-pale');
+    await expect(page.locator('#basemap-row')).not.toHaveClass(/unsupported/);
     // **読んだ WASM (Worker の分も) は、どれも WASM として返ってくる。** 本番ビルドでは Worker が自分の隣から読む WASM を
     // 写し忘れて、404 の HTML を WASM として読んでいた。Draco の読み手は圧縮されたタイルが届いてから読むので
     // (ここでは外の 3D Tiles を止めている)、写し忘れはビルドの時に見る (packages/navara/vite.ts の navaraWorkerWasm)。
@@ -3073,39 +3096,39 @@ test('検索していないときは左上が地図を塞がない', async ({ pa
 });
 
 /**
- * 背景地図と地形は**出所の見出しの下の行**。既定で出ているが、それを理由に見出しは開かない
- * (開くと国土地理院とMapterhornが常に開いて一覧が伸びる)。見出しの件数で出ていると分かる。
+ * **重ねる地図は、足したものを重ね順に並べる。** 足すと**いちばん上**に入り、一覧でも上に並ぶ (何が上かが一覧で見える)。
+ * 背景地図 (欄で選んだもの) はいつもいちばん下で、並べ替えても動かない。
  */
-test('地図タイルは足したものを重ね順に並べ、ドラッグで入れ替え、✕ で外せる', async ({ page }) => {
-  // 既定では淡色地図だけ。ほかはカタログのダイアログの中。
-  expect(await shownTiles(page)).toEqual([BASEMAP.pale]);
+test('重ねる地図は足したものを重ね順に並べ、ドラッグで入れ替え、✕ で外せる', async ({ page }) => {
+  // 既定では重ねる地図は無い (背景地図の欄に淡色地図)。ほかはカタログのダイアログの中。
+  expect(await shownTiles(page)).toEqual([]);
   await expect(page.locator('#terrain-toggle')).toBeChecked();
-  await expect(page.locator(`[data-layer="${BASEMAP.pale}"] .layer-name`)).toHaveAttribute('title', /地図タイル/);
 
-  // 足すと**いちばん上**に入り、一覧でも上に並ぶ (何が上かが一覧で見える)。
   await showLayer(page, BASEMAP.photo);
-  expect(await shownTiles(page)).toEqual([BASEMAP.photo, BASEMAP.pale]);
-  expect(await visibleBasemaps(page)).toEqual([BASEMAP.pale, BASEMAP.photo]);
+  await showLayer(page, BASEMAP.blank);
+  await expect(page.locator(`[data-layer="${BASEMAP.blank}"] .layer-name`)).toHaveAttribute('title', /地図タイル/);
+  expect(await shownTiles(page)).toEqual([BASEMAP.blank, BASEMAP.photo]);
+  expect(await visibleBasemaps(page)).toEqual([BASEMAP.pale, BASEMAP.photo, BASEMAP.blank]);
 
-  // 写真を淡色地図の下へドラッグ。地図の重ね順も入れ替わる。
-  await dragRow(page, BASEMAP.photo, BASEMAP.pale, 'below');
-  await expect.poll(() => shownTiles(page)).toEqual([BASEMAP.pale, BASEMAP.photo]);
-  await expect.poll(() => visibleBasemaps(page)).toEqual([BASEMAP.photo, BASEMAP.pale]);
+  // 写真を白地図の上へドラッグ。地図の重ね順も入れ替わる。背景地図はいちばん下のまま。
+  await dragRow(page, BASEMAP.photo, BASEMAP.blank, 'above');
+  await expect.poll(() => shownTiles(page)).toEqual([BASEMAP.photo, BASEMAP.blank]);
+  await expect.poll(() => visibleBasemaps(page)).toEqual([BASEMAP.pale, BASEMAP.blank, BASEMAP.photo]);
   // キーボードでも動かせる (⋮⋮ を選んで ↓)。動かしたあともフォーカスは同じ行に残る。
-  const handle = page.locator(`.layer-row[data-layer="${BASEMAP.pale}"] .layer-drag-handle`);
+  const handle = page.locator(`.layer-row[data-layer="${BASEMAP.photo}"] .layer-drag-handle`);
   await handle.focus();
   await page.keyboard.press('ArrowDown');
-  await expect.poll(() => shownTiles(page)).toEqual([BASEMAP.photo, BASEMAP.pale]);
+  await expect.poll(() => shownTiles(page)).toEqual([BASEMAP.blank, BASEMAP.photo]);
   await expect(handle).toBeFocused();
-  await expect.poll(() => visibleBasemaps(page)).toEqual([BASEMAP.pale, BASEMAP.photo]);
+  await expect.poll(() => visibleBasemaps(page)).toEqual([BASEMAP.pale, BASEMAP.photo, BASEMAP.blank]);
 
   // 隠しても一覧に残る。✕ で外すと一覧から消え、地図からも消える。
   await hideLayer(page, BASEMAP.photo);
-  expect(await shownTiles(page)).toEqual([BASEMAP.photo, BASEMAP.pale]);
+  expect(await shownTiles(page)).toEqual([BASEMAP.blank, BASEMAP.photo]);
   await showLayer(page, BASEMAP.photo);
   await page.locator(`[data-layer="${BASEMAP.photo}"] .layer-remove-button`).click();
-  expect(await shownTiles(page)).toEqual([BASEMAP.pale]);
-  expect(await visibleBasemaps(page)).toEqual([BASEMAP.pale]);
+  expect(await shownTiles(page)).toEqual([BASEMAP.blank]);
+  expect(await visibleBasemaps(page)).toEqual([BASEMAP.pale, BASEMAP.blank]);
   // カタログでは、また足せる状態に戻る。
   await openCatalogFor(page, BASEMAP.photo);
   await expect(page.locator(`[data-catalog-layer="${BASEMAP.photo}"] .catalog-add`)).toBeEnabled();
@@ -3144,11 +3167,12 @@ test('データの重ね順も一覧で入れ替えられる', async ({ page }) 
  * 起動時の見た目と読み込む量が変わる。
  */
 test('足したものは読み直すと既定に戻る', async ({ page }) => {
-  await showLayer(page, BASEMAP.photo);
-  await hideLayer(page, BASEMAP.pale);
+  await showLayer(page, BASEMAP.blank);
+  await page.locator('#basemap-source').selectOption(BASEMAP.photo);
   await page.reload();
   await waitForReady(page);
-  expect(await shownTiles(page)).toEqual([BASEMAP.pale]);
+  expect(await shownTiles(page)).toEqual([]);
+  await expect(page.locator('#basemap-source')).toHaveValue(BASEMAP.pale);
   expect(await visibleBasemaps(page)).toEqual([BASEMAP.pale]);
 });
 
