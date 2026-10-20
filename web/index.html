@@ -111,7 +111,10 @@
                 <button type="button" class="layer-add-button" data-section="tile" title="カタログから地図を追加" data-i18n-title="addTileTitle" data-i18n="add">＋ 追加</button>
               </div>
               <div id="tile-rows"></div>
-              <p id="tile-empty" class="layer-empty" data-i18n="tileEmpty" hidden>「＋ 追加」から背景地図などを選んでください</p>
+              <p id="tile-empty" class="layer-empty" data-i18n="tileEmpty" hidden>「＋ 追加」から重ねる地図を選んでください</p>
+              <!-- **背景地図も1つ選ぶ** (地形の欄と同じ形。中身は ui/layer-list.ts が作る)。いつもいちばん下に敷き、選び直すだけで切り替わる。
+                   上に重ねたい地図は「＋ 追加」で上の行として足す。 -->
+              <div id="basemap-row" class="layer-row" data-layer="basemap" hidden></div>
               <!-- 地形は**1つだけ**選ぶ (MapLibre は地形を1つしか持てない)。 -->
               <div id="terrain-row" class="layer-row" data-layer="terrain" hidden>
                 <div class="layer-head">
@@ -299,7 +302,7 @@
           </ul>
           <h3>データを見る</h3>
           <ul>
-            <li><b>＋ 追加</b>から、データや背景地図を選びます。語を入れて<b>絞り込</b>めます</li>
+            <li><b>背景地図</b>は欄で選ぶだけで切り替わります。データや重ねたい地図は<b>＋ 追加</b>から選びます。語を入れて<b>絞り込</b>めます</li>
             <li>チェックで表示を切り替え、<b>⋮⋮</b> をドラッグして重ね順を変えます</li>
             <li><b>▸</b> は行の下に絞り込み・色分け (地図のテーマでは中の層) を開き、<b>ⓘ</b> はデータの説明と<b>この範囲を取得</b>です</li>
             <li>地図の上の建物などに<b>カーソルを合わせる</b>と (スマホでは押すと)、名前などが出ます</li>

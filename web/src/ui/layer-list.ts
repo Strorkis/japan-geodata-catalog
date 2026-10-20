@@ -65,6 +65,8 @@ export interface Layer {
    * 出し入れもできるが、そのエンジンの間は灰色にして理由を添える (描けるようにするのは TOBE)。
    */
   unsupportedIn?: Partial<Record<EngineId, string>>;
+  /** **背景地図になれる** (地図タイル・スタイルの背景地図)。背景地図の欄で選べる。「＋ 追加」で上に重ねることもできる。 */
+  basemap?: boolean;
 }
 
 /** 区分ごとの目印の層 (描かない)。その区分の層は、この直下に重ねる。 */
@@ -196,9 +198,19 @@ export function createLayerList(options: LayerListOptions): LayerList {
   const indexEl = document.querySelector<HTMLElement>('#catalog-index')!;
   const tabs = [...dialog.querySelectorAll<HTMLButtonElement>('.catalog-tab')];
   const tabNoteEl = dialog.querySelector<HTMLParagraphElement>('#catalog-tab-note')!;
+  const basemapEl = document.querySelector<HTMLDivElement>('#basemap-row')!;
 
-  /** 一覧に置いている行ID。区分ごとに**先頭がいちばん上**。 */
+  /** 一覧に置いている行ID。区分ごとに**先頭がいちばん上**。背景地図の欄で選んだものは入れない (下の `basemapId`)。 */
   const order: Record<Section, string[]> = { data: [], tile: [] };
+  /**
+   * **背景地図の欄で選んでいるもの** (地形の欄と同じく1つだけ)。表示するだけの地図のいちばん下に敷く。
+   * 選び直すだけで切り替わる (前は背景地図も行で、外してから足し直す必要があった。2026-10-19、利用者)。
+   */
+  let basemapId: string | null = null;
+  /** 背景地図の欄のチェック。外しても選んでいるものは覚えておく。 */
+  let basemapVisible = true;
+  /** 一覧にあるか (行か、背景地図の欄か)。 */
+  const isPlaced = (layer: Layer) => order[layer.section].includes(layer.id) || basemapId === layer.id;
   /** 隠したテーマの、出していた中の層 (出し直すときに戻す)。 */
   const lastParts = new Map<string, string[]>();
   /** 中の層を開いている行。**描き直しても開いたまま**にする。 */
@@ -239,7 +251,10 @@ export function createLayerList(options: LayerListOptions): LayerList {
     for (const section of ['tile', 'data'] as const) {
       const anchor = LAYER_ANCHORS[section];
       if (!map.getLayer(anchor)) continue;
-      for (const id of [...order[section]].reverse()) {
+      // 背景地図はいちばん下 (最初に動かす)。
+      const bottomUp = [...order[section]].reverse();
+      if (section === 'tile' && basemapId) bottomUp.unshift(basemapId);
+      for (const id of bottomUp) {
         for (const mapLayer of byId.get(id)?.mapLayerIds() ?? []) {
           if (map.getLayer(mapLayer)) map.moveLayer(mapLayer, anchor);
         }
@@ -253,7 +268,7 @@ export function createLayerList(options: LayerListOptions): LayerList {
    */
   const place = (layer: Layer, parts?: string[]) => {
     const list = order[layer.section];
-    if (list.includes(layer.id) || layer.viewOnly) return;
+    if (isPlaced(layer) || layer.viewOnly) return;
     if (layer.section === 'tile') {
       list.unshift(layer.id);
     } else {
@@ -560,6 +575,106 @@ export function createLayerList(options: LayerListOptions): LayerList {
     el.append(list);
   };
 
+  // ---- 背景地図の欄 ----------------------------------------------------------------
+
+  /** 背景地図を選び直す (前のものは隠す)。チェックの状態はそのまま。 */
+  const chooseBasemap = (id: string) => {
+    if (id === basemapId) return;
+    const previous = basemapId ? byId.get(basemapId) : undefined;
+    if (previous) {
+      setVisible(previous, false);
+      previous.refresh();
+      if (settingsRowId === previous.id) settingsRowId = null;
+    }
+    basemapId = id;
+    const next = byId.get(id)!;
+    setVisible(next, basemapVisible);
+    next.refresh();
+    applyOrder();
+    render();
+    onChange();
+  };
+
+  /**
+   * **背景地図の欄** (地形の欄と同じ形)。1段目にチェック・▸ (不透明度)・ⓘ、2段目に選ぶ欄。並べ替えと ✕ は無い
+   * (いつもいちばん下。隠すならチェックを外す)。上に重ねたい地図は「＋ 追加」で行として足す。
+   */
+  const renderBasemap = () => {
+    const current = basemapId ? byId.get(basemapId) : undefined;
+    basemapEl.hidden = !current;
+    if (!current) return;
+    const toggle = document.createElement('input');
+    toggle.type = 'checkbox';
+    toggle.id = 'basemap-toggle';
+    toggle.checked = basemapVisible;
+    toggle.addEventListener('change', () => {
+      basemapVisible = toggle.checked;
+      setVisible(current, basemapVisible);
+      current.refresh();
+      render();
+      onChange();
+    });
+    const name = document.createElement('label');
+    name.className = 'layer-name';
+    name.htmlFor = toggle.id;
+    name.textContent = m.basemap;
+    name.title = [current.group?.title, current.title, current.vintage].filter(Boolean).join(' · ');
+
+    const settingsOpen = settingsRowId === current.id;
+    const settings = iconButton(
+      'layer-settings-button',
+      settingsOpen ? '▾' : '▸',
+      settingsOpen ? m.closeSettings : m.layerSettings(current.title),
+      () => {
+        settingsRowId = settingsOpen ? null : current.id;
+        render();
+      },
+    );
+    settings.setAttribute('aria-expanded', String(settingsOpen));
+    settings.hidden = !hasSettings(current);
+    const detail = iconButton('layer-detail-button', 'ⓘ', m.layerDetailsLong(current.title), () => openDetails(current));
+    const head = document.createElement('div');
+    head.className = 'layer-head';
+    head.append(toggle, name, settings, detail);
+
+    // 選べるのは背景地図になれるもの全部。**上に重ねている地図は選べない** (地図の層は1つなので、両方には置けない)。
+    const select = document.createElement('select');
+    select.id = 'basemap-source';
+    select.setAttribute('aria-label', m.basemapSourceLabel);
+    for (const layer of layers.filter((l) => l.basemap && !l.viewOnly)) {
+      const option = document.createElement('option');
+      option.value = layer.id;
+      const overlaid = order.tile.includes(layer.id);
+      option.textContent = [layer.title, layer.group ? `(${layer.group.title})` : '', overlaid ? m.basemapOverlaid : '']
+        .filter(Boolean)
+        .join(' ');
+      option.disabled = overlaid;
+      select.append(option);
+    }
+    select.value = current.id;
+    select.addEventListener('change', () => chooseBasemap(select.value));
+    const sub = document.createElement('div');
+    sub.className = 'layer-sub';
+    const reason = unsupported(current);
+    basemapEl.classList.toggle('unsupported', reason !== undefined);
+    sub.append(select);
+    if (reason) {
+      const note = document.createElement('span');
+      note.className = 'layer-unsupported-note';
+      note.textContent = reason;
+      note.title = reason;
+      sub.append(note);
+    }
+    basemapEl.replaceChildren(head, sub);
+    if (settingsOpen && hasSettings(current)) {
+      const slot = document.createElement('div');
+      slot.className = 'layer-settings-slot';
+      current.settings.hidden = false;
+      slot.append(current.settings);
+      basemapEl.append(slot);
+    }
+  };
+
   const renderList = () => {
     // 設定はいったん置き場へ戻す。開いている行があれば、作るときにまたそこへ移す
     // (戻さないと、閉じたときに作り直す前の行と一緒にDOMから外れたままになる)。
@@ -567,8 +682,10 @@ export function createLayerList(options: LayerListOptions): LayerList {
     for (const section of ['data', 'tile'] as const) {
       const rows = order[section].map((id) => byId.get(id)).filter((l): l is Layer => l !== undefined);
       rowsEl[section].replaceChildren(...rows.map(row));
-      emptyEl[section].hidden = rows.length > 0;
+      // 背景地図の欄があれば、重ねる地図が無くても空ではない。
+      emptyEl[section].hidden = rows.length > 0 || (section === 'tile' && basemapId !== null);
     }
+    renderBasemap();
   };
 
   // ---- カタログから足す (ダイアログ) ------------------------------------------------
@@ -640,12 +757,16 @@ export function createLayerList(options: LayerListOptions): LayerList {
 
     const detail = iconButton('layer-detail-button', 'ⓘ', m.layerDetails(layer.title), () => openDetails(layer));
 
-    const placed = order[layer.section].includes(layer.id);
+    const placed = isPlaced(layer);
     const add = document.createElement('button');
     add.type = 'button';
     add.className = 'catalog-add';
     if (layer.viewOnly) {
       add.textContent = m.cannotDraw;
+      add.disabled = true;
+    } else if (basemapId === layer.id) {
+      // 同じ地図を背景と重ねる行の両方には置けない (地図の層は1つ)。
+      add.textContent = m.basemapInUse;
       add.disabled = true;
     } else if (placed) {
       add.textContent = m.added;
@@ -770,6 +891,15 @@ export function createLayerList(options: LayerListOptions): LayerList {
       .sort((a, b) => (section === 'data' ? a.rank - b.rank : 0))
       .map((layer) => layer.id);
   }
+  // 既定で出している背景地図のうち、**いちばん下のもの**を背景地図の欄に移す (ほかは重ねる行のまま)。
+  // 出しているものが無ければ、先頭の背景地図を選んだうえでチェックを外しておく。
+  const defaultBasemap =
+    [...order.tile].reverse().find((id) => byId.get(id)?.basemap) ?? layers.find((l) => l.basemap && !l.viewOnly)?.id;
+  if (defaultBasemap) {
+    basemapId = defaultBasemap;
+    basemapVisible = order.tile.includes(defaultBasemap);
+    order.tile = order.tile.filter((id) => id !== defaultBasemap);
+  }
   for (const layer of layers) storeEl.append(layer.settings);
   applyOrder();
 
@@ -778,8 +908,11 @@ export function createLayerList(options: LayerListOptions): LayerList {
     if (dialog.open) renderCatalog();
   };
 
+  /** 背景地図は表示するだけの地図のいちばん下 (エンジンもいちばん下に敷く)。 */
   const ordered = (section: Section) =>
-    order[section].map((id) => byId.get(id)).filter((l): l is Layer => l !== undefined);
+    [...order[section], ...(section === 'tile' && basemapId ? [basemapId] : [])]
+      .map((id) => byId.get(id))
+      .filter((l): l is Layer => l !== undefined);
 
   return { render, applyOrder, ordered };
 }
