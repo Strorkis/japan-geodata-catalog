@@ -225,7 +225,7 @@
   <body>
     <header>
       <h1>japan-geodata-catalog ダッシュボード</h1>
-      <span class="meta">更新 2026-10-20 19:30 (日本時間)</span>
+      <span class="meta">更新 2026-10-20 21:35 (日本時間)</span>
       <span class="meta">
         <a href="https://strorkis.github.io/japan-geodata-catalog/">公開サイト (改名後の URL)</a> ·
         <a href="roadmap.md">方針 (roadmap)</a> ·
@@ -241,7 +241,7 @@
       <div class="card kpi">
         <div class="label">公開待ちの PR</div>
         <div class="value">1 <small>件</small></div>
-        <span class="status you">背景地図の欄 (feat/basemap-row)</span>
+        <span class="status you">地図の準備が終わらない件 (fix/basemap-load-hang)</span>
       </div>
       <div class="card kpi">
         <div class="label">R2 の配信データ (手元の data/output)</div>
@@ -258,9 +258,9 @@
       <h2>公開までの残り</h2>
       <ol class="steps">
         <li class="current">
-          <b>ブランチ <code>feat/basemap-row</code> を push → PR を見てマージ</b><span class="status you">あなたの番</span>
+          <b>ブランチ <code>fix/basemap-load-hang</code> を push → PR を見てマージ</b><span class="status you">あなたの番</span>
           <span class="sub">
-            気付いてもらった4点目: 背景地図を欄で選ぶだけで切り替える (地形の欄と同じ形)。重ねたい地図は今までどおり「＋ 追加」。
+            背景地図のタイルが全部失敗すると「準備中」のまま、の件。地図の準備をスタイルが読めた時点で進める。
             push のあと私が PR を作る。PR の「読むべき所」を見てから、マージコミットでマージ
           </span>
         </li>
@@ -273,23 +273,23 @@
         <h2>次にやること</h2>
         <ol class="tasks">
           <li>
-            <b>スタイルと 3D Tiles の不透明度</b>
+            <b>触って気付いたこと (10-19)</b> <span class="status todo">次</span>
+            <span class="sub">吹き出しを出さないモード・建物を中心から ○ m まで・PLATEAU の整備範囲を細かく (大きさを測ってから相談)。roadmap「触って気付いたこと」</span>
+          </li>
+          <li>
+            <b>カタログに載せるものを増やす</b>
             <span class="sub">
-              スタイルを Portolan の <code>style</code> アセットとして持つ。ライブラリに分ける作業 (A〜D) は済んだ。
-              データの行の描き方を部品にするのは TOBE (roadmap「ライブラリに分ける」)
+              PLATEAU の建物以外 (全国まとめの 3D Tiles は表示するだけの地図、都市ごとのものは出所だけ)・重ねるハザードマップ・国土数値情報・
+              シームレス地質図・G空間情報センター (利用者が選んだ。載せる前に規約の本文を確かめる)
             </span>
           </li>
           <li>
-            <b>触って気付いたこと (10-19)</b>
-            <span class="sub">吹き出しを出さないモード・PLATEAU の整備範囲を細かく・表示量を項目ごとに (建物を中心から ○ m まで、など)。roadmap「触って気付いたこと」</span>
+            <b>スタイルと 3D Tiles の不透明度</b>
+            <span class="sub">スタイルを Portolan の <code>style</code> アセットとして持つ。データの行の描き方を部品にするのは TOBE</span>
           </li>
           <li>
             <b>ジオコーダーを並べる</b>
             <span class="sub">住所の正規化 (Geolonia の normalize-japanese-addresses) と Nominatim (押したときだけ・毎秒1回まで)</span>
-          </li>
-          <li>
-            <b>背景地図が全部失敗すると「準備中」のまま</b> <span class="status todo">不具合</span>
-            <span class="sub">同じタブで2回目に開いたときだけ。前からある (roadmap「見つけた不具合」)</span>
           </li>
         </ol>
       </section>

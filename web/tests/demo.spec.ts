@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page, type Route } from '@playwright/test';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { MapLibreMap, GeoJSONSource } from 'maplibre-gl';
@@ -1172,6 +1172,23 @@ test('白地図を入れると、無いズームのタイルを取りに行か�
   );
   const lastBasemap = ids.findLastIndex((id) => id.startsWith('basemap/'));
   expect(ids.slice(0, lastBasemap + 1).every((id) => id.startsWith('basemap/'))).toBe(true);
+});
+
+/**
+ * **背景地図と地形のタイルが全部取れなくても、地図の準備は終わる** (配布元が落ちているとき)。前は同じタブで2回目に開くと
+ * 「準備中」のまま進まないことがあった (2026-10-12 に見つけた。地図の準備を、最初の画面のタイルが揃うまで待っていた)。
+ */
+test('背景地図のタイルが全部取れなくても、地図の準備は終わる', { tag: '@map' }, async ({ page }) => {
+  // 落ちている配信は、接続を切ることもエラーを返すこともある。両方を混ぜる。
+  let n = 0;
+  const fail = (route: Route) => (n++ % 2 === 0 ? route.abort() : route.fulfill({ status: 503, body: '' }));
+  await page.route(/cyberjapandata\.gsi\.go\.jp\/xyz\//, fail);
+  await page.route(TERRAIN_TILES, fail);
+  // 同じタブで何度か開き直す (1回目に開くときは起きなかった)。
+  for (let i = 0; i < 3; i++) {
+    await page.goto('./');
+    await waitForMap(page);
+  }
 });
 
 // 地図と地形は別々に選べる。片方の操作で、自分で選んだもう片方が勝手に変わらないこと。
