@@ -18,6 +18,7 @@ import {
   type BuildingSource,
   type LineSource,
   type MeshSource,
+  type PlaceSource,
   type RailwaySource,
   type RoadSource,
   type ViewBounds,
@@ -48,8 +49,12 @@ export interface NearbyPanelOptions {
     railways: RailwaySource[];
     road: RoadSource | undefined;
     lines: LineSource[];
+    /** 場所と施設。一覧で出しているものだけを調べる (`isVisible`)。 */
+    places: PlaceSource[];
     meshes: MeshSource[];
   };
+  /** 一覧で出しているか。 */
+  isVisible: (id: string) => boolean;
   /** 時間のかかる処理を「処理中」の表示で包む。 */
   busy: <T>(label: string, run: () => Promise<T>) => Promise<T>;
   ensureSpatial: () => Promise<void>;
@@ -112,6 +117,7 @@ const NEARBY_LAYERS = [
   'nearby-zone-line',
   'nearby-hits',
   'nearby-hit-lines',
+  'nearby-hit-points',
   'nearby-origin-fill',
   'nearby-origin-casing',
   'nearby-origin-line',
@@ -190,12 +196,15 @@ export function createNearbyPanel(options: NearbyPanelOptions): NearbyPanel {
         onlyName('建物'),
       ]);
     }
-    if (map.getLayer('nearby-hit-lines')) {
-      map.setFilter('nearby-hit-lines', [
-        'all',
-        ['!', ['in', ['get', 'kind'], ['literal', [...hidden]]]],
-        focus ? ['all', ['==', ['get', 'kind'], focus.kind], ['==', ['get', 'name'], focus.name]] : TRUE,
-      ]);
+    const lineFilter: ExpressionSpecification = [
+      'all',
+      ['!', ['in', ['get', 'kind'], ['literal', [...hidden]]]],
+      focus ? ['all', ['==', ['get', 'kind'], focus.kind], ['==', ['get', 'name'], focus.name]] : TRUE,
+    ];
+    if (map.getLayer('nearby-hit-lines')) map.setFilter('nearby-hit-lines', lineFilter);
+    // 点の層は点だけを描く (同じソースの線と面は上の層)。
+    if (map.getLayer('nearby-hit-points')) {
+      map.setFilter('nearby-hit-points', ['all', ['==', ['geometry-type'], 'Point'], lineFilter]);
     }
   };
 
@@ -377,6 +386,12 @@ export function createNearbyPanel(options: NearbyPanelOptions): NearbyPanel {
       ]);
     }
     for (const source of sources.lines) {
+      await source.ensure();
+      names.push([source.title, await fetchNearbyNames(conn, source, frame, 'name'), source.id]);
+    }
+    // 場所と施設 (公園・駐車場・公共施設など)。**一覧で出しているものだけ** (データが大きく、出していない出所まで
+    // 調べると周辺検索が重くなる)。名前の無いもの (駐車場の多く) も、形は地図に描く。
+    for (const source of sources.places.filter((s) => options.isVisible(s.id))) {
       await source.ensure();
       names.push([source.title, await fetchNearbyNames(conn, source, frame, 'name'), source.id]);
     }

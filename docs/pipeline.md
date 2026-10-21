@@ -516,6 +516,39 @@ cargo run --release --bin add_coarse_lod -- \
   タイル (QuadKey ズーム9、約60km) ごとにまとめれば名前の無い線も残る。
   粗い段は送電線 1.8MB (全国)、川 5.5MB (行グループ9つ)
 
+### 公園・広場・駐車場・公共施設 (2026-10-21)
+
+```sh
+for k in open_space amenity facility; do
+  cargo run --release --bin extract_overture -- $k ../data/overture/${k}_jp.parquet
+  cargo run --release --bin overture_places_to_geoparquet -- $k \
+    ../data/overture/${k}_jp.parquet ../data/overture/divisions_jp.parquet ../data/overture/places-tmp
+done
+# 並べ直し (3つとも。粗い段は作らない — 点と小さな面なので)
+cargo run --release --bin optimize_geoparquet -- \
+  ../data/overture/places-tmp/overture_open_spaces.parquet ../data/output/overture/overture_open_spaces.parquet
+```
+
+**ライセンスの違うものは別のファイル** (base は ODbL、places は CDLA Permissive 2.0 などの混在。1つにすると
+places まで ODbL の派生データベースになる)。どれも `category` (絞り込みの単位) と `class` (Overture の分類) を持つ。
+
+| ファイル | 出所 | 中身 | 件数 / 配信 |
+| --- | --- | --- | --- |
+| `overture_open_spaces` | base/land_use (面、OSM 由来) | 公園・緑地・運動場・遊び場・広場・学校の敷地 | 23.4万 / 42.5MB |
+| `overture_amenities` | base/infrastructure (面と点、OSM 由来) | 駐車場 (面 が大半)・公衆トイレ・水飲み場 | 51.0万 / 48.3MB |
+| `overture_facilities` | places/place (点) | 役所・公民館・図書館・学校・病院・警察・消防・公園・駐車場 | 16.0万 / 8.5MB |
+
+- **種類はまとめる** (`pipeline/src/overture.rs` の `OPEN_SPACE_CATEGORY`・`FACILITY_CATEGORY`)。Overture の class は細かい
+  (公園だけで park・village_green・dog_park)。墓地・農地・ゴルフ場、`social_or_community_service` (福祉・NPO が混ざり広すぎる)、
+  塾や教室が混ざる `education` は入れない。郵便局 (`post_office`) は 2026-09-23.1 の日本に1件も無い。病院には小さな診療所も混ざる
+- **places は住所の国 (`JP`) で日本だけにし**、閉じた施設と確からしさの低いもの (`confidence` < 0.5) を外す (23.6万 → 16.0万件)。
+  base は送電線と同じく市区町村との交差で国外を落とす
+- **places は1件ごとに出所とライセンスを持ち回る** (`source`・`license`)。2026-09-23.1 の日本では CDLA Permissive 2.0 が13.2万・
+  CC0 1.0 (AllThePlaces) が1.5万・Apache-2.0 (Foursquare) が1.3万。CDLA Permissive 2.0 は本文をデータと一緒に置くこと、
+  Apache-2.0 は本文と NOTICE を置くことを求めるので、`pipeline/licenses/overture-places.md` を `build_catalog` が
+  `overture/LICENSES-places.md` に写し、Collection から `rel: license` で指す
+- 東京の中心部 (23区あたり) で、駐車場 2.1万・公園 4,634・運動場 2,994・遊び場 754・広場 76 (land_use と infrastructure、2026-10-21)
+
 ### 海域を削る
 
 Overtureの `division_area` は `class='land'` で絞ってもなお湾を跨いでいる。

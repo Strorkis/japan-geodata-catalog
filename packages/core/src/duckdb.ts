@@ -18,12 +18,15 @@ import {
 } from './stac';
 import {
   LINE_KINDS,
+  PLACE_KINDS,
   buildingTiles,
   type BuildingCoverage,
   type BuildingSource,
   type LineKind,
   type LineSource,
   type MeshSource,
+  type PlaceKind,
+  type PlaceSource,
   type RailwaySource,
   type RoadSource,
 } from './sources';
@@ -103,6 +106,8 @@ export interface Database {
   roadSource: RoadSource | undefined;
   /** 送電線・川など、名前と種別だけを持つ線。カタログに並んだ順。 */
   lineSources: LineSource[];
+  /** 場所と施設 (公園・広場・駐車場・公共施設など)。カタログに並んだ順。 */
+  placeSources: PlaceSource[];
   /** 道路等級の語彙。絞り込みの選択肢をここから作る。 */
   roadClasses: string[];
   /** 道路がいつ時点のものか。ホバーで出す。 */
@@ -544,6 +549,22 @@ export function initDuckDb(collections: Collection[]): Database {
       return source;
     });
 
+  // 場所と施設。線と同じく、ONにするまで Item を読まない。種類の語彙はカタログから。
+  const placeSources: PlaceSource[] = collections
+    .filter((c) => (PLACE_KINDS as readonly string[]).includes(c.kind))
+    .map((collection) => {
+      const source: PlaceSource = {
+        id: collection.id,
+        kind: collection.kind as PlaceKind,
+        title: collection.title,
+        bbox: collection.bbox,
+        files: [],
+        categories: (collection.summaries['category'] ?? []) as string[],
+        ensure: lazyFiles(collection, (files) => (source.files = files)),
+      };
+      return source;
+    });
+
   // 路線の索引と、区間そのもの。**検索とハイライトのときだけ**読む。
   const routeCollection = byKind('road_route')[0];
   const ensureRoutes =
@@ -605,6 +626,7 @@ export function initDuckDb(collections: Collection[]): Database {
     railwayVintage: railwayCollection?.vintage,
     roadSource,
     lineSources,
+    placeSources,
     // 等級の語彙もカタログから。鉄道の事業者種別と同じ扱い。
     roadClasses: (roadCollection?.summaries['class'] ?? []) as string[],
     roadVintage: roadCollection?.vintage,

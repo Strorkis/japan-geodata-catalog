@@ -341,6 +341,13 @@ pub enum DatasetKind {
     /// 川・運河 (線)。出所はOverture (元はOpenStreetMap)。**参考どまり** —
     /// 国土数値情報の河川 (W05) は非商用で使えず、基盤地図情報の水涯線は承認待ち。
     Waterway,
+    /// 公園・緑地・運動場・遊び場・広場・学校の敷地 (面)。出所はOverture の land_use (元はOpenStreetMap)。
+    /// 種類は `category` (`crate::overture` の `OPEN_SPACE_CATEGORY`)。
+    OpenSpace,
+    /// 駐車場・公衆トイレ・水飲み場 (面と点)。出所はOverture の infrastructure (元はOpenStreetMap)。
+    Amenity,
+    /// 公共施設など (点)。出所はOverture の places。**行ごとにライセンスが違う** (`license` の列)。
+    Facility,
     /// **整備範囲** (面)。地域メッシュで「どこまで入っているか」を表す。
     ///
     /// 収録範囲をbboxの和で示すと、PLATEAUを306都市に広げた時点で日本をほぼ覆う
@@ -560,8 +567,44 @@ const OVERTURE_TRANSPORTATION: Attribution = Attribution {
 };
 
 /// 川と送電線 (base の water / infrastructure) は OSM 由来。base に挙がっている ESA WorldCover・
-/// ETOPO1・GLOBathy は土地被覆と水深の種類の出所で、うちは取っていない。
+/// ETOPO1・GLOBathy は土地被覆と水深の種類の出所で、うちは取っていない。公園など (land_use) と駐車場など
+/// (infrastructure) も OSM 由来。
 const OVERTURE_BASE: Attribution = OVERTURE;
+
+/// **places は ODbL ではない。** 出所ごとにライセンスが違い (CDLA Permissive 2.0・Foursquare の Apache-2.0・
+/// AllThePlaces の CC0 1.0)、Overture は出所ごとの出典の文言を示している (<https://docs.overturemaps.org/attribution/>、
+/// 2026-10-21 に読んだ)。2026-09-23.1 の東京の中心部では、Overture・Meta・Foursquare・AllThePlaces・Microsoft の順に多い。
+/// CDLA Permissive 2.0 は本文をデータと一緒に置くこと、Apache-2.0 は本文と NOTICE を置くことを求めるので、
+/// [`LICENSE_FILES`] で写して `rel: license` で指す。**継承は無い** (別のファイルにしてあるので ODbL も及ばない)。
+const OVERTURE_PLACES: Attribution = Attribution {
+    // 出典は英語の文言なので、加工した旨も英語で添える (Apache-2.0 の 4条 b。何をしたかは `processing:lineage` と本文のファイル)。
+    text: concat!(
+        "Overture Maps · Data from Meta, Microsoft (CDLA Permissive 2.0) · © Foursquare Labs, Inc. (Apache 2.0) · ",
+        "Data from AllThePlaces (CC0 1.0) · modified by ",
+        creator!()
+    ),
+    url: "https://docs.overturemaps.org/attribution/",
+    license: "CDLA-Permissive-2.0 AND Apache-2.0 AND CC0-1.0",
+    provider: "Overture Maps Foundation",
+    terms: Terms {
+        name: "CDLA Permissive 2.0 (一部 Apache-2.0・CC0 1.0)",
+        url: "https://cdla.dev/permissive-2-0/",
+        commercial: Commercial::Allowed,
+        // CDLA 自体は出典の表示を求めないが、Apache-2.0 (Foursquare) は NOTICE を保つことを求め、Overture も出典を示している。
+        attribution_required: true,
+        // Apache-2.0 の 4条 b (変更したファイルに変更した旨を書く)。
+        note_modification: true,
+        share_alike: false,
+    },
+};
+
+/// **データと一緒に置く規約の本文** (規約が「本文をデータと一緒に」と求めるもの)。`(種別, パイプラインの licenses/ の
+/// ファイル, 配信先の名前)`。配信先は Collection と同じディレクトリで、Collection から `rel: license` で指す。
+pub const LICENSE_FILES: &[(DatasetKind, &str, &str)] = &[(
+    DatasetKind::Facility,
+    "overture-places.md",
+    "LICENSES-places.md",
+)];
 
 /// PLATEAU (3D都市モデル) は政府標準利用規約に準じたPDL1.0。
 /// 加工した場合はその旨を示すことを求めているので、他の国土交通省コンテンツと
@@ -814,6 +857,55 @@ const DESCRIPTIONS: &[(&str, Description)] = &[
             summary_columns: &[],
             mesh_digits: None,
             via: "https://docs.overturemaps.org/guides/base/",
+        },
+    ),
+    (
+        "overture_open_spaces",
+        Description {
+            kind: DatasetKind::OpenSpace,
+            collection: "overture-open-spaces",
+            lineage: "Overture Maps の base (land_use) から日本の公園・緑地・運動場・遊び場・広場・学校の敷地の面を取り出し、\
+                      種類をまとめて GeoParquet にしました。行は場所ごとに並べ替えています。",
+            title: "公園・広場・運動場",
+            description: "公園・緑地・運動場・遊び場・広場・学校の敷地の面です。元は OpenStreetMap で、国のデータではありません。\
+                          名前を持つものもあります。",
+            attribution: OVERTURE_BASE,
+            // 種類 (公園・運動場など)。絞り込みの選択肢になる。
+            summary_columns: &["category"],
+            mesh_digits: None,
+            via: "https://docs.overturemaps.org/guides/base/",
+        },
+    ),
+    (
+        "overture_amenities",
+        Description {
+            kind: DatasetKind::Amenity,
+            collection: "overture-amenities",
+            lineage: "Overture Maps の base (infrastructure) から日本の駐車場・公衆トイレ・水飲み場を取り出し、GeoParquet にしました。\
+                      行は場所ごとに並べ替えています。",
+            title: "駐車場・トイレ・水飲み場",
+            description: "駐車場 (ほとんどが敷地の面)・公衆トイレ・水飲み場です。元は OpenStreetMap で、国のデータではありません。",
+            attribution: OVERTURE_BASE,
+            summary_columns: &["category"],
+            mesh_digits: None,
+            via: "https://docs.overturemaps.org/guides/base/",
+        },
+    ),
+    (
+        "overture_facilities",
+        Description {
+            kind: DatasetKind::Facility,
+            collection: "overture-facilities",
+            lineage: "Overture Maps の places から、日本の住所の役所・公民館・図書館・学校・病院・警察・消防・公園・駐車場を\
+                      取り出し、閉じた施設と確からしさの低いものを除いて、種類をまとめて GeoParquet にしました。出所とライセンスは\
+                      1件ごとに持ち回っています。行は場所ごとに並べ替えています。",
+            title: "公共施設など",
+            description: "役所・公民館・図書館・学校・病院・警察・消防と、公園・駐車場の点です。出所は Meta・Microsoft・\
+                          Foursquare などで、1件ごとにライセンスが違います。病院には小さな診療所も含まれます。",
+            attribution: OVERTURE_PLACES,
+            summary_columns: &["category"],
+            mesh_digits: None,
+            via: "https://docs.overturemaps.org/guides/places/",
         },
     ),
     // **`plateau_bldg` より前に置くこと。** 前方一致で引くので、後ろだと吸われる。
@@ -1526,6 +1618,9 @@ mod tests {
                     | DatasetKind::Railway
                     | DatasetKind::RailwayStation
                     | DatasetKind::Road
+                    | DatasetKind::OpenSpace
+                    | DatasetKind::Amenity
+                    | DatasetKind::Facility
             );
             assert_eq!(
                 is_filterable,

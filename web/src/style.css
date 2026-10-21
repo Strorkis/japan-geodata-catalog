@@ -619,6 +619,33 @@ body,
   display: none;
 }
 
+/* 場所と施設の種類 (ui/layers/places.ts)。鉄道の事業者種別と同じ形。面と点が混ざるので、色見本は四角。 */
+.place-categories {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 0.4rem;
+  border: 1px solid #eee;
+  border-radius: 0.3rem;
+  padding: 0.3rem;
+}
+
+.place-categories label {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.1rem 0;
+  font-weight: normal;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.place-categories .swatch {
+  display: inline-block;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 0.15rem;
+}
+
 /* 凡例。色の段と iGRC の対応を示す。 */
 #mesh-legend {
   width: 100%;

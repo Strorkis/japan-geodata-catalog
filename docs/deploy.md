@@ -114,6 +114,7 @@ CI のランナーには GPU が無く地図をソフトウェアで描くので
 | STAC Browser の背景地図 | 表示 | 既定は OSM の公式タイル (重い使い方は禁止) | ✅ **地理院タイルに替えた** |
 | PLATEAU | 変換して配る / 公式の 3D Tiles と CityGML を指す | PDL1.0・CC BY 4.0: 出典と加工の明記 | ✅ 配信 API は手続き不要・無償 (試験運用で保証なし) |
 | Overture | 変換して配る | **ODbL**: 出典、派生物は ODbL で提供 | ✅ ODbL で提供 (README)。**出典を主題ごとに直した** (下の注意) |
+| Overture の places (公共施設など) | 変換して配る (10-21 に足した) | **ODbL ではない**。CDLA Permissive 2.0 (本文をデータと一緒に)・Apache-2.0 (本文と NOTICE、変更した旨)・CC0 1.0 が行ごとに混在 | ✅ 別ファイル。行ごとに `license`。本文と NOTICE を `overture/LICENSES-places.md` に置き `rel: license` で指す。出典に加工した旨 |
 | 国土数値情報 (鉄道 N02) | 変換して配る | 2020年以降はオープンデータ | ✅ |
 | 国勢調査 (地域メッシュ) | 変換して配る | 政府標準利用規約 2.0: 出典と加工の明記 | ✅ |
 | 位置参照情報 | 変換して配る | 独自の約款: 出典の書き方の指定、**精度の要る測量・証明には使えない** | ✅ 第三者への提供も可 |
@@ -232,9 +233,10 @@ cd data/output && mise exec -- jq -r '.links[] | select(.rel=="child") | .href' 
 rclone copy data/output "$R2" --filter '- /items.parquet' --filter '+ *.parquet' --filter '- **' \
   --size-only -P
 
-# 2. まとめ以外の JSON と items.parquet を上げる (大きさで比べない)
+# 2. まとめ以外の JSON と items.parquet と、データと一緒に置く規約の本文 (LICENSES-*.md) を上げる (大きさで比べない)
 rclone copy data/output "$R2" \
-  --filter '- /collections*.json' --filter '+ *.json' --filter '+ /items.parquet' --filter '- **' -P
+  --filter '- /collections*.json' --filter '+ *.json' --filter '+ /items.parquet' --filter '+ LICENSES-*.md' \
+  --filter '- **' -P
 
 # 3. まとめを最後に上げる
 rclone copy data/output "$R2" --filter '+ /collections*.json' --filter '- **' -P
@@ -248,6 +250,8 @@ git push
 
 - `- /collections*.json` — 先頭の `/` で**ルートのものだけ**を外す
 - `+ *.json` — 残りのJSON (Catalog・サブカタログ・Collection と、その英語版)
+- `+ LICENSES-*.md` — **データと一緒に置く規約の本文** (2026-10-21 から。places の CDLA Permissive 2.0 などが求める。
+  `build_catalog` が写す)。parquet と JSON だけを選んでいると上がらない
 - `- **` — それ以外は外す
 
 選ばれるファイルは、**上げる前に手元で確かめられる** (`lsf` はリモートに触れない。
