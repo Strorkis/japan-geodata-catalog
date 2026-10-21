@@ -3973,8 +3973,10 @@ test('周辺検索: 出している公園と公共施設が結果に入る', asy
  * **周辺検索 — 地図上の点から。** ○m以内の建物 (段ごと)・駅・人口が出て、
  * 範囲の輪郭と当たった建物が地図に重なる。**距離を広げると件数は減らない。**
  */
-test('周辺検索: 地図上の点から、建物と駅が出て、距離を広げても減らない', async ({ page }) => {
+test('周辺検索: 地図上の点から、建物と駅が出て、距離を広げても減らない', async ({ page }, testInfo) => {
   test.skip(!(await hasPlateau(page)), 'PLATEAUの建物データが無い');
+  // 距離を変えて2回調べるので長い。単独でも55〜59秒かかり、手元が重いと60秒の上限で落ちた (2026-10-21)。
+  testInfo.setTimeout(Math.max(testInfo.timeout, 120_000));
   await page.evaluate(() => {
     (window as unknown as TestWindow).__map!.jumpTo({ center: [139.7671, 35.6812], zoom: 16 });
   });
