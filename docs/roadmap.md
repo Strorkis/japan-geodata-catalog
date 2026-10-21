@@ -59,7 +59,7 @@
 | D `refactor/pipeline-crate-name` | Rust のクレート名を `duck-geocoder` から `japan-geodata-pipeline` に付け直す (利用者が選んだ) | 10-18 |
 
 置き場所は **`web/` はそのまま、直下に `packages/*`** (`web/` を動かすと文書・CI のパスの直しが大きい)。名前は `@japan-geodata-catalog/*`
-(npm には出さない)。**各 PR の前に本番ビルドの E2E を全件流す。**
+(npm には出さない)。**各 PR の前に本番ビルドの E2E を全件流す** (この作業のときの約束。2026-10-21 からはデプロイの前に1回)。
 
 **A でしたこと:**
 

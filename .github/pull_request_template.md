@@ -13,7 +13,8 @@
 
 ## 確かめたこと
 
-- [ ] 本番ビルドの E2E を全件 (`cd web && pnpm test:dist`)
+- [ ] 変えた機能に関わる E2E (`-g` で絞ったもの。何を流したか書く)
+- [ ] 本番ビルドの E2E を全件 (`cd web && pnpm test:dist --workers=1`)。**デプロイ (main へのマージ) の前に1回**。文書・テストだけなら外す
 - [ ] pipeline (`cargo fmt && cargo clippy --all-targets -- -D warnings && cargo test`)。触っていなければ外す
 
 ## 公開の前にあなたがすること

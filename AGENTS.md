@@ -164,7 +164,10 @@ R2へのアップロードが要るとき) に更新すること。経緯や根�
 
 ```sh
 cd pipeline && cargo fmt && cargo clippy --all-targets -- -D warnings && cargo test
-cd web && pnpm exec tsc --noEmit && pnpm -w run test:unit && pnpm test && pnpm test:dist
+# 作っている間: 型・単体と、変えた機能に関わる E2E だけ (数分)
+cd web && pnpm exec tsc --noEmit && pnpm -w run test:unit && pnpm exec playwright test -g '<変えた機能>' --no-deps
+# デプロイ (main へのマージ) の前に1回: 本番ビルドで全件 (30分前後)
+cd web && pnpm test:dist --workers=1
 ```
 
 **pnpm のワークスペースの起点はリポジトリの直下** (`pnpm-workspace.yaml`・`pnpm-lock.yaml`・`.pnpmfile.cjs`)。Web サイト (`web/`) と
@@ -172,9 +175,17 @@ cd web && pnpm exec tsc --noEmit && pnpm -w run test:unit && pnpm test && pnpm t
 (`web/` で `pnpm test:unit` だと web の分だけ)。
 
 **Web の E2E は CI では流さない** (2026-10-16、利用者の判断)。CI のランナーは GPU が無く、地図をソフトウェアで描いて
-時間切れになり、公開が止まったため。**push の前に手元で `pnpm test:dist` を全件流す** (1回30分前後)。
-CI は型・単体テスト・ビルドと、R2 の CORS と Range の確認 (手元では見えない) だけを回す。落ちれば公開されない
-(docs/deploy.md「テスト」)。
+時間切れになり、公開が止まったため。CI は型・単体テスト・ビルドと、R2 の CORS と Range の確認 (手元では見えない) だけを回す。
+落ちれば公開されない (docs/deploy.md「テスト」)。
+
+**本番ビルドの E2E の全件は、デプロイ (main へのマージ) の前に1回だけ流す** (2026-10-21、利用者の判断)。全件は1回30〜45分かかり、
+PR ごとに流していたら進みが遅くなりすぎた (前は「各 PR の前に全件」)。
+
+- **作っている間は、変えた機能に関わる E2E だけを流す** (`-g` で絞る。`--no-deps` を付ける)。型と単体テストは毎回
+- **いくつかの機能をまとめてデプロイする。** PR はまとめても分けてもよいが、全件を流してから main に入れる。
+  全件のあとに足したのが文書やテストだけなら、流し直さない
+- **文書だけ・テストだけの変更は全件を流さない**
+- 全件で落ちたら、直したテストと、流れなかったもの (`engines` は `main` に依る) だけを流し直す
 
 ### ブランチと PR (2026-10-18、利用者)
 

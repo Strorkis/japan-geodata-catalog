@@ -91,7 +91,8 @@ VITE_BASE_PATH=/japan-geodata-catalog/ pnpm test:dist
 DATA_LATENCY_MS=450 DATA_BANDWIDTH_MBPS=16 pnpm test:dist
 ```
 
-**E2E は CI では流さない。push の前に手元で `pnpm test:dist` を全件流す** (2026-10-16、利用者の判断)。
+**E2E は CI では流さない。デプロイ (main へのマージ) の前に手元で `pnpm test:dist` を全件流す** (2026-10-16、利用者の判断。
+2026-10-21 から、PR ごとではなくデプロイの前に1回。作っている間は関わるテストだけ。AGENTS.md「変更を入れるとき」)。
 CI のランナーには GPU が無く地図をソフトウェアで描くので、3並列だとどの手順も数秒かかって時間切れになり、
 3回続けて公開が止まった (地図のエンジンを足したあと)。CI は型・単体テスト・ビルドと、
 **R2 の CORS と Range の確認 (curl で1バイト読む)** だけを回す。R2 の配信の設定は手元のテストでは見えない
