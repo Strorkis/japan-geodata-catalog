@@ -1,7 +1,8 @@
 use anyhow::{Context, Result, bail};
 use japan_geodata_pipeline::overture::{
-    BoundingBox, DEFAULT_RELEASE, JAPAN_BBOX, OvertureLine, build_divisions_extract_sql,
-    build_extract_sql, build_lines_extract_sql, build_ocean_extract_sql, build_roads_extract_sql,
+    BoundingBox, DEFAULT_RELEASE, JAPAN_BBOX, OvertureLine, OverturePlace,
+    build_divisions_extract_sql, build_extract_sql, build_lines_extract_sql,
+    build_ocean_extract_sql, build_places_extract_sql, build_roads_extract_sql,
 };
 use std::path::PathBuf;
 use std::process::Command;
@@ -40,6 +41,11 @@ fn main() -> Result<()> {
             eprintln!("Overture から日本周辺の{line:?}を抽出しています...");
             build_lines_extract_sql(line, &release(), JAPAN_BBOX, &prepare(output)?)
         }
+        [_, kind @ ("open_space" | "amenity" | "facility"), output] => {
+            let place = OverturePlace::parse(kind)?;
+            eprintln!("Overture から日本周辺の{place:?}を抽出しています...");
+            build_places_extract_sql(place, &release(), JAPAN_BBOX, &prepare(output)?)
+        }
         _ => bail!(
             "usage:\n  \
              extract_overture buildings <output.parquet> <xmin> <ymin> <xmax> <ymax>\n  \
@@ -47,7 +53,8 @@ fn main() -> Result<()> {
              extract_overture ocean <output.parquet>\n  \
              extract_overture roads <output.parquet>\n  \
              extract_overture power <output.parquet>\n  \
-             extract_overture water <output.parquet>\n\n\
+             extract_overture water <output.parquet>\n  \
+             extract_overture <open_space|amenity|facility> <output.parquet>\n\n\
              例:\n  \
              extract_overture buildings ../data/output/overture_buildings_minato.parquet \\\n    \
              139.73 35.63 139.78 35.68\n  \

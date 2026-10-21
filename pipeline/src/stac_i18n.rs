@@ -262,6 +262,48 @@ const EN: &[(&str, &str)] = &[
         "川と運河の流れの線です。元は OpenStreetMap で、国のデータではありません。",
         "Flow lines of rivers and canals. They come from OpenStreetMap, not from national data.",
     ),
+    ("公園・広場・運動場", "Parks, plazas and sports grounds"),
+    (
+        "公園・緑地・運動場・遊び場・広場・学校の敷地の面です。元は OpenStreetMap で、国のデータではありません。名前を持つものもあります。",
+        "Areas of parks, greens, sports grounds, playgrounds, plazas and school grounds. They come from OpenStreetMap, \
+         not from national data. Some have names.",
+    ),
+    (
+        "Overture Maps の base (land_use) から日本の公園・緑地・運動場・遊び場・広場・学校の敷地の面を取り出し、種類をまとめて GeoParquet にしました。行は場所ごとに並べ替えています。",
+        "Extracted the areas of parks, greens, sports grounds, playgrounds, plazas and school grounds in Japan from \
+         Overture Maps base (land_use), grouped their kinds and wrote them as GeoParquet. Rows are sorted by location.",
+    ),
+    (
+        "駐車場・トイレ・水飲み場",
+        "Parking, toilets and drinking water",
+    ),
+    (
+        "駐車場 (ほとんどが敷地の面)・公衆トイレ・水飲み場です。元は OpenStreetMap で、国のデータではありません。",
+        "Parking (mostly as lot areas), public toilets and drinking water. They come from OpenStreetMap, not from national data.",
+    ),
+    (
+        "Overture Maps の base (infrastructure) から日本の駐車場・公衆トイレ・水飲み場を取り出し、GeoParquet にしました。行は場所ごとに並べ替えています。",
+        "Extracted parking, public toilets and drinking water in Japan from Overture Maps base (infrastructure) and wrote \
+         them as GeoParquet. Rows are sorted by location.",
+    ),
+    ("公共施設など", "Public facilities and more"),
+    (
+        "役所・公民館・図書館・学校・病院・警察・消防と、公園・駐車場の点です。出所は Meta・Microsoft・Foursquare などで、1件ごとにライセンスが違います。病院には小さな診療所も含まれます。",
+        "Points of government offices, community centers, libraries, schools, hospitals, police and fire stations, \
+         plus parks and parking. They come from Meta, Microsoft, Foursquare and others, and the license differs \
+         per row. Hospitals include small clinics.",
+    ),
+    (
+        "Overture Maps の places から、日本の住所の役所・公民館・図書館・学校・病院・警察・消防・公園・駐車場を取り出し、閉じた施設と確からしさの低いものを除いて、種類をまとめて GeoParquet にしました。出所とライセンスは1件ごとに持ち回っています。行は場所ごとに並べ替えています。",
+        "Extracted government offices, community centers, libraries, schools, hospitals, police and fire stations, \
+         parks and parking with Japanese addresses from Overture Maps places, removed closed and low-confidence ones, \
+         grouped their kinds and wrote them as GeoParquet. The source and license are kept per row. Rows are sorted by location.",
+    ),
+    (
+        "CDLA Permissive 2.0 (一部 Apache-2.0・CC0 1.0)",
+        "CDLA Permissive 2.0 (partly Apache-2.0 and CC0 1.0)",
+    ),
+    ("規約の本文", "Full license texts"),
     ("建物の整備範囲", "Building coverage"),
     (
         "PLATEAU の建物がある場所を、1km四方のメッシュで示したものです。",

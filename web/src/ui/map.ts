@@ -10,9 +10,10 @@ import {
   NavigationControl,
   TerrainControl,
   type ExpressionSpecification,
+  type FilterSpecification,
 } from 'maplibre-gl';
 import type { Collection } from '@japan-geodata-catalog/core/stac';
-import { LINE_KINDS, type LineKind } from '@japan-geodata-catalog/core/sources';
+import { LINE_KINDS, PLACE_KINDS, type LineKind } from '@japan-geodata-catalog/core/sources';
 import { TERRAIN_SOURCE, baseStyle } from '@japan-geodata-catalog/maplibre/tiles';
 import { buildDataCredits, collapseAttribution, watchAttributionHeight } from './credits';
 import { LAYER_ANCHORS } from './layer-list';
@@ -32,6 +33,30 @@ export const LINE_STYLES: Record<LineKind, { color: string; width: number; dash:
 
 /** 線の種別 (`class`) の呼び名。Overture の値はOSM由来の英語なので言い直す。 */
 export const LINE_CLASS_LABELS: Readonly<Record<string, string>> = m.lineClassLabels;
+
+/**
+ * **場所と施設の種類 (`category`) ごとの色。** 語彙はカタログから来るので、ここには色だけを持つ (呼び名は i18n)。
+ * 出所をまたいで同じ種類 (公園・駐車場) は同じ色。緑系 = 開けた場所、灰青 = 駐車場、赤〜紫 = 施設。
+ */
+export const PLACE_COLORS: Readonly<Record<string, string>> = {
+  park: '#2e8b57',
+  sports: '#7cb342',
+  playground: '#e0a800',
+  plaza: '#8d6e63',
+  school: '#5c6bc0',
+  parking: '#546e7a',
+  toilets: '#00897b',
+  drinking_water: '#1e88e5',
+  government: '#d84315',
+  community: '#ab47bc',
+  library: '#6d4c41',
+  hospital: '#e53935',
+  police: '#283593',
+  fire: '#ff6f00',
+};
+
+/** 語彙に無い種類が来たときの色。 */
+export const PLACE_FALLBACK_COLOR = '#757575';
 
 /**
  * 道路の等級ごとの色と呼び名。**語彙はカタログから来る**ので、ここには
@@ -216,6 +241,40 @@ function addDataLayers(map: MapLibreMap): void {
     },
   });
 
+  // 場所と施設 (公園・駐車場・公共施設など)。面は人口メッシュのすぐ上に薄く塗り、点は丸で描く。
+  // 面と点が混ざるので、出所ごとに塗り・縁・丸の3つの層を置き、形の種類で振り分ける。
+  for (const kind of PLACE_KINDS) {
+    const source = `place-${kind}`;
+    emptySource(map, source);
+    const polygon: FilterSpecification = ['==', ['geometry-type'], 'Polygon'];
+    map.addLayer({
+      id: `${source}-fill`,
+      type: 'fill',
+      source,
+      filter: polygon,
+      paint: { 'fill-color': ['get', 'color'], 'fill-opacity': 0.35 },
+    });
+    map.addLayer({
+      id: `${source}-outline`,
+      type: 'line',
+      source,
+      filter: polygon,
+      paint: { 'line-color': ['get', 'color'], 'line-width': 1, 'line-opacity': 0.8 },
+    });
+    map.addLayer({
+      id: `${source}-point`,
+      type: 'circle',
+      source,
+      filter: ['==', ['geometry-type'], 'Point'],
+      paint: {
+        'circle-color': ['get', 'color'],
+        'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 2.5, 16, 5.5],
+        'circle-stroke-color': '#ffffff',
+        'circle-stroke-width': 1,
+      },
+    });
+  }
+
   // 送電線・川。道路の下に敷く (道路の方が細かく読まれるため)。
   // 種別ごとに1組。見せ方は `LINE_STYLES` (川は実線、送電線は破線)。
   for (const kind of LINE_KINDS) {
@@ -395,6 +454,19 @@ function addOverlayLayers(map: MapLibreMap): void {
       ],
       'line-width': ['match', ['get', 'kind'], '駅', 6, 3],
       'line-opacity': 0.9,
+    },
+  });
+  // 範囲に入った点 (公共施設など)。線と同じソースで、点だけを丸で描く (公園・駐車場の面は上の層が縁を描く)。
+  map.addLayer({
+    id: 'nearby-hit-points',
+    type: 'circle',
+    source: 'nearby-hit-lines',
+    filter: ['==', ['geometry-type'], 'Point'],
+    paint: {
+      'circle-color': '#ff6600',
+      'circle-radius': 5,
+      'circle-stroke-color': '#ffffff',
+      'circle-stroke-width': 1.5,
     },
   });
   // **起点** (押したもの)。結果より上に、太く縁取って描く。何を起点にしたかが一目で分かるように。

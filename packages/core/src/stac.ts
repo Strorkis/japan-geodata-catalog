@@ -45,6 +45,10 @@ export type DatasetKind =
   | 'road_route'
   | 'power_line'
   | 'waterway'
+  // **場所と施設** (公園・広場・駐車場・公共施設など)。種類を `category` で持つ (sources.ts の `PlaceKind`)。
+  | 'open_space'
+  | 'amenity'
+  | 'facility'
   // **外部のベクトルタイル** (地理院の最適化ベクトルタイル)。SQLでは引けず、重ねて見るだけ。
   | 'vector_tiles'
   // **外部の地図タイル** (背景地図)。いちばん下に敷く。

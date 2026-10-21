@@ -507,6 +507,198 @@ pub fn build_building_tile_sql(
     )
 }
 
+/// **場所と施設** (公園・広場・駐車場・公共施設など)。どれも `category` (絞り込みの単位) と `class` (Overture の分類) を持つ。
+///
+/// **ライセンスの違うものは別のファイルにする** (base は ODbL、places は CDLA Permissive 2.0 などの混在)。
+/// 1つにすると places まで ODbL の派生データベースになる (roadmap.md の「ODbLの感染範囲」)。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum OverturePlace {
+    /// 公園・緑地・運動場・遊び場・広場・学校の敷地 (`base/land_use`、面)。元は OpenStreetMap。
+    OpenSpace,
+    /// 駐車場・公衆トイレ・水飲み場 (`base/infrastructure`、面と点)。元は OpenStreetMap。
+    Amenity,
+    /// 公共施設など (`places/place`、点)。出所は Meta・Microsoft・Foursquare・AllThePlaces など。
+    Facility,
+}
+
+impl OverturePlace {
+    pub fn parse(name: &str) -> Result<Self> {
+        match name {
+            "open_space" => Ok(Self::OpenSpace),
+            "amenity" => Ok(Self::Amenity),
+            "facility" => Ok(Self::Facility),
+            other => bail!("知らない種類です: {other:?} (open_space・amenity・facility のどれか)"),
+        }
+    }
+
+    /// 配信するファイルの名前。カタログはこの接頭辞で種別を決める。
+    pub fn file_name(self) -> &'static str {
+        match self {
+            Self::OpenSpace => "overture_open_spaces.parquet",
+            Self::Amenity => "overture_amenities.parquet",
+            Self::Facility => "overture_facilities.parquet",
+        }
+    }
+
+    /// 国の内外を市区町村との交差で決めるか。places は住所の国 (`JP`) で決められるので要らない。
+    pub fn clip_by_divisions(self) -> bool {
+        self != Self::Facility
+    }
+}
+
+/// 公園など (land_use) の `category`。**分類をまとめて、絞り込みの単位を少なくする** (Overture の class は細かい)。
+///
+/// 入れないもの: 墓地・農地・宗教施設 (開けているが性格が違う)、病院・自動車学校 (敷地の分類で、施設は places にある)、
+/// ゴルフ場とその中の区画 (数が多く、使う人が限られる)。
+const OPEN_SPACE_CATEGORY: &str = "CASE
+      WHEN subtype = 'park' AND class IN ('park', 'village_green', 'dog_park') THEN 'park'
+      WHEN subtype = 'recreation' AND class IN ('pitch', 'recreation_ground', 'track', 'stadium') THEN 'sports'
+      WHEN class = 'playground' THEN 'playground'
+      WHEN subtype = 'pedestrian' AND class IN ('plaza', 'pedestrian') THEN 'plaza'
+      WHEN subtype = 'education' AND class IN ('school', 'kindergarten', 'university', 'college', 'schoolyard') THEN 'school'
+    END";
+
+/// 公共施設など (places) の `category`。`basic_category` を、役所・学校のような施設の種類にまとめる。
+///
+/// 入れないもの: `social_or_community_service` (福祉・NPO・相談窓口などが混ざり、3.4万件と広すぎる)、
+/// `education`・`place_of_learning` (塾や教室が混ざる)、`sport_or_fitness_facility` (ジムが中心)。
+/// `hospital` には小さな診療所も混ざる (2026-10-01 に見た)。郵便局 (`post_office`) は 2026-09-23.1 の日本には1件も無い。
+const FACILITY_CATEGORY: &str = "CASE basic_category
+      WHEN 'government_office' THEN 'government'
+      WHEN 'community_center' THEN 'community'
+      WHEN 'library' THEN 'library'
+      WHEN 'elementary_school' THEN 'school'
+      WHEN 'middle_school' THEN 'school'
+      WHEN 'high_school' THEN 'school'
+      WHEN 'hospital' THEN 'hospital'
+      WHEN 'police_station' THEN 'police'
+      WHEN 'fire_station' THEN 'fire'
+      WHEN 'park' THEN 'park'
+      WHEN 'parking' THEN 'parking'
+    END";
+
+/// 場所と施設を S3 から取り出す SQL。**箱で絞って、使う分類だけを持ってくる** (国の内外はこのあと)。
+///
+/// places は住所の国で日本だけにし、閉じた施設と確からしさの低いもの (`confidence` < 0.5) を外す。
+/// どこから来たかとそのライセンスは**1件ごとに持ち回る** (`source`・`license`。Foursquare は Apache-2.0、
+/// AllThePlaces は CC0 1.0、ほかは CDLA Permissive 2.0)。
+pub fn build_places_extract_sql(
+    place: OverturePlace,
+    release: &str,
+    bbox: BoundingBox,
+    output: &str,
+) -> String {
+    let BoundingBox {
+        xmin,
+        ymin,
+        xmax,
+        ymax,
+    } = bbox;
+    let in_box =
+        format!("bbox.xmin BETWEEN {xmin} AND {xmax} AND bbox.ymin BETWEEN {ymin} AND {ymax}");
+    let select = match place {
+        OverturePlace::OpenSpace => format!(
+            "SELECT names.primary AS name, {OPEN_SPACE_CATEGORY} AS category, class, bbox, geometry
+  FROM read_parquet('s3://overturemaps-us-west-2/release/{release}/theme=base/type=land_use/*', hive_partitioning=1)
+  WHERE {in_box}
+    AND ST_GeometryType(geometry) IN ('POLYGON', 'MULTIPOLYGON')"
+        ),
+        // 駐車場は面が大半 (2026-10-21、日本の箱で面 51.9万・点 1.98万)。線 (22件) は入れない。
+        OverturePlace::Amenity => format!(
+            "SELECT names.primary AS name, class AS category, class, bbox, geometry
+  FROM read_parquet('s3://overturemaps-us-west-2/release/{release}/theme=base/type=infrastructure/*', hive_partitioning=1)
+  WHERE {in_box}
+    AND class IN ('parking', 'toilets', 'drinking_water')
+    AND ST_GeometryType(geometry) IN ('POINT', 'POLYGON', 'MULTIPOLYGON')"
+        ),
+        OverturePlace::Facility => format!(
+            "SELECT names.primary AS name, {FACILITY_CATEGORY} AS category, basic_category AS class,
+    addresses[1].freeform AS address, sources[1].dataset AS source, sources[1].license AS license, bbox, geometry
+  FROM read_parquet('s3://overturemaps-us-west-2/release/{release}/theme=places/type=place/*', hive_partitioning=1)
+  WHERE {in_box}
+    AND addresses[1].country = 'JP'
+    AND coalesce(operating_status, 'open') <> 'permanently_closed'
+    AND confidence >= 0.5"
+        ),
+    };
+    format!(
+        "INSTALL spatial; LOAD spatial;
+INSTALL httpfs; LOAD httpfs;
+SET s3_region='us-west-2';
+SET preserve_insertion_order = false;
+SET memory_limit = '2GB';
+COPY (
+  SELECT * FROM ({select})
+  WHERE category IS NOT NULL
+) TO '{output}' (FORMAT PARQUET);"
+    )
+}
+
+/// 取り出した場所と施設の収録範囲とジオメトリ種別。**書き出すものと同じ絞り込みを掛ける。**
+pub fn build_places_stats_sql(place: OverturePlace, input: &str, divisions: &str) -> String {
+    let japan = if place.clip_by_divisions() {
+        in_japan(divisions, "r")
+    } else {
+        "TRUE".to_string()
+    };
+    format!(
+        "INSTALL spatial; LOAD spatial;
+{SPATIAL_JOIN_SETTINGS}
+SELECT
+  min(r.bbox.xmin) AS xmin,
+  min(r.bbox.ymin) AS ymin,
+  max(r.bbox.xmax) AS xmax,
+  max(r.bbox.ymax) AS ymax,
+  list_sort(list_distinct(list(ST_GeometryType(r.geometry)::VARCHAR))) AS geometry_types
+FROM read_parquet('{input}') r
+WHERE {japan};"
+    )
+}
+
+/// 取り出した場所と施設から、日本の分だけを配信用のデータセットにするSQL。
+///
+/// ジオメトリをBLOBとして書く理由は [`build_admin_sql`] と同じ。places は住所・出所・ライセンスの列も持つ。
+pub fn build_places_sql(
+    place: OverturePlace,
+    input: &str,
+    divisions: &str,
+    output: &str,
+    geo_metadata_json: &str,
+    vintage: &str,
+) -> String {
+    let escaped = geo_metadata_json.replace('\'', "''");
+    let vintage = vintage.replace('\'', "''");
+    let vintage_key = crate::geoparquet::VINTAGE_KEY;
+    let japan = if place.clip_by_divisions() {
+        in_japan(divisions, "r")
+    } else {
+        "TRUE".to_string()
+    };
+    let extra = if place == OverturePlace::Facility {
+        "r.address, r.source, r.license,"
+    } else {
+        ""
+    };
+    format!(
+        "INSTALL spatial; LOAD spatial;
+{SPATIAL_JOIN_SETTINGS}
+COPY (
+  SELECT
+    r.name,
+    r.category,
+    r.class,
+    {extra}
+    r.bbox,
+    ST_AsWKB(r.geometry)::BLOB AS geometry
+  FROM read_parquet('{input}') r
+  WHERE {japan}
+) TO '{output}' (FORMAT PARQUET, KV_METADATA {{
+  geo: '{escaped}',
+  '{vintage_key}': '{vintage}'
+}});"
+    )
+}
+
 /// 道路以外に配るOvertureの線。**名前と種別だけを持つ単純な線**として同じ流れで作る。
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum OvertureLine {
@@ -826,6 +1018,66 @@ mod tests {
         assert!(sql.contains("TO '/tmp/out.parquet'"));
         // 表示範囲での絞り込みに必要なので、bbox列を落とさないこと。
         assert!(sql.contains("    bbox,\n"));
+    }
+
+    #[test]
+    fn places_extract_sql_reads_each_theme_and_keeps_only_categorised_rows() {
+        let open = build_places_extract_sql(
+            OverturePlace::OpenSpace,
+            "2026-09-23.1",
+            JAPAN_BBOX,
+            "/tmp/o.parquet",
+        );
+        assert!(open.contains("theme=base/type=land_use"));
+        assert!(open.contains("bbox.xmin BETWEEN 122 AND 154"));
+        assert!(open.contains("WHERE category IS NOT NULL"));
+        // 面だけ (land_use には点や線も混ざる)。
+        assert!(open.contains("IN ('POLYGON', 'MULTIPOLYGON')"));
+
+        let amenity = build_places_extract_sql(
+            OverturePlace::Amenity,
+            "2026-09-23.1",
+            JAPAN_BBOX,
+            "/tmp/a.parquet",
+        );
+        assert!(amenity.contains("theme=base/type=infrastructure"));
+        assert!(amenity.contains("class IN ('parking', 'toilets', 'drinking_water')"));
+
+        let facility = build_places_extract_sql(
+            OverturePlace::Facility,
+            "2026-09-23.1",
+            JAPAN_BBOX,
+            "/tmp/f.parquet",
+        );
+        assert!(facility.contains("theme=places/type=place"));
+        assert!(facility.contains("addresses[1].country = 'JP'"));
+        assert!(facility.contains("confidence >= 0.5"));
+        // **ライセンスを1件ごとに持ち回る** (出所ごとに違う)。
+        assert!(facility.contains("sources[1].license AS license"));
+    }
+
+    #[test]
+    fn places_sql_clips_base_by_divisions_but_not_places() {
+        let open = build_places_sql(
+            OverturePlace::OpenSpace,
+            "/tmp/i.parquet",
+            "/tmp/d.parquet",
+            "/tmp/o.parquet",
+            "{}",
+            "v",
+        );
+        assert!(open.contains("ST_Intersects(jp.geometry, r.geometry)"));
+        assert!(!open.contains("r.license"));
+        let facility = build_places_sql(
+            OverturePlace::Facility,
+            "/tmp/i.parquet",
+            "/tmp/d.parquet",
+            "/tmp/o.parquet",
+            "{}",
+            "v",
+        );
+        assert!(!facility.contains("ST_Intersects"));
+        assert!(facility.contains("r.license"));
     }
 
     #[test]

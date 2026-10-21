@@ -225,7 +225,7 @@
   <body>
     <header>
       <h1>japan-geodata-catalog ダッシュボード</h1>
-      <span class="meta">更新 2026-10-20 21:35 (日本時間)</span>
+      <span class="meta">更新 2026-10-21 19:05 (日本時間)</span>
       <span class="meta">
         <a href="https://strorkis.github.io/japan-geodata-catalog/">公開サイト (改名後の URL)</a> ·
         <a href="roadmap.md">方針 (roadmap)</a> ·
@@ -241,15 +241,15 @@
       <div class="card kpi">
         <div class="label">公開待ちの PR</div>
         <div class="value">1 <small>件</small></div>
-        <span class="status you">地図の準備が終わらない件 (fix/basemap-load-hang)</span>
+        <span class="status you">公園・駐車場・公共施設 (feat/overture-open-spaces)。R2 に上げてから</span>
       </div>
       <div class="card kpi">
         <div class="label">R2 の配信データ (手元の data/output)</div>
-        <div class="value">9.86 <small>GB / 無料枠 10 GB</small></div>
-        <div class="meter" role="img" aria-label="無料枠の99%">
-          <span style="width: 99%; background: var(--warning)"></span>
+        <div class="value">9.97 <small>GB / 無料枠 10 GB</small></div>
+        <div class="meter" role="img" aria-label="無料枠の99.7%">
+          <span style="width: 99.7%; background: var(--warning)"></span>
         </div>
-        <span class="status you">無料枠の99% (超えた分は払う方針)</span>
+        <span class="status you">無料枠の99.7% (次に足すと超える。超えた分は払う方針)</span>
       </div>
     </section>
 
@@ -258,9 +258,16 @@
       <h2>公開までの残り</h2>
       <ol class="steps">
         <li class="current">
-          <b>ブランチ <code>fix/basemap-load-hang</code> を push → PR を見てマージ</b><span class="status you">あなたの番</span>
+          <b>R2 に公園・駐車場・公共施設のデータとカタログを上げる</b><span class="status you">あなたの番</span>
           <span class="sub">
-            背景地図のタイルが全部失敗すると「準備中」のまま、の件。地図の準備をスタイルが読めた時点で進める。
+            <code>docs/deploy.md</code> の「上げる順番」の 1→2→3 (2 に規約の本文 <code>LICENSES-*.md</code> を足した)。
+            新しいのは <code>overture/</code> の parquet 3つ (約100MB)・JSON・<code>LICENSES-places.md</code>・<code>items.parquet</code>
+          </span>
+        </li>
+        <li>
+          <b>ブランチ <code>feat/overture-open-spaces</code> を push → PR を見てマージ</b><span class="status you">あなたの番</span>
+          <span class="sub">
+            公園・広場・運動場、駐車場・トイレ・水飲み場、公共施設を「問い合わせできるデータ」に (Overture から)。種類で絞れ、周辺検索にも入る。
             push のあと私が PR を作る。PR の「読むべき所」を見てから、マージコミットでマージ
           </span>
         </li>
@@ -273,14 +280,15 @@
         <h2>次にやること</h2>
         <ol class="tasks">
           <li>
-            <b>触って気付いたこと (10-19)</b> <span class="status todo">次</span>
+            <b>触って気付いたこと (10-19)</b> <span class="status todo">カタログのあと</span>
             <span class="sub">吹き出しを出さないモード・建物を中心から ○ m まで・PLATEAU の整備範囲を細かく (大きさを測ってから相談)。roadmap「触って気付いたこと」</span>
           </li>
           <li>
-            <b>カタログに載せるものを増やす</b>
+            <b>カタログに載せるものを増やす</b> <span class="status todo">次</span>
             <span class="sub">
-              PLATEAU の建物以外 (全国まとめの 3D Tiles は表示するだけの地図、都市ごとのものは出所だけ)・重ねるハザードマップ・国土数値情報・
-              シームレス地質図・G空間情報センター (利用者が選んだ。載せる前に規約の本文を確かめる)
+              公園・駐車場・公共施設 (Overture) は済み。次は PLATEAU の建物以外 (全国まとめの 3D Tiles は表示するだけの地図、都市ごとのものは出所だけ)・
+              重ねるハザードマップ・国土数値情報 (都市公園・公共施設・避難施設)・シームレス地質図・G空間情報センターと自治体の公開データ
+              (利用者が選んだ。載せる前に規約の本文を確かめる)
             </span>
           </li>
           <li>

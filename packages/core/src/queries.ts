@@ -22,6 +22,7 @@ import {
   type BuildingSource,
   type LineSource,
   type MeshSource,
+  type PlaceSource,
   type RailwaySource,
   type RoadSource,
   type ViewBounds,
@@ -46,6 +47,65 @@ function nearCenter(bounds: ViewBounds): string {
 
 const fileList = (files: string[]) => files.map((file) => `'${file}'`).join(', ');
 const quote = (value: string) => `'${value.replace(/'/g, "''")}'`;
+
+// ---- 場所と施設 (公園・広場・駐車場・公共施設など) ------------------------------------
+
+export interface PlaceFeature {
+  geojson: GeoJSON.Geometry;
+  name: string | null;
+  /** 絞り込みの単位 (公園・運動場・役所など)。 */
+  category: string;
+  /** Overture の分類 (`pitch`・`government_office` など)。 */
+  placeClass: string;
+  /** 住所・出所・その行のライセンス。公共施設 (places) だけが持つ。 */
+  address?: string | null;
+  origin?: string | null;
+  license?: string | null;
+}
+
+/**
+ * 表示範囲の場所と施設を、選んだ種類だけ引く。線と同じく、中心に近い順に上限まで。
+ * **種類を1つも選んでいなければ引かない** (空の IN は書けないし、全部を引く意味でもない)。
+ */
+export async function fetchPlacesInView(
+  conn: Conn,
+  source: PlaceSource,
+  bounds: ViewBounds,
+  categories: string[],
+  limit: number,
+): Promise<PlaceFeature[]> {
+  const files = filesInView(source, bounds);
+  if (files.length === 0 || categories.length === 0) return [];
+  // 公共施設 (places) は、出所とライセンスを1件ごとに持つ (吹き出しで言う)。
+  const extra = source.kind === 'facility' ? ', address, source, license' : '';
+  const result = await conn.query(`
+    SELECT geometry, name, category, class${extra}
+    FROM read_parquet([${fileList(files)}])
+    WHERE category IN (${categories.map(quote).join(', ')}) AND ${inView(bounds)}
+    ORDER BY ${nearCenter(bounds)}
+    LIMIT ${limit};
+  `);
+  return result.toArray().map((row) => {
+    const r = row.toJSON() as unknown as {
+      geometry: unknown;
+      name: string | null;
+      category: string;
+      class: string;
+      address?: string | null;
+      source?: string | null;
+      license?: string | null;
+    };
+    return {
+      geojson: geometryOf(r.geometry),
+      name: r.name,
+      category: r.category,
+      placeClass: r.class,
+      address: r.address,
+      origin: r.source,
+      license: r.license,
+    };
+  });
+}
 
 // ---- 送電線・川 ------------------------------------------------------------------
 

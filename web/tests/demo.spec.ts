@@ -809,9 +809,15 @@ test('使うときの条件が一覧表とバッジで出る', async ({ page }) 
   await expect(page.locator('#terms-summary .terms-note')).toContainText('参考情報');
 
   // Overture は ODbL なので継承がある。PLATEAU は CC BY で継承は無い。
-  const overture = table.locator('tbody tr', { hasText: 'Overture' }).first();
+  // **Overture でも places (公共施設など) は ODbL ではない** (CDLA Permissive 2.0 など)。継承は無く、CDLA の本文を指す。
+  const overture = table.locator('tbody tr', { hasText: 'Overture' }).filter({ hasText: 'ODbL' }).first();
   await expect(overture).toContainText('あり');
   await expect(overture.locator('a')).toHaveAttribute('href', /opendatacommons\.org/);
+  const places = table.locator('tbody tr', { hasText: 'CDLA Permissive 2.0' });
+  if ((await places.count()) > 0) {
+    await expect(places.locator('td').nth(4)).toHaveText('—');
+    await expect(places.locator('a')).toHaveAttribute('href', /cdla\.dev/);
+  }
   const plateau = table.locator('tbody tr', { hasText: 'PLATEAU' }).first();
   await expect(plateau.locator('td').nth(1)).toHaveText('可');
   await expect(plateau.locator('td').nth(4)).toHaveText('—');
@@ -3750,6 +3756,79 @@ for (const [layer, label] of [
   });
 }
 
+/** 場所と施設 (Overture の land_use・infrastructure・places)。Collection ID と地図のソース。 */
+const PLACES = [
+  { id: 'overture-open-spaces', kind: 'open_space', sample: '公園・緑地' },
+  { id: 'overture-amenities', kind: 'amenity', sample: '駐車場' },
+  { id: 'overture-facilities', kind: 'facility', sample: '役所' },
+] as const;
+
+/**
+ * **公園・広場・駐車場・公共施設などを、種類で絞って描く。** 選択肢はカタログの語彙 (`summaries.category`) から作る。
+ * 種類を全部外すと何も引かず、そう言う。公共施設は1件ごとにライセンスが違うので、吹き出しでライセンスを言う。
+ */
+test('公園・駐車場・公共施設を種類で絞って描き、施設の吹き出しにライセンスが出る', async ({ page }, testInfo) => {
+  test.skip(!(await bundledCollection(page, PLACES[0].id)), '場所と施設のデータが無い');
+  // 3つの出所を順に足して絞り込みを試すので、ほかのテストより長い。
+  testInfo.setTimeout(Math.max(testInfo.timeout, 120_000));
+  await page.evaluate(() => {
+    (window as unknown as TestWindow).__map!.jumpTo({ center: [139.7454, 35.6586], zoom: 15 });
+  });
+  for (const place of PLACES) {
+    await showLayer(page, place.id);
+    const status = page.locator(`[data-layer-status="${place.id}"]`);
+    await expect(status).toContainText('件', { timeout: DATA_TIMEOUT });
+    expect(await sourceFeatureCount(page, `place-${place.kind}`)).toBeGreaterThan(0);
+    // 種類の選択肢は、カタログの語彙を画面の言葉で。
+    await openLayerSettings(page, place.id);
+    const settings = page.locator(`[data-layer="${place.id}"] .layer-settings-slot`);
+    await expect(settings.locator('.place-categories')).toContainText(place.sample);
+    // 全部外すと引かない。
+    await settings.locator('.bulk button', { hasText: '解除' }).click();
+    await expect(status).toHaveText('種類が選ばれていません', { timeout: DATA_TIMEOUT });
+    await expect.poll(() => sourceFeatureCount(page, `place-${place.kind}`)).toBe(0);
+    await settings.locator('.bulk button', { hasText: '全部' }).click();
+    await expect(status).toContainText('件', { timeout: DATA_TIMEOUT });
+  }
+
+  // 公共施設の点に乗ると、種類と、その行の出所のライセンスが出る。**ほかの行は隠す** (建物や駐車場の面が
+  // 点に重なっていると、吹き出しはそちらのものになる)。
+  await hideLayer(page, LAYER.plateauBuildings);
+  await hideLayer(page, 'overture-open-spaces');
+  await hideLayer(page, 'overture-amenities');
+  await expect(page.locator('#busy')).toBeHidden({ timeout: DATA_TIMEOUT });
+  // 左下の一覧と右下の案内に隠れていない点を選ぶ (隠れていると乗れない)。
+  const point = await page.evaluate(() => {
+    const map = (window as unknown as TestWindow).__map!;
+    const { width, height } = map.getCanvas().getBoundingClientRect();
+    return (
+      map
+        .queryRenderedFeatures(undefined as never, { layers: ['place-facility-point'] })
+        .map((feature) => map.project((feature.geometry as GeoJSON.Point).coordinates as [number, number]))
+        .find((p) => p.x > 360 && p.x < width - 320 && p.y > 120 && p.y < height - 120) ?? null
+    );
+  });
+  expect(point).not.toBeNull();
+  await page.mouse.move(point!.x, point!.y);
+  const tooltip = page.locator('.hover-popup .maplibregl-popup-content');
+  await expect(tooltip).toContainText('ライセンス');
+  await expect(tooltip).toContainText(/CDLA-Permissive-2\.0|Apache-2\.0|CC0-1\.0/);
+});
+
+/**
+ * **規約が本文をデータと一緒に置くよう求めるもの (places の CDLA Permissive 2.0・Apache-2.0) は、本文を置いて指す。**
+ */
+test('公共施設のカタログは規約の本文を指し、その本文が配信されている', async ({ page }) => {
+  test.skip(!(await bundledCollection(page, 'overture-facilities')), '場所と施設のデータが無い');
+  const collection = await bundledCollection<{ links: { rel: string; href: string }[] }>(page, 'overture-facilities');
+  const license = collection!.links.find((link) => link.rel === 'license');
+  expect(license?.href).toBe('LICENSES-places.md');
+  const text = await page.evaluate(async (url) => (await fetch(url)).text(), await resolveDataUrl(page, 'overture/LICENSES-places.md'));
+  expect(text).toContain('Community Data License Agreement - Permissive - Version 2.0');
+  expect(text).toContain('Apache License');
+  expect(text).toContain('Foursquare OS Places dataset');
+});
+
 /**
  * **引いた表示では、重要な段の建物だけをタイル (PMTiles) で描く。** 1ズーム引くごとに1段減らす。
  *
@@ -3862,11 +3941,42 @@ async function nearbyBuildingTotal(page: Page): Promise<number> {
 }
 
 /**
+ * **周辺検索に、出している場所と施設が入る** (公園・公共施設など)。出していない出所は調べない
+ * (データが大きく、周辺検索が重くなる)。当たった施設の点は地図に丸で描く。
+ */
+test('周辺検索: 出している公園と公共施設が結果に入る', async ({ page }) => {
+  test.skip(!(await bundledCollection(page, 'overture-facilities')), '場所と施設のデータが無い');
+  await page.evaluate(() => {
+    (window as unknown as TestWindow).__map!.jumpTo({ center: [139.7486, 35.6545], zoom: 16 });
+  });
+  await showLayer(page, 'overture-open-spaces');
+  await showLayer(page, 'overture-facilities');
+  await expect(page.locator('[data-layer-status="overture-facilities"]')).toContainText('件', { timeout: DATA_TIMEOUT });
+  await expect(page.locator('#busy')).toBeHidden({ timeout: DATA_TIMEOUT });
+
+  await nearbyAt(page, await emptyPointNear(page, { x: 640, y: 360 }));
+  const results = page.locator('#nearby-results');
+  await expect(results.locator('dt', { hasText: '公園・広場・運動場' })).toBeVisible({ timeout: DATA_TIMEOUT });
+  await expect(results.locator('dt', { hasText: '公共施設など' })).toBeVisible();
+  // 出していない駐車場などは調べない。
+  await expect(results.locator('dt', { hasText: '駐車場・トイレ・水飲み場' })).toHaveCount(0);
+  // 当たった施設の点を描く (線の層と同じソースの、点の層)。
+  const points = await page.evaluate(async () => {
+    const map = (window as unknown as TestWindow).__map!;
+    const data = (await (map.getSource('nearby-hit-lines') as GeoJSONSource).getData()) as GeoJSON.FeatureCollection;
+    return data.features.filter((f) => f.geometry.type === 'Point').length;
+  });
+  expect(points).toBeGreaterThan(0);
+});
+
+/**
  * **周辺検索 — 地図上の点から。** ○m以内の建物 (段ごと)・駅・人口が出て、
  * 範囲の輪郭と当たった建物が地図に重なる。**距離を広げると件数は減らない。**
  */
-test('周辺検索: 地図上の点から、建物と駅が出て、距離を広げても減らない', async ({ page }) => {
+test('周辺検索: 地図上の点から、建物と駅が出て、距離を広げても減らない', async ({ page }, testInfo) => {
   test.skip(!(await hasPlateau(page)), 'PLATEAUの建物データが無い');
+  // 距離を変えて2回調べるので長い。単独でも55〜59秒かかり、手元が重いと60秒の上限で落ちた (2026-10-21)。
+  testInfo.setTimeout(Math.max(testInfo.timeout, 120_000));
   await page.evaluate(() => {
     (window as unknown as TestWindow).__map!.jumpTo({ center: [139.7671, 35.6812], zoom: 16 });
   });

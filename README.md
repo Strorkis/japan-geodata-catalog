@@ -75,10 +75,14 @@ Overtureの区画は湾を跨いでいて、そのままでは海上の点に自
 > 正本は各配布元の規約の本文なので、使う前に必ず本文を確かめること。
 
 **ODbLの同一ライセンス条項が掛かるのはOverture由来のものだけ。**
-行政区域・建物・道路・送電線・川 (`overture/*.parquet`) はOverture Mapsから切り出したもので、
+行政区域・建物・道路・送電線・川・公園など・駐車場など (`overture/*.parquet`) はOverture Mapsから切り出したもので、
 **ODbL 1.0の派生データベースにあたる**。ODbLは派生データベースを公に利用する場合に
 同一ライセンスでの提供を求めるため、**これらはODbL 1.0で提供する**。
 出典表示だけでは要件を満たさない。
+
+**公共施設など (`overture/overture_facilities.parquet`) は Overture の places で、ODbL ではない。** 1件ごとに出所とライセンスが
+違い (CDLA Permissive 2.0・Apache-2.0・CC0 1.0。`license` の列)、規約が求める本文 (CDLA Permissive 2.0・Apache-2.0) と
+Foursquare の NOTICE を `overture/LICENSES-places.md` に置いている。
 
 PLATEAU・国土数値情報・国勢調査・位置参照情報から作ったものには、この条項は掛からない。
 それぞれのライセンスと出典表示に従う。
@@ -91,7 +95,8 @@ PLATEAU・国土数値情報・国勢調査・位置参照情報から作った�
 | 建物 (Overture) | Overture Maps / © OpenStreetMap contributors (ODbL 1.0) · Microsoft Global ML Building Footprints (ODbL) · East Asian building data by Qian Shi et al. (CC BY 4.0) |
 | 行政区域 (Overture) | Overture Maps / © OpenStreetMap contributors (ODbL 1.0) · geoBoundaries, Esri Community Maps contributors (CC BY 4.0) |
 | 道路 (Overture) | Overture Maps / © OpenStreetMap contributors (ODbL 1.0) · TomTom |
-| 送電線・川 (Overture) | Overture Maps / © OpenStreetMap contributors (ODbL 1.0) |
+| 送電線・川・公園・広場・運動場・駐車場・トイレ・水飲み場 (Overture) | Overture Maps / © OpenStreetMap contributors (ODbL 1.0) |
+| 公共施設など (Overture) | Overture Maps · Data from Meta, Microsoft (CDLA Permissive 2.0) · © Foursquare Labs, Inc. (Apache 2.0) · Data from AllThePlaces (CC0 1.0) · modified by japan-geodata-catalog |
 | 鉄道路線・駅 | 「国土数値情報（鉄道データ）」（国土交通省）をもとに japan-geodata-catalog 作成 |
 | 人口メッシュ | 「令和2年国勢調査 地域メッシュ統計」（総務省統計局）をもとに japan-geodata-catalog 作成 |
 | 大字・町丁目 / 街区 | 大字・町丁目位置参照情報　国土交通省 / 街区レベル位置参照情報　国土交通省 (japan-geodata-catalog が加工) |

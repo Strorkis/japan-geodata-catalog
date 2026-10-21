@@ -17,6 +17,7 @@ import {
   type BuildingSource,
   type LineSource,
   type MeshSource,
+  type PlaceSource,
   type RailwaySource,
   type RoadSource,
   type ViewBounds,
@@ -35,6 +36,7 @@ import { createMeshLayer } from './ui/layers/mesh';
 import { createRailwayLayer } from './ui/layers/railway';
 import { createRoadLayer } from './ui/layers/roads';
 import { createLineLayers } from './ui/layers/lines';
+import { createPlaceLayers } from './ui/layers/places';
 import { LAYER_ANCHORS, createLayerList, selectField, sliderSettings, type Layer, type LayerList } from './ui/layer-list';
 import { renderCredits, renderTechCredits, renderTermsSummary } from './ui/credits';
 import { createStacViewer } from './ui/stac-viewer';
@@ -209,6 +211,7 @@ async function main() {
   let railwayVintage: string | undefined;
   let roadSource: RoadSource | undefined;
   let lineSources: LineSource[] = [];
+  let placeSources: PlaceSource[] = [];
   let roadClasses: string[] = [];
   let roadVintage: string | undefined;
   let ensureRoutes: (() => Promise<void>) | undefined;
@@ -233,6 +236,7 @@ async function main() {
     railwayVintage = db.railwayVintage;
     roadSource = db.roadSource;
     lineSources = db.lineSources;
+    placeSources = db.placeSources;
     roadClasses = db.roadClasses;
     roadVintage = db.roadVintage;
     ensureRoutes = db.ensureRoutes;
@@ -425,6 +429,7 @@ async function main() {
   const requestRoadRefresh = roadLayer?.request ?? (() => {});
   const lineRequests = createLineLayers(drawContext, lineSources);
   const requestLineRefresh = (source: LineSource) => lineRequests.get(source.id) ?? (() => {});
+  const placeLayers = createPlaceLayers(drawContext, placeSources);
 
   // ---- レイヤー一覧 -------------------------------------------------------
   //
@@ -449,7 +454,11 @@ async function main() {
     road: 3,
     power_line: 4,
     waterway: 5,
-    population_mesh: 6,
+    // 場所と施設。施設 (点) は線より上、公園など (面) は人口メッシュのすぐ上。
+    facility: 1,
+    amenity: 5,
+    open_space: 6,
+    population_mesh: 7,
   };
   /** 行を描く地図の層。**データの層は地図を作るときに全部ある** (中身が空なだけ)。 */
   const DATA_MAP_LAYERS: Partial<Record<DatasetKind, string[]>> = {
@@ -460,6 +469,12 @@ async function main() {
     road: ['road-line'],
     power_line: ['line-power_line'],
     waterway: ['line-waterway'],
+    ...Object.fromEntries(
+      (['open_space', 'amenity', 'facility'] as const).map((kind) => [
+        kind,
+        [`place-${kind}-fill`, `place-${kind}-outline`, `place-${kind}-point`],
+      ]),
+    ),
     population_mesh: ['population-mesh-fill'],
   };
 
@@ -761,6 +776,15 @@ async function main() {
         // 絞り込みが無いので、設定の中身は空 (▸ ではCollectionの中身だけが出る)。
         const settings = document.createElement('div');
         layers.push({ ...base, settings, refresh: requestLineRefresh(source) });
+        break;
+      }
+      case 'open_space':
+      case 'amenity':
+      case 'facility': {
+        // 場所と施設。▸ で種類を絞る (選択肢はカタログの語彙。ui/layers/places.ts)。
+        const place = placeLayers.get(collection.id);
+        if (!place) break;
+        layers.push({ ...base, settings: place.settings, refresh: place.request });
         break;
       }
       case 'raster_tiles': {
@@ -1166,8 +1190,10 @@ async function main() {
       railways: railwaySources,
       road: roadSource,
       lines: lineSources,
+      places: placeSources,
       meshes: meshSources,
     },
+    isVisible: (id) => isLayerVisible(id),
     busy,
     ensureSpatial,
     setSourceData,

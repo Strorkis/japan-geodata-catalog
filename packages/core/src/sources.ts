@@ -220,6 +220,27 @@ export interface LineSource {
   ensure: () => Promise<void>;
 }
 
+/** 場所と施設の種類。**面と点が混ざる** (駐車場は敷地の面が大半で、点もある。公共施設は点)。 */
+export type PlaceKind = 'open_space' | 'amenity' | 'facility';
+
+/** [`PlaceKind`] の全部 (カタログの `duck:kind` がこのどれかなら場所と施設として扱う)。 */
+export const PLACE_KINDS: readonly PlaceKind[] = ['open_space', 'amenity', 'facility'];
+
+/**
+ * 場所と施設 (公園・広場・駐車場・公共施設など)。どれも `category` (公園・運動場・役所など) を持ち、それで絞り込む。
+ * 選択肢はカタログの `summaries.category` から作る (道路の等級と同じ)。粗い段は無い (点と小さな面なので)。
+ */
+export interface PlaceSource {
+  id: string;
+  kind: PlaceKind;
+  title: string;
+  bbox: Bbox | null;
+  files: ItemFile[];
+  /** 取りうる種類 (カタログの `summaries.category`)。 */
+  categories: string[];
+  ensure: () => Promise<void>;
+}
+
 /**
  * 人口メッシュの出所。**SORAの地上リスクを見るためのもの。**
  *

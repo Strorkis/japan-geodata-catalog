@@ -21,6 +21,8 @@ export interface DetailSettings {
    * 多くの等級が出る。高速は元が0なので動かない。
    */
   roadClassZoomShift: number;
+  /** 場所と施設 (公園・駐車場・公共施設など) の、出所1つあたりの上限。中心に近い順に切る。 */
+  placesLimit: number;
 }
 
 /**
@@ -46,6 +48,7 @@ export const DETAIL_LEVELS: Record<DetailLevel, DetailSettings & { label: string
     railwayLimit: 2000,
     roadLimit: 3000,
     roadClassZoomShift: -2,
+    placesLimit: 1500,
   },
   medium: {
     label: m.detailMedium,
@@ -54,6 +57,7 @@ export const DETAIL_LEVELS: Record<DetailLevel, DetailSettings & { label: string
     railwayLimit: 4000,
     roadLimit: 6000,
     roadClassZoomShift: 0,
+    placesLimit: 3000,
   },
   high: {
     label: m.detailHigh,
@@ -62,6 +66,7 @@ export const DETAIL_LEVELS: Record<DetailLevel, DetailSettings & { label: string
     railwayLimit: 8000,
     roadLimit: 12000,
     roadClassZoomShift: 2,
+    placesLimit: 10000,
   },
 };
 

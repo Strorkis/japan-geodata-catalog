@@ -521,6 +521,17 @@ fn collection(
     if !summaries.is_empty() {
         body["summaries"] = json!(summaries);
     }
+    // **規約が本文をデータと一緒に置くよう求めるもの** (CDLA Permissive 2.0・Apache-2.0)。同じディレクトリに写した本文を指す
+    // (`build_catalog` が写す)。
+    for (_, _, name) in crate::catalog::LICENSE_FILES
+        .iter()
+        .filter(|(kind, _, _)| *kind == first.kind)
+    {
+        body["links"]
+            .as_array_mut()
+            .expect("links は配列")
+            .push(json!({ "rel": "license", "href": name, "type": "text/markdown", "title": "規約の本文" }));
+    }
     // 同じ人口メッシュでも細かさの違うCollectionが並ぶので、UIがどれを引くかを
     // これで決める。メッシュ以外には出さない。
     if let Some(digits) = first.mesh_digits {

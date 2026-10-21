@@ -72,6 +72,20 @@ fn main() -> Result<()> {
         std::fs::write(&path, text).with_context(|| format!("書けません: {}", path.display()))?;
     }
 
+    // **規約の本文を、データと同じディレクトリに写す** (CDLA Permissive 2.0 などが求める。Collection の `rel: license` が指す)。
+    let licenses = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("licenses");
+    for (kind, source, name) in catalog::LICENSE_FILES {
+        for entry in datasets.iter().filter(|entry| entry.kind == *kind) {
+            let target_dir = dir
+                .join(&entry.file)
+                .parent()
+                .map(PathBuf::from)
+                .unwrap_or_else(|| dir.clone());
+            std::fs::copy(licenses.join(source), target_dir.join(name))
+                .with_context(|| format!("規約の本文を写せません: {source}"))?;
+        }
+    }
+
     // 日本語の Collection だけを数える (英語版は同じ Collection の別の文書)。
     let collections = documents
         .iter()
