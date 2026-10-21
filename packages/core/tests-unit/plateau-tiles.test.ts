@@ -28,6 +28,11 @@ test('LOD1 にはテクスチャの指定を付けない (LOD1 は「テクス�
   );
 });
 
+test('建物以外の種類 (橋梁・水部など) には組み合わせを選ばせない', () => {
+  assert.equal(plateauTilesChoice(`${API}/all-brid-maxlod3-latest/tileset.json`), undefined);
+  assert.equal(plateauTilesChoice(`${API}/all-wtr-maxlod1-latest/tileset.json`), undefined);
+});
+
 test('PLATEAU の組み立ての形でなければ触らない', () => {
   const reearth = 'https://buildings.reearth.land/tileset.json';
   assert.equal(plateauTilesChoice(reearth), undefined);

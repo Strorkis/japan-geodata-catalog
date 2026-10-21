@@ -1307,6 +1307,56 @@ test('3D Tiles は足せるが MapLibre では灰色で理由を出し、ⓘ か
 });
 
 /**
+ * **上に重ねる主題図 (ハザードマップ・地質図) は、足すと上に重なるが、背景地図には選べない** (`duck:overlay`)。
+ * 地質図のタイルは `{z}/{y}/{x}` (縦と横の順が地理院と逆)。**公開元には読みに行かない** (横取りして空の画像を返す)。
+ */
+test('ハザードマップと地質図は上に重ねられ、背景地図には選べない', { tag: '@map' }, async ({ page }) => {
+  const empty = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+    'base64',
+  );
+  const requested: string[] = [];
+  await page.route(/disaportaldata\.gsi\.go\.jp|gbank\.gsj\.jp\/seamless/, (route) => {
+    requested.push(route.request().url());
+    return route.fulfill({ status: 200, contentType: 'image/png', body: empty });
+  });
+  // 背景地図の欄の候補に、主題図は無い。
+  const options = await page.locator('#basemap-source option').evaluateAll((els) => els.map((el) => (el as HTMLOptionElement).value));
+  expect(options).not.toContain('hazard-flood-l2');
+  expect(options).not.toContain('gsj-seamless-geology');
+
+  await showLayer(page, 'hazard-flood-l2');
+  await showLayer(page, 'gsj-seamless-geology');
+  expect(await shownTiles(page)).toEqual(['gsj-seamless-geology', 'hazard-flood-l2']);
+  // 背景地図 (淡色地図) の上に重なる。
+  await expect.poll(() => visibleBasemaps(page)).toEqual([BASEMAP.pale, 'hazard-flood-l2', 'gsj-seamless-geology']);
+  await expect.poll(() => requested.some((url) => url.includes('/01_flood_l2_shinsuishin_data/'))).toBe(true);
+  // 地質図は {z}/{y}/{x}。東京付近 (ズーム9) なら y は 200 前後、x は 450 前後。
+  await expect.poll(() => requested.find((url) => url.includes('/seamless/v2/api/1.3.1/tiles/'))).toBeTruthy();
+  const tile = requested.find((url) => url.includes('/tiles/'))!;
+  const [, , y, x] = tile.match(/tiles\/(\d+)\/(\d+)\/(\d+)\.png/)!.map(Number);
+  expect(y).toBeLessThan(x);
+});
+
+/**
+ * **PLATEAU の建物以外 (橋梁・道路など) の 3D Tiles も足せる。** ただし LOD とテクスチャは選ばせない (建物だけ)。
+ * 都市ごとのデータ (洪水浸水想定・都市計画など) は「出所だけ」のタブにある。
+ */
+test('PLATEAU の建物以外の 3D Tiles は足せ、都市ごとのデータは出所だけにある', async ({ page }) => {
+  await showLayer(page, 'plateau-3dtiles-brid');
+  const row = page.locator('.layer-row[data-layer="plateau-3dtiles-brid"]');
+  await expect(row).toHaveClass(/unsupported/);
+  // 組み合わせの設定は無い (▸ が出ない)。
+  await expect(row.locator('.layer-settings-button')).toBeHidden();
+
+  await openCatalogFor(page, 'plateau-fld');
+  await expect(page.locator('.catalog-tab[data-section="view"]')).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('[data-catalog-layer="plateau-fld"] .catalog-add')).toBeDisabled();
+  await expect(page.locator('[data-catalog-layer="geospatial-jp-catalog"] .catalog-add')).toBeDisabled();
+  await closeCatalog(page);
+});
+
+/**
  * **配っていない元データ (NASADEM) も、カタログにあることは見せる。** 足せないが、
  * ⓘ から中身と公開元が分かる。
  */

@@ -794,8 +794,8 @@ async function main() {
         layers.push({
           ...tileBase,
           unsupportedIn: notDrawnIn('raster-tiles'),
-          // 背景地図の欄で選べる (上に重ねることもできる)。
-          basemap: true,
+          // 背景地図の欄で選べる (上に重ねることもできる)。**主題図 (ハザードマップ・地質図) は選べない** (重ねるだけ)。
+          basemap: !collection.overlay,
           // **先頭の背景地図 (淡色地図) だけ既定で出す** (スタイルを組むときと同じ規則)。
           visible: collection === first,
           // 何のソースかを行で言う (出所の名前は一覧が前に足す)。

@@ -219,6 +219,8 @@ export interface StacCollection {
   'duck:dem'?: DemInfo;
   /** 同じ役割 (背景地図・地形) の中で既定に使うもの。 */
   'duck:default'?: boolean;
+  /** 上に重ねる主題図 (ハザードマップ・地質図)。背景地図には選べない。 */
+  'duck:overlay'?: boolean;
   links: StacLink[];
 }
 
@@ -386,6 +388,8 @@ export interface Collection {
   sourceStac: string | undefined;
   /** 同じ役割 (背景地図・地形) の中で既定に使うもの (`duck:default`)。 */
   isDefault: boolean;
+  /** **上に重ねる主題図** (`duck:overlay`。ハザードマップ・地質図)。地図タイルだが、背景地図の欄の候補には入れない。 */
+  overlay: boolean;
   /** 標高のエンコード (`dem.encoding` の近道)。 */
   demEncoding: string | undefined;
   /** Itemを読む。**Collectionごとに1回だけ**読む (その Collection の行グループだけ)。 */
@@ -600,6 +604,7 @@ function toCollection(
       (link) => link.rel === 'alternate' && link.type === 'application/json' && !link.hreflang,
     )?.href,
     isDefault: document['duck:default'] === true,
+    overlay: document['duck:overlay'] === true,
     zoom: document['duck:zoom'],
     tileSize: document['duck:tile_size'],
     dem: document['duck:dem'],

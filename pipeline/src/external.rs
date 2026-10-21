@@ -302,6 +302,8 @@ pub enum RasterRole {
     Reference,
     /// スタイル (`TileLink::Style`) で描く背景地図。中身はベクトルタイルなので、ラスタの背景地図と分ける。
     VectorBasemap,
+    /// **上に重ねる主題図** (ハザードマップ・地質図など)。地図タイルだが背景地図には選べない (`duck:overlay`)。
+    Overlay,
 }
 
 /// 標高タイルの形式 (`duck:dem`)。**同じ「標高タイル」でも中身の約束が違う**ので書く。
@@ -550,6 +552,122 @@ pub const EXTERNAL_RASTERS: &[ExternalRaster] = &[
         quantized_mesh: None,
         default: false,
     },
+    // ---- 上に重ねる主題図 (背景地図には選べない) ----
+    // ハザードマップは国管理河川と都道府県管理河川をまとめた全国の層だけ (都道府県ごとの層は載せない)。ズームは公開元のとおり。
+    ExternalRaster {
+        id: "hazard-flood-l2",
+        dir: "disaportal",
+        title: "洪水浸水想定区域 (想定最大規模)",
+        description: "ハザードマップポータルサイトのオープンデータの、洪水浸水想定区域 (想定最大規模) の地図タイルです。\
+                      国と都道府県が管理する河川をまとめたもので、まだ指定されていない川はありません。\
+                      宅地建物取引の重要事項説明には使えません。ズーム2〜17です。",
+        attribution: HAZARDMAP,
+        via: HAZARDMAP_VIA,
+        role: RasterRole::Overlay,
+        link: TileLink::Xyz {
+            template: "https://disaportaldata.gsi.go.jp/raster/01_flood_l2_shinsuishin_data/{z}/{x}/{y}.png",
+            media_type: "image/png",
+        },
+        minzoom: 2,
+        maxzoom: 17,
+        tile_size: 256,
+        bounds: JAPAN_BOUNDS,
+        dem: None,
+        derived_from: &[],
+        viewer: Some("https://disaportal.gsi.go.jp/maps/"),
+        quantized_mesh: None,
+        default: false,
+    },
+    ExternalRaster {
+        id: "hazard-naisui",
+        dir: "disaportal",
+        title: "内水 (雨水出水) 浸水想定区域",
+        description: "ハザードマップポータルサイトのオープンデータの、内水 (雨水出水) 浸水想定区域の地図タイルです。\
+                      深さ0.1m未満は描かれていません。ズーム2〜17です。",
+        attribution: HAZARDMAP,
+        via: HAZARDMAP_VIA,
+        role: RasterRole::Overlay,
+        link: TileLink::Xyz {
+            template: "https://disaportaldata.gsi.go.jp/raster/02_naisui_data/{z}/{x}/{y}.png",
+            media_type: "image/png",
+        },
+        minzoom: 2,
+        maxzoom: 17,
+        tile_size: 256,
+        bounds: JAPAN_BOUNDS,
+        dem: None,
+        derived_from: &[],
+        viewer: Some("https://disaportal.gsi.go.jp/maps/"),
+        quantized_mesh: None,
+        default: false,
+    },
+    ExternalRaster {
+        id: "hazard-hightide",
+        dir: "disaportal",
+        title: "高潮浸水想定区域",
+        description: "ハザードマップポータルサイトのオープンデータの、高潮浸水想定区域の地図タイルです。ズーム2〜17です。",
+        attribution: HAZARDMAP,
+        via: HAZARDMAP_VIA,
+        role: RasterRole::Overlay,
+        link: TileLink::Xyz {
+            template: "https://disaportaldata.gsi.go.jp/raster/03_hightide_l2_shinsuishin_data/{z}/{x}/{y}.png",
+            media_type: "image/png",
+        },
+        minzoom: 2,
+        maxzoom: 17,
+        tile_size: 256,
+        bounds: JAPAN_BOUNDS,
+        dem: None,
+        derived_from: &[],
+        viewer: Some("https://disaportal.gsi.go.jp/maps/"),
+        quantized_mesh: None,
+        default: false,
+    },
+    ExternalRaster {
+        id: "hazard-tsunami",
+        dir: "disaportal",
+        title: "津波浸水想定",
+        description: "ハザードマップポータルサイトのオープンデータの、津波浸水想定の地図タイルです。ズーム2〜17です。",
+        attribution: HAZARDMAP,
+        via: HAZARDMAP_VIA,
+        role: RasterRole::Overlay,
+        link: TileLink::Xyz {
+            template: "https://disaportaldata.gsi.go.jp/raster/04_tsunami_newlegend_data/{z}/{x}/{y}.png",
+            media_type: "image/png",
+        },
+        minzoom: 2,
+        maxzoom: 17,
+        tile_size: 256,
+        bounds: JAPAN_BOUNDS,
+        dem: None,
+        derived_from: &[],
+        viewer: Some("https://disaportal.gsi.go.jp/maps/"),
+        quantized_mesh: None,
+        default: false,
+    },
+    ExternalRaster {
+        id: "gsj-seamless-geology",
+        dir: "gsj",
+        title: "20万分の1日本シームレス地質図 V2",
+        description: "産総研 地質調査総合センターの、日本全国の地質図の地図タイルです。地層や岩石の種類で塗り分けてあり、\
+                      寄ると地質の境界と断層も描かれます。ズーム0〜13です。",
+        attribution: GSJ_SEAMLESS,
+        via: "https://gbank.gsj.jp/seamless/",
+        role: RasterRole::Overlay,
+        link: TileLink::Xyz {
+            template: "https://gbank.gsj.jp/seamless/v2/api/1.3.1/tiles/{z}/{y}/{x}.png",
+            media_type: "image/png",
+        },
+        minzoom: 0,
+        maxzoom: 13,
+        tile_size: 256,
+        bounds: JAPAN_BOUNDS,
+        dem: None,
+        derived_from: &[],
+        viewer: Some("https://gbank.gsj.jp/seamless/v2/viewer/"),
+        quantized_mesh: None,
+        default: false,
+    },
     // ---- 標高 (地形) — **1つだけ選んで使う** ----
     ExternalRaster {
         id: "mapterhorn-terrain",
@@ -715,6 +833,147 @@ pub const EXTERNAL_RASTERS: &[ExternalRaster] = &[
         quantized_mesh: None,
         default: false,
     },
+    // 建物以外 (整備している都市が多い順)。説明の終わりは共通の注意。
+    plateau_3dtiles(
+        "plateau-3dtiles-tran",
+        "道路 (3D Tiles・公式配信)",
+        "PLATEAU 配信サービスが配っている道路の 3D Tiles です。車道・歩道などの面を持ちます。全国の都市を1つにまとめたもので、\
+         MapLibre だけでは描けず、Three.js・Cesium・Navara で描けます。配信サービスは試験運用で、提供期間や品質は保証されていません。",
+        "https://api.plateauview.mlit.go.jp/datacatalog/3dtiles/all-tran-maxlod3-latest/tileset.json",
+    ),
+    plateau_3dtiles(
+        "plateau-3dtiles-wtr",
+        "水部 (3D Tiles・公式配信)",
+        "PLATEAU 配信サービスが配っている水部 (川・池・海など) の 3D Tiles です。全国の都市を1つにまとめたもので、\
+         MapLibre だけでは描けず、Three.js・Cesium・Navara で描けます。配信サービスは試験運用で、提供期間や品質は保証されていません。",
+        "https://api.plateauview.mlit.go.jp/datacatalog/3dtiles/all-wtr-maxlod1-latest/tileset.json",
+    ),
+    plateau_3dtiles(
+        "plateau-3dtiles-frn",
+        "都市設備 (3D Tiles・公式配信)",
+        "PLATEAU 配信サービスが配っている都市設備 (電柱・標識・ベンチなど) の 3D Tiles です。全国の都市を1つにまとめたもので、\
+         MapLibre だけでは描けず、Three.js・Cesium・Navara で描けます。配信サービスは試験運用で、提供期間や品質は保証されていません。",
+        "https://api.plateauview.mlit.go.jp/datacatalog/3dtiles/all-frn-maxlod3-latest/tileset.json",
+    ),
+    plateau_3dtiles(
+        "plateau-3dtiles-brid",
+        "橋梁 (3D Tiles・公式配信)",
+        "PLATEAU 配信サービスが配っている橋梁の 3D Tiles です。全国の都市を1つにまとめたもので、\
+         MapLibre だけでは描けず、Three.js・Cesium・Navara で描けます。配信サービスは試験運用で、提供期間や品質は保証されていません。",
+        "https://api.plateauview.mlit.go.jp/datacatalog/3dtiles/all-brid-maxlod3-latest/tileset.json",
+    ),
+    plateau_3dtiles(
+        "plateau-3dtiles-veg",
+        "植生 (3D Tiles・公式配信)",
+        "PLATEAU 配信サービスが配っている植生 (樹木・植栽) の 3D Tiles です。全国の都市を1つにまとめたもので、\
+         MapLibre だけでは描けず、Three.js・Cesium・Navara で描けます。配信サービスは試験運用で、提供期間や品質は保証されていません。",
+        "https://api.plateauview.mlit.go.jp/datacatalog/3dtiles/all-veg-maxlod3-latest/tileset.json",
+    ),
+    plateau_3dtiles(
+        "plateau-3dtiles-trk",
+        "徒歩道 (3D Tiles・公式配信)",
+        "PLATEAU 配信サービスが配っている徒歩道の 3D Tiles です。全国の都市を1つにまとめたもので、\
+         MapLibre だけでは描けず、Three.js・Cesium・Navara で描けます。配信サービスは試験運用で、提供期間や品質は保証されていません。",
+        "https://api.plateauview.mlit.go.jp/datacatalog/3dtiles/all-trk-maxlod3-latest/tileset.json",
+    ),
+    plateau_3dtiles(
+        "plateau-3dtiles-gen",
+        "汎用都市オブジェクト (3D Tiles・公式配信)",
+        "PLATEAU 配信サービスが配っている汎用都市オブジェクト (ほかの種類に当てはまらない地物) の 3D Tiles です。\
+         全国の都市を1つにまとめたもので、MapLibre だけでは描けず、Three.js・Cesium・Navara で描けます。\
+         配信サービスは試験運用で、提供期間や品質は保証されていません。",
+        "https://api.plateauview.mlit.go.jp/datacatalog/3dtiles/all-gen-maxlod1-latest/tileset.json",
+    ),
+    plateau_3dtiles(
+        "plateau-3dtiles-ubld",
+        "地下街 (3D Tiles・公式配信)",
+        "PLATEAU 配信サービスが配っている地下街の 3D Tiles です。全国の都市を1つにまとめたもので、\
+         MapLibre だけでは描けず、Three.js・Cesium・Navara で描けます。配信サービスは試験運用で、提供期間や品質は保証されていません。",
+        "https://api.plateauview.mlit.go.jp/datacatalog/3dtiles/all-ubld-maxlod4-latest/tileset.json",
+    ),
+    plateau_3dtiles(
+        "plateau-3dtiles-squr",
+        "広場 (3D Tiles・公式配信)",
+        "PLATEAU 配信サービスが配っている広場 (駅前広場など) の 3D Tiles です。全国の都市を1つにまとめたもので、\
+         MapLibre だけでは描けず、Three.js・Cesium・Navara で描けます。配信サービスは試験運用で、提供期間や品質は保証されていません。",
+        "https://api.plateauview.mlit.go.jp/datacatalog/3dtiles/all-squr-maxlod3-latest/tileset.json",
+    ),
+    plateau_3dtiles(
+        "plateau-3dtiles-rwy",
+        "鉄道 (3D Tiles・公式配信)",
+        "PLATEAU 配信サービスが配っている鉄道の 3D Tiles です。全国の都市を1つにまとめたもので、\
+         MapLibre だけでは描けず、Three.js・Cesium・Navara で描けます。配信サービスは試験運用で、提供期間や品質は保証されていません。",
+        "https://api.plateauview.mlit.go.jp/datacatalog/3dtiles/all-rwy-maxlod3-latest/tileset.json",
+    ),
+    plateau_3dtiles(
+        "plateau-3dtiles-cons",
+        "その他の構造物 (3D Tiles・公式配信)",
+        "PLATEAU 配信サービスが配っているその他の構造物 (擁壁・堤防など) の 3D Tiles です。全国の都市を1つにまとめたもので、\
+         MapLibre だけでは描けず、Three.js・Cesium・Navara で描けます。配信サービスは試験運用で、提供期間や品質は保証されていません。",
+        "https://api.plateauview.mlit.go.jp/datacatalog/3dtiles/all-cons-maxlod3-latest/tileset.json",
+    ),
+    plateau_3dtiles(
+        "plateau-3dtiles-unf",
+        "地下埋設物 (3D Tiles・公式配信)",
+        "PLATEAU 配信サービスが配っている地下埋設物 (管路など) の 3D Tiles です。全国の都市を1つにまとめたもので、\
+         MapLibre だけでは描けず、Three.js・Cesium・Navara で描けます。配信サービスは試験運用で、提供期間や品質は保証されていません。",
+        "https://api.plateauview.mlit.go.jp/datacatalog/3dtiles/all-unf-maxlod3-latest/tileset.json",
+    ),
+    // ---- PLATEAU の都市ごとのデータ (出所だけ) ----
+    plateau_reference(
+        "plateau-luse",
+        "土地利用 (PLATEAU)",
+        "PLATEAU の土地利用モデルです (290都市)。都市計画基礎調査の土地利用の区分を面で持ちます。都市ごとの MVT と CityGML で\
+         配られていて、このカタログでは出所と条件だけを載せています。",
+    ),
+    plateau_reference(
+        "plateau-urf",
+        "都市計画決定情報 (PLATEAU)",
+        "PLATEAU の都市計画決定情報モデルです (283都市)。用途地域・地区計画・都市施設 (公園・道路など) の区域を面で持ちます。\
+         都市ごとの MVT と CityGML で配られていて、このカタログでは出所と条件だけを載せています。",
+    ),
+    plateau_reference(
+        "plateau-fld",
+        "洪水浸水想定区域 (PLATEAU)",
+        "PLATEAU の洪水浸水想定区域モデルです (282都市)。浸水の深さを 3D で持ちます。都市ごと・河川ごとの 3D Tiles と CityGML で\
+         配られていて、このカタログでは出所と条件だけを載せています。全国の地図タイルは「洪水浸水想定区域 (想定最大規模)」にあります。",
+    ),
+    plateau_reference(
+        "plateau-lsld",
+        "土砂災害警戒区域 (PLATEAU)",
+        "PLATEAU の土砂災害警戒区域モデルです (252都市)。都市ごとの MVT と CityGML で配られていて、\
+         このカタログでは出所と条件だけを載せています。",
+    ),
+    plateau_reference(
+        "plateau-tnm",
+        "津波浸水想定区域 (PLATEAU)",
+        "PLATEAU の津波浸水想定区域モデルです (104都市)。浸水の深さを 3D で持ちます。都市ごとの 3D Tiles と CityGML で配られていて、\
+         このカタログでは出所と条件だけを載せています。",
+    ),
+    plateau_reference(
+        "plateau-htd",
+        "高潮浸水想定区域 (PLATEAU)",
+        "PLATEAU の高潮浸水想定区域モデルです (75都市)。浸水の深さを 3D で持ちます。都市ごとの 3D Tiles と CityGML で配られていて、\
+         このカタログでは出所と条件だけを載せています。",
+    ),
+    plateau_reference(
+        "plateau-area",
+        "区域 (PLATEAU)",
+        "PLATEAU の区域モデルです (36都市)。法令などで決まる区域を面で持ちます。都市ごとの MVT と CityGML で配られていて、\
+         このカタログでは出所と条件だけを載せています。",
+    ),
+    plateau_reference(
+        "plateau-ifld",
+        "内水浸水想定区域 (PLATEAU)",
+        "PLATEAU の内水浸水想定区域モデルです (28都市)。浸水の深さを 3D で持ちます。都市ごとの 3D Tiles と CityGML で配られていて、\
+         このカタログでは出所と条件だけを載せています。",
+    ),
+    plateau_reference(
+        "plateau-rfld",
+        "ため池ハザードマップ (PLATEAU)",
+        "PLATEAU のため池ハザードマップモデルです (3都市)。浸水の深さを 3D で持ちます。都市ごと・ため池ごとの 3D Tiles と CityGML で\
+         配られていて、このカタログでは出所と条件だけを載せています。",
+    ),
     // ---- 配っていない元データ (承認が要るもの) ----
     ExternalRaster {
         id: "ksj-admin-source",
@@ -725,6 +984,28 @@ pub const EXTERNAL_RASTERS: &[ExternalRaster] = &[
                       承認を得るまでは配らず、行政区域には Overture のものを使っています。",
         attribution: MLIT_KSJ_N03,
         via: "https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N03-2026.html",
+        role: RasterRole::Reference,
+        link: TileLink::None,
+        minzoom: 0,
+        maxzoom: 0,
+        tile_size: 0,
+        bounds: JAPAN_BOUNDS,
+        dem: None,
+        derived_from: &[],
+        viewer: None,
+        quantized_mesh: None,
+        default: false,
+    },
+    // ---- データの集まりへの入口 (出所だけ) ----
+    ExternalRaster {
+        id: "geospatial-jp-catalog",
+        dir: "geospatial-jp",
+        title: "G空間情報センターのデータカタログ",
+        description: "国・自治体・企業などの地理空間データを集めたカタログです。自治体の公共施設一覧や避難所なども探せます。\
+                      条件はデータセットごとに違うので、使う前にそれぞれのページで確かめてください。\
+                      公式の API (CKAN) で検索でき、読むだけなら登録は要りません。このカタログでは複製せず、入口への案内だけを載せています。",
+        attribution: GEOSPATIAL_JP,
+        via: "https://www.geospatial.jp/ckan/dataset",
         role: RasterRole::Reference,
         link: TileLink::None,
         minzoom: 0,
@@ -934,6 +1215,122 @@ const ASTER_GDEM: Attribution = Attribution {
         share_alike: false,
     },
 };
+
+/// **重ねるハザードマップのオープンデータ** (国土交通省のハザードマップポータルサイト。タイルは国土地理院が配る)。
+/// 条件は公共データ利用規約 (第1.0版)。「ウェブサイトやソフトウェア、アプリケーションに商用非商用問わずご利用いただけます」
+/// (<https://disaportal.gsi.go.jp/hazardmap/copyright/opendata.html>)。出典の書き方は「出典：「ハザードマップポータルサイト」」
+/// (<https://disaportal.gsi.go.jp/hazardmapportal/hazardmap/copyright/copyright.html>、2026-10-21 に読んだ)。配信を指すだけで加工しない。
+/// **土砂災害警戒区域の層は載せない** — 「各都道府県が定める利用条件に同意の上」とあり、47の条件を読んでいない (TOBE)。
+const HAZARDMAP: Attribution = Attribution {
+    text: "「ハザードマップポータルサイト」",
+    url: "https://disaportal.gsi.go.jp/hazardmap/copyright/opendata.html",
+    license: "other",
+    provider: "国土交通省",
+    terms: Terms {
+        name: "ハザードマップポータルサイトの利用規約 (公共データ利用規約 第1.0版)",
+        url: "https://disaportal.gsi.go.jp/hazardmapportal/hazardmap/copyright/copyright.html",
+        commercial: Commercial::Allowed,
+        attribution_required: true,
+        note_modification: true,
+        share_alike: false,
+    },
+};
+const HAZARDMAP_VIA: &str = "https://disaportal.gsi.go.jp/hazardmap/copyright/opendata.html";
+
+/// **20万分の1日本シームレス地質図 V2** (産総研 地質調査総合センター)。政府標準利用規約 (第2.0版) で、
+/// 「出典を記載していただくことで改変を含む自由な二次利用が可能です (利用申請手続き不要)」
+/// (<https://gbank.gsj.jp/seamless/agreement.html>、2026-10-21 に読んだ)。出典は案内の例のとおり。
+/// タイルは Web API (ver 1.3.1) の `tiles/{z}/{y}/{x}.png` (**縦と横の順が地理院と逆**)。
+const GSJ_SEAMLESS: Attribution = Attribution {
+    text: "20万分の1日本シームレス地質図V2（©産総研地質調査総合センター）",
+    url: "https://gbank.gsj.jp/seamless/",
+    license: "other",
+    provider: "産業技術総合研究所 地質調査総合センター",
+    terms: Terms {
+        name: "政府標準利用規約 (第2.0版)",
+        url: "https://gbank.gsj.jp/seamless/agreement.html",
+        commercial: Commercial::Allowed,
+        attribution_required: true,
+        note_modification: true,
+        share_alike: false,
+    },
+};
+
+/// **G空間情報センター** (社会基盤情報流通推進協議会が運営する、地理空間データの集まり)。**データセットごとに条件が違う**ので、
+/// 入口への案内だけを載せる。公式の CKAN API (`https://www.geospatial.jp/ckan/api/3/action/`) は、読むだけなら鍵が要らない
+/// (<https://front.geospatial.jp/how_to_use/manual8/>、2026-10-21 に読んだ)。
+const GEOSPATIAL_JP: Attribution = Attribution {
+    text: "G空間情報センター",
+    url: "https://front.geospatial.jp/",
+    license: "other",
+    provider: "一般社団法人 社会基盤情報流通推進協議会",
+    terms: Terms {
+        name: "データセットごとに違います (G空間情報センター利用約款)",
+        url: "https://front.geospatial.jp/about/",
+        commercial: Commercial::NotRestricted,
+        attribution_required: true,
+        note_modification: true,
+        share_alike: false,
+    },
+};
+
+/// **PLATEAU の建物以外の 3D Tiles** (全国の都市を1つの tileset.json に束ねたもの。配信サービスがその場で組み立てる)。
+/// LOD は建物と同じく「都市ごとにいちばん細かいもの」(`maxlodN`) にする。**LOD とテクスチャは選ばせない**
+/// (選べるのは建物だけ。packages/core/src/plateau-tiles.ts)。URL は 2026-10-21 に12種類とも返ることを確かめた。
+const fn plateau_3dtiles(
+    id: &'static str,
+    title: &'static str,
+    description: &'static str,
+    url: &'static str,
+) -> ExternalRaster {
+    ExternalRaster {
+        id,
+        dir: "plateau",
+        title,
+        description,
+        attribution: PLATEAU_TILES,
+        via: "https://docs.plateauview.mlit.go.jp/datasets/3d-tiles/",
+        role: RasterRole::ThreeDTiles,
+        link: TileLink::ThreeDTiles { url },
+        minzoom: 0,
+        maxzoom: 0,
+        tile_size: 0,
+        bounds: JAPAN_BOUNDS,
+        dem: None,
+        derived_from: &[],
+        viewer: Some("https://plateauview.mlit.go.jp/"),
+        quantized_mesh: None,
+        default: false,
+    }
+}
+
+/// **PLATEAU の都市ごとのデータ** (洪水浸水想定・都市計画など)。全国のまとめが無く、都市ごと・河川ごとに分かれているので、
+/// 出所と条件だけを載せる (データ化は TOBE)。一覧は公式の配信カタログ API。都市の数は 2026-10-21 に API から数えた。
+const fn plateau_reference(
+    id: &'static str,
+    title: &'static str,
+    description: &'static str,
+) -> ExternalRaster {
+    ExternalRaster {
+        id,
+        dir: "plateau",
+        title,
+        description,
+        attribution: PLATEAU_TILES,
+        via: "https://api.plateauview.mlit.go.jp/datacatalog/plateau-datasets",
+        role: RasterRole::Reference,
+        link: TileLink::None,
+        minzoom: 0,
+        maxzoom: 0,
+        tile_size: 0,
+        bounds: JAPAN_BOUNDS,
+        dem: None,
+        derived_from: &[],
+        viewer: Some("https://plateauview.mlit.go.jp/"),
+        quantized_mesh: None,
+        default: false,
+    }
+}
 
 /// PLATEAU の公式配信の 3D Tiles。**加工せずに指すだけ**なので「もとに作成」と書かない。
 /// 条件は PLATEAU のサイトポリシー (PDL1.0 / CC BY 4.0)。配信 API は手続き不要・無償 (試験運用)。

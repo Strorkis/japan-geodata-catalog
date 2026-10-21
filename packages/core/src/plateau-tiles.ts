@@ -50,10 +50,14 @@ function parse(href: string) {
   };
 }
 
-/** PLATEAU の組み立ての URL なら、いまの組み合わせを返す (選べる形に寄せる)。そうでなければ undefined。 */
+/**
+ * PLATEAU の組み立ての URL なら、いまの組み合わせを返す (選べる形に寄せる)。そうでなければ undefined。
+ * **選べるのは建物 (`bldg`) だけ。** 橋梁・道路・植生なども同じ形の URL だが、LOD の段は種類ごとに違い (水部は LOD1 まで)、
+ * テクスチャは建物にしか無い。既定の組み合わせ (LOD2 まで) に書き換えると、無い段を指してしまう。
+ */
 export function plateauTilesChoice(href: string): PlateauTilesChoice | undefined {
   const spec = parse(href);
-  if (!spec) return undefined;
+  if (!spec || spec.type !== 'bldg') return undefined;
   const lod = (['lod1', 'maxlod2', 'maxlod3', 'maxlod4'] as const).find((l) => l === spec.lod) ?? 'maxlod2';
   return { lod, texture: spec.texture === 'notexture' ? 'notexture' : 'preferred' };
 }
