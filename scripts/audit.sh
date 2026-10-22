@@ -42,6 +42,19 @@ mise exec -- uvx --quiet pip-audit --requirement "$reqs" --disable-pip --no-deps
 rm -f "$reqs"
 
 echo
+echo "== 道具の版 (mise。知らせるだけで止めない) =="
+# mise.toml は版を固定している (2026-10-22 から)。新しい版が出ていたら知らせる。セキュリティの更新なら
+# `mise upgrade --bump <道具>` で上げ、Node.js・pnpm・Rust は CI の版も揃える (mise.toml の先頭)。
+# Node.js は LTS の版から選ぶ (mise は LTS でない新しい版も出す)。mise は場所を `~/…` の形で書くので、ディレクトリ名で絞る。
+outdated=$(mise outdated --bump 2>/dev/null | grep -F "/$(basename "$(pwd)")/mise.toml" || true)
+if [ -n "$outdated" ]; then
+  echo "新しい版があります (意図して上げる):"
+  echo "$outdated"
+else
+  echo "道具は最新です。"
+fi
+
+echo
 if [ "$status" -ne 0 ]; then
   echo "脆弱性が見つかりました。直すか、理由を添えて設定に記録してください。" >&2
 else

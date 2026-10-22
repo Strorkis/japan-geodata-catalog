@@ -29,8 +29,11 @@ jobs:
         working-directory: crates/remote-zip
     steps:
       - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@stable
+      # mise.toml と同じ版に固定する (stable のままだと、新しい版の clippy の指摘で突然落ちうる)。
+      # 版を入力で渡すときは @master を使う (このアクションの使い方)。
+      - uses: dtolnay/rust-toolchain@master
         with:
+          toolchain: 1.97.1
           components: clippy, rustfmt
       - uses: Swatinem/rust-cache@v2
         with:
@@ -52,8 +55,11 @@ jobs:
       - name: PROJのビルドに必要なパッケージ
         run: sudo apt-get update && sudo apt-get install -y build-essential cmake sqlite3 libsqlite3-dev
 
-      - uses: dtolnay/rust-toolchain@stable
+      # mise.toml と同じ版に固定する (stable のままだと、新しい版の clippy の指摘で突然落ちうる)。
+      # 版を入力で渡すときは @master を使う (このアクションの使い方)。
+      - uses: dtolnay/rust-toolchain@master
         with:
+          toolchain: 1.97.1
           components: clippy, rustfmt
 
       # PROJのビルドが重いので、target/ ごとキャッシュする。
