@@ -34,6 +34,11 @@
   (`pyproject.toml` / `uv.lock` / `.python-version` で固定してはいる)
 - **ワンショットでも繰り返すなら Rust に置く。** `pipeline/src/bin/` ならテストが書けて再実行できる
 - `mise exec -- <コマンド>` で実行する。`export PATH=...` より短く、状態を持たない
+- **`mise.toml` の版は固定する** (2026-10-22、利用者と決めた)。`latest` だと入れ直すたびに試していない版が入る。
+  上げるときは `mise outdated` で見て (`scripts/audit.sh` も知らせる)、`mise upgrade --bump <道具>` で意図して上げる。
+  **Node.js・pnpm・Rust は CI (`.github/workflows/`) の版も揃える。** Node.js は LTS の版から選ぶ
+- **監査は lockfile を4つとも見る** (npm・`pipeline`・`crates/remote-zip`・`uv.lock`。`scripts/audit.sh`)。2026-10-22 までは
+  remote-zip と uv を見ておらず、直したはずの脆弱性が残っていた
 - **プロセスを止めるときは `fuser -k -n tcp <port>`。** `pkill` は終了コード144になる
 
 `sed -i` と**素の** `python` / `python3` / `uv` は `.claude/settings.json` のhookで止めている

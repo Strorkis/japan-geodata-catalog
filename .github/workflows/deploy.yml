@@ -41,16 +41,17 @@ jobs:
       # Node.js 24 で動くメジャーバージョンを使う (どれも action.yml の `using: node24` を確かめた。2026-10-18)。
       - uses: actions/checkout@v7
 
-      # package.json に packageManager を書いていないので、ここでメジャーを指定する
-      # (mise.toml 側は pnpm = "latest" なので、細かく固定しすぎない)。
+      # package.json に packageManager を書いていないので、ここで版を指定する。**mise.toml と同じ版に固定する**
+      # (2026-10-22 から。上げるときは両方を書き換える)。
       - uses: pnpm/action-setup@v6
         with:
-          version: 11
+          version: 11.21.0
       # v6以降、packageManager を見た自動キャッシュはnpmだけになったが、
       # ここでは cache を明示しているので pnpm でも効く。
       - uses: actions/setup-node@v7
         with:
-          node-version: lts/*
+          # mise.toml と同じ版 (前は lts/* で、その日の最新の LTS になり、手元とずれた)。
+          node-version: 24.22.1
           cache: pnpm
           # lockfile はワークスペースの起点 (リポジトリの直下) に1つ。
           cache-dependency-path: pnpm-lock.yaml
