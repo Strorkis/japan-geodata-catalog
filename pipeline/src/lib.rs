@@ -10,6 +10,7 @@ pub mod external;
 pub mod geoparquet;
 pub mod isj_block;
 pub mod isj_oaza;
+pub mod ksj_facility;
 pub mod lod;
 pub mod mesh;
 pub mod mesh_pop;

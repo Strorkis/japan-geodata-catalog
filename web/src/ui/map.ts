@@ -44,6 +44,8 @@ export const PLACE_COLORS: Readonly<Record<string, string>> = {
   playground: '#e0a800',
   plaza: '#8d6e63',
   school: '#5c6bc0',
+  university: '#00838f',
+  kindergarten: '#f9a825',
   parking: '#546e7a',
   toilets: '#00897b',
   drinking_water: '#1e88e5',
@@ -51,12 +53,21 @@ export const PLACE_COLORS: Readonly<Record<string, string>> = {
   community: '#ab47bc',
   library: '#6d4c41',
   hospital: '#e53935',
+  clinic: '#f06292',
+  dental: '#8e24aa',
   police: '#283593',
   fire: '#ff6f00',
 };
 
 /** 語彙に無い種類が来たときの色。 */
 export const PLACE_FALLBACK_COLOR = '#757575';
+
+/** 場所と施設の地図のソース (Collection ごとに1つ)。 */
+export const placeSourceId = (collectionId: string) => `place-${collectionId}`;
+
+/** 場所と施設の地図の層 (塗り・縁・丸)。 */
+export const placeLayerIds = (collectionId: string) =>
+  (['fill', 'outline', 'point'] as const).map((part) => `${placeSourceId(collectionId)}-${part}`);
 
 /**
  * 道路の等級ごとの色と呼び名。**語彙はカタログから来る**ので、ここには
@@ -200,7 +211,7 @@ export function initMap(collections: Collection[]): Promise<MapLibreMap> {
   // 層を足すのに要るのはスタイルだけ。タイルはあとから届けば描かれる。起動を外部サービスに握らせない。
   return new Promise((resolve) => {
     map.once('style.load', () => {
-      addDataLayers(map);
+      addDataLayers(map, collections);
       addOverlayLayers(map);
       // 地形は最後に有効にする。以降タイルが取れなくても、起伏が出ないだけで地図は使える。
       if (hasTerrain) map.setTerrain({ source: TERRAIN_SOURCE, exaggeration: 1 });
@@ -222,7 +233,7 @@ const anchor = (map: MapLibreMap, id: string) =>
  * `anchor/data` の直下に、一覧の順で積む (ui/layer-list.ts の applyOrder)。データは地図タイルより
  * 常に上、周辺検索とハイライトより下。ここでの並びは、一覧に足したときの既定の重なりと同じ。
  */
-function addDataLayers(map: MapLibreMap): void {
+function addDataLayers(map: MapLibreMap, collections: Collection[]): void {
   anchor(map, LAYER_ANCHORS.tile);
 
   // 人口メッシュは一番下に敷く。判断の背景であって、主役ではない。
@@ -243,8 +254,10 @@ function addDataLayers(map: MapLibreMap): void {
 
   // 場所と施設 (公園・駐車場・公共施設など)。面は人口メッシュのすぐ上に薄く塗り、点は丸で描く。
   // 面と点が混ざるので、出所ごとに塗り・縁・丸の3つの層を置き、形の種類で振り分ける。
-  for (const kind of PLACE_KINDS) {
-    const source = `place-${kind}`;
+  // **Collection ごとに1組** (同じ種類の出所が複数ある。公共施設は Overture と国土数値情報の3つ)。
+  for (const collection of collections) {
+    if (!(PLACE_KINDS as readonly string[]).includes(collection.kind)) continue;
+    const source = placeSourceId(collection.id);
     emptySource(map, source);
     const polygon: FilterSpecification = ['==', ['geometry-type'], 'Polygon'];
     map.addLayer({

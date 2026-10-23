@@ -13,6 +13,7 @@ import {
 // **地図に依らない部品は `@japan-geodata-catalog/core`** (packages/core)。
 // データの出所 (GeoParquet のファイル群) と、表示範囲から読むファイルを選ぶ部品は sources。
 import {
+  PLACE_KINDS,
   unionBbox,
   type BuildingSource,
   type LineSource,
@@ -28,7 +29,7 @@ import { configureDuckDb, initDuckDb, type Conn } from '@japan-geodata-catalog/c
 import { coverageInView } from '@japan-geodata-catalog/core/queries';
 import { DETAIL_LEVELS, loadDetailLevel, saveDetailLevel, type DetailLevel, type DetailSettings } from './lib/detail';
 // 画面の部品は ui/。地図の初期化と描き方は map.ts、左下の一覧とカタログのダイアログは layer-list.ts。
-import { EMPTY_FEATURE_COLLECTION, buildingTilesLayerId, initMap } from './ui/map';
+import { EMPTY_FEATURE_COLLECTION, buildingTilesLayerId, initMap, placeLayerIds } from './ui/map';
 // データの描き方 (建物・人口メッシュ・鉄道・道路・送電線と川) は ui/layers/。
 import type { DrawContext } from './ui/layers/context';
 import { createBuildingLayers } from './ui/layers/buildings';
@@ -469,12 +470,7 @@ async function main() {
     road: ['road-line'],
     power_line: ['line-power_line'],
     waterway: ['line-waterway'],
-    ...Object.fromEntries(
-      (['open_space', 'amenity', 'facility'] as const).map((kind) => [
-        kind,
-        [`place-${kind}-fill`, `place-${kind}-outline`, `place-${kind}-point`],
-      ]),
-    ),
+    // 場所と施設は Collection ごとに層がある (下で `placeLayerIds`)。
     population_mesh: ['population-mesh-fill'],
   };
 
@@ -701,6 +697,7 @@ async function main() {
     const dataMapLayers = [
       ...(DATA_MAP_LAYERS[collection.kind] ?? []),
       ...(isBuildings ? [buildingTilesLayerId(collection.id)] : []),
+      ...((PLACE_KINDS as readonly string[]).includes(collection.kind) ? placeLayerIds(collection.id) : []),
     ];
     const base = {
       id: collection.id,

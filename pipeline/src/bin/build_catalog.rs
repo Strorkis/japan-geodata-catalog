@@ -74,8 +74,11 @@ fn main() -> Result<()> {
 
     // **規約の本文を、データと同じディレクトリに写す** (CDLA Permissive 2.0 などが求める。Collection の `rel: license` が指す)。
     let licenses = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("licenses");
-    for (kind, source, name) in catalog::LICENSE_FILES {
-        for entry in datasets.iter().filter(|entry| entry.kind == *kind) {
+    for (collection, source, name) in catalog::LICENSE_FILES {
+        for entry in datasets
+            .iter()
+            .filter(|entry| entry.collection == *collection)
+        {
             let target_dir = dir
                 .join(&entry.file)
                 .parent()

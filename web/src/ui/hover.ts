@@ -13,7 +13,7 @@ import type { Collection } from '@japan-geodata-catalog/core/stac';
 import { LINE_KINDS, PLACE_KINDS } from '@japan-geodata-catalog/core/sources';
 import { MESH_SIZE_LABELS } from '@japan-geodata-catalog/core/mesh';
 import type { VectorOverlay } from '@japan-geodata-catalog/maplibre/tiles';
-import { BUILDING_TILES_PREFIX, buildingTilesLayerId } from './map';
+import { BUILDING_TILES_PREFIX, buildingTilesLayerId, placeLayerIds } from './map';
 import { hoverContent, text, vectorHover, type Hover, type HoverRows } from './hover-rows';
 import { m } from '../i18n';
 
@@ -147,26 +147,29 @@ export function createHover(options: HoverOptions): HoverHandle {
     },
     // 場所と施設。塗り・縁・丸のどれに乗っても同じ吹き出し。公共施設は住所と、その行の出所・ライセンスも言う
     // (places は1件ごとにライセンスが違う)。
+    // 層は Collection ごと (同じ種類の出所が複数ある)。
     ...Object.fromEntries(
-      PLACE_KINDS.flatMap((kind) =>
-        ['fill', 'outline', 'point'].map((part) => [
-          `place-${kind}-${part}`,
-          (p: Props): Hover => {
-            const origin = originOf(p);
-            return {
-              key: `place|${kind}|${p.name ?? ''}|${p.category}|${p.address ?? ''}`,
-              rows: [
-                ['', text(p.name) ?? text(p.category) ?? m.unnamed],
-                [m.hoverKind, text(p.category)],
-                [m.hoverAddress, text(p.address)],
-                [m.hoverSource, [origin?.group?.title, text(p.via)].filter(Boolean).join(' · ') || null],
-                [m.hoverLicense, text(p.license)],
-                [m.hoverVintage, origin?.vintage ?? null],
-              ],
-            };
-          },
-        ]),
-      ),
+      collections
+        .filter((c) => (PLACE_KINDS as readonly string[]).includes(c.kind))
+        .flatMap((collection) =>
+          placeLayerIds(collection.id).map((layerId) => [
+            layerId,
+            (p: Props): Hover => {
+              const origin = originOf(p);
+              return {
+                key: `place|${collection.id}|${p.name ?? ''}|${p.category}|${p.address ?? ''}`,
+                rows: [
+                  ['', text(p.name) ?? text(p.category) ?? m.unnamed],
+                  [m.hoverKind, text(p.category)],
+                  [m.hoverAddress, text(p.address)],
+                  [m.hoverSource, [origin?.group?.title, text(p.via)].filter(Boolean).join(' · ') || null],
+                  [m.hoverLicense, text(p.license)],
+                  [m.hoverVintage, origin?.vintage ?? null],
+                ],
+              };
+            },
+          ]),
+        ),
     ),
     ...Object.fromEntries(
       LINE_KINDS.map((kind) => [

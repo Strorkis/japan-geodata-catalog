@@ -3806,11 +3806,15 @@ for (const [layer, label] of [
   });
 }
 
-/** 場所と施設 (Overture の land_use・infrastructure・places)。Collection ID と地図のソース。 */
+/**
+ * 場所と施設 (Overture の land_use・infrastructure・places と、国土数値情報の医療機関)。Collection ID と、種類の選択肢の1つ。
+ * **地図のソースは Collection ごと** (同じ種類の出所が複数ある)。
+ */
 const PLACES = [
-  { id: 'overture-open-spaces', kind: 'open_space', sample: '公園・緑地' },
-  { id: 'overture-amenities', kind: 'amenity', sample: '駐車場' },
-  { id: 'overture-facilities', kind: 'facility', sample: '役所' },
+  { id: 'overture-open-spaces', sample: '公園・緑地' },
+  { id: 'overture-amenities', sample: '駐車場' },
+  { id: 'overture-facilities', sample: '役所' },
+  { id: 'ksj-medical-facilities', sample: '診療所' },
 ] as const;
 
 /**
@@ -3819,8 +3823,8 @@ const PLACES = [
  */
 test('公園・駐車場・公共施設を種類で絞って描き、施設の吹き出しにライセンスが出る', async ({ page }, testInfo) => {
   test.skip(!(await bundledCollection(page, PLACES[0].id)), '場所と施設のデータが無い');
-  // 3つの出所を順に足して絞り込みを試すので、ほかのテストより長い。
-  testInfo.setTimeout(Math.max(testInfo.timeout, 120_000));
+  // 4つの出所を順に足して絞り込みを試すので、ほかのテストより長い。
+  testInfo.setTimeout(Math.max(testInfo.timeout, 160_000));
   await page.evaluate(() => {
     (window as unknown as TestWindow).__map!.jumpTo({ center: [139.7454, 35.6586], zoom: 15 });
   });
@@ -3828,7 +3832,7 @@ test('公園・駐車場・公共施設を種類で絞って描き、施設の�
     await showLayer(page, place.id);
     const status = page.locator(`[data-layer-status="${place.id}"]`);
     await expect(status).toContainText('件', { timeout: DATA_TIMEOUT });
-    expect(await sourceFeatureCount(page, `place-${place.kind}`)).toBeGreaterThan(0);
+    expect(await sourceFeatureCount(page, `place-${place.id}`)).toBeGreaterThan(0);
     // 種類の選択肢は、カタログの語彙を画面の言葉で。
     await openLayerSettings(page, place.id);
     const settings = page.locator(`[data-layer="${place.id}"] .layer-settings-slot`);
@@ -3836,16 +3840,20 @@ test('公園・駐車場・公共施設を種類で絞って描き、施設の�
     // 全部外すと引かない。
     await settings.locator('.bulk button', { hasText: '解除' }).click();
     await expect(status).toHaveText('種類が選ばれていません', { timeout: DATA_TIMEOUT });
-    await expect.poll(() => sourceFeatureCount(page, `place-${place.kind}`)).toBe(0);
+    await expect.poll(() => sourceFeatureCount(page, `place-${place.id}`)).toBe(0);
     await settings.locator('.bulk button', { hasText: '全部' }).click();
     await expect(status).toContainText('件', { timeout: DATA_TIMEOUT });
   }
+  // **同じ種類 (公共施設) の出所を2つ出しても、互いに上書きしない** (地図のソースが Collection ごと)。
+  expect(await sourceFeatureCount(page, 'place-overture-facilities')).toBeGreaterThan(0);
+  expect(await sourceFeatureCount(page, 'place-ksj-medical-facilities')).toBeGreaterThan(0);
 
   // 公共施設の点に乗ると、種類と、その行の出所のライセンスが出る。**ほかの行は隠す** (建物や駐車場の面が
   // 点に重なっていると、吹き出しはそちらのものになる)。
   await hideLayer(page, LAYER.plateauBuildings);
   await hideLayer(page, 'overture-open-spaces');
   await hideLayer(page, 'overture-amenities');
+  await hideLayer(page, 'ksj-medical-facilities');
   await expect(page.locator('#busy')).toBeHidden({ timeout: DATA_TIMEOUT });
   // 左下の一覧と右下の案内に隠れていない点を選ぶ (隠れていると乗れない)。
   const point = await page.evaluate(() => {
@@ -3853,7 +3861,7 @@ test('公園・駐車場・公共施設を種類で絞って描き、施設の�
     const { width, height } = map.getCanvas().getBoundingClientRect();
     return (
       map
-        .queryRenderedFeatures(undefined as never, { layers: ['place-facility-point'] })
+        .queryRenderedFeatures(undefined as never, { layers: ['place-overture-facilities-point'] })
         .map((feature) => map.project((feature.geometry as GeoJSON.Point).coordinates as [number, number]))
         .find((p) => p.x > 360 && p.x < width - 320 && p.y > 120 && p.y < height - 120) ?? null
     );

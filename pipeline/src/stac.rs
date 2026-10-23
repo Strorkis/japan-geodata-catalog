@@ -545,7 +545,7 @@ fn collection(
     // (`build_catalog` が写す)。
     for (_, _, name) in crate::catalog::LICENSE_FILES
         .iter()
-        .filter(|(kind, _, _)| *kind == first.kind)
+        .filter(|(collection, _, _)| *collection == id)
     {
         body["links"]
             .as_array_mut()

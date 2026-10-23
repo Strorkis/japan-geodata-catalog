@@ -304,6 +304,52 @@ const EN: &[(&str, &str)] = &[
         "CDLA Permissive 2.0 (partly Apache-2.0 and CC0 1.0)",
     ),
     ("規約の本文", "Full license texts"),
+    // ---- 国土数値情報の施設 (2026-10-21) ----
+    ("2020年度 (令和2年度)", "Fiscal 2020"),
+    ("2022年 (令和4年)", "2022"),
+    ("2023年度 (令和5年度)", "Fiscal 2023"),
+    ("学校", "Schools"),
+    (
+        "小学校・中学校・高等学校・特別支援学校・大学・短期大学・高等専門学校・幼稚園・認定こども園の点です。2023年度 (令和5年度) のものです。",
+        "Points of elementary, junior high, high and special-needs schools, universities, junior colleges, colleges of \
+         technology, kindergartens and certified centers for early childhood education. As of fiscal 2023.",
+    ),
+    (
+        "国土数値情報の学校データから、小学校・中学校・高等学校・大学・幼稚園などを取り出し (各種学校と専修学校は除きました)、学校の分類のコードに名前と種類を添えて、座標系を WGS84 に変えて GeoParquet にしました。行は場所ごとに並べ替えています。",
+        "Extracted elementary, junior high and high schools, universities, kindergartens and others from the National Land \
+         Numerical Information school data (miscellaneous and specialized training schools were left out), added names and \
+         kinds to the school class codes, converted the coordinates to WGS84 and wrote them as GeoParquet. Rows are sorted by location.",
+    ),
+    (
+        "役所・公民館・集会施設",
+        "Government offices, community halls and meeting facilities",
+    ),
+    (
+        "市役所・区役所・町村役場とその支所、行政サービスの施設、公立公民館、集会施設の点です。2022年 (令和4年) のものです。",
+        "Points of city, ward, town and village offices and their branches, other government service facilities, public \
+         community halls and meeting facilities. As of 2022.",
+    ),
+    (
+        "国土数値情報の市町村役場等及び公的集会施設データの都道府県ごとのファイルをまとめ、施設の分類のコードに名前と種類を添えて、座標系を WGS84 に変えて GeoParquet にしました。行は場所ごとに並べ替えています。",
+        "Combined the per-prefecture files of the National Land Numerical Information municipal offices and public meeting \
+         facilities data, added names and kinds to the facility class codes, converted the coordinates to WGS84 and wrote \
+         them as GeoParquet. Rows are sorted by location.",
+    ),
+    ("医療機関", "Medical institutions"),
+    (
+        "病院・診療所・歯科診療所の点です。2020年度 (令和2年度) のものです。診療科目・病床数・救急告示などの属性は原典にあります (このファイルには入れていません)。",
+        "Points of hospitals, clinics and dental clinics. As of fiscal 2020. Attributes such as departments, bed counts and \
+         emergency designation are in the original (not in this file).",
+    ),
+    (
+        "国土数値情報の医療機関データから名前・分類・住所を取り出し、分類のコードに名前と種類を添えて、座標系を WGS84 に変えて GeoParquet にしました。行は場所ごとに並べ替えています。",
+        "Extracted names, classes and addresses from the National Land Numerical Information medical institution data, added \
+         names and kinds to the class codes, converted the coordinates to WGS84 and wrote them as GeoParquet. Rows are sorted by location.",
+    ),
+    (
+        "CC BY 4.0 (国土数値情報)",
+        "CC BY 4.0 (National Land Numerical Information)",
+    ),
     // ---- 上に重ねる主題図 (ハザードマップ・地質図) と、出所だけのもの (2026-10-21) ----
     ("ハザードマップポータルサイト", "Hazard Map Portal Site"),
     (
