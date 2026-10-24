@@ -10,7 +10,7 @@
 import type { GeoJSONSource } from 'maplibre-gl';
 import type { PlaceSource } from '@japan-geodata-catalog/core/sources';
 import { fetchPlacesInView } from '@japan-geodata-catalog/core/queries';
-import { EMPTY_FEATURE_COLLECTION, PLACE_COLORS, PLACE_FALLBACK_COLOR } from '../map';
+import { EMPTY_FEATURE_COLLECTION, PLACE_COLORS, PLACE_FALLBACK_COLOR, placeSourceId } from '../map';
 import { requester, type DrawContext } from './context';
 import { m } from '../../i18n';
 
@@ -81,7 +81,7 @@ export function createPlaceLayers(ctx: DrawContext, sources: PlaceSource[]): Map
     const picker = categoryPicker(source, () => request());
 
     const refresh = async () => {
-      const mapSource = map.getSource(`place-${source.kind}`) as GeoJSONSource | undefined;
+      const mapSource = map.getSource(placeSourceId(source.id)) as GeoJSONSource | undefined;
       if (!mapSource) return;
       // 世代は最初に進める (外したあとに読み込み中の結果が描かれないように)。
       const mine = ++token;

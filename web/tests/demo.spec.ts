@@ -1307,6 +1307,56 @@ test('3D Tiles は足せるが MapLibre では灰色で理由を出し、ⓘ か
 });
 
 /**
+ * **上に重ねる主題図 (ハザードマップ・地質図) は、足すと上に重なるが、背景地図には選べない** (`duck:overlay`)。
+ * 地質図のタイルは `{z}/{y}/{x}` (縦と横の順が地理院と逆)。**公開元には読みに行かない** (横取りして空の画像を返す)。
+ */
+test('ハザードマップと地質図は上に重ねられ、背景地図には選べない', { tag: '@map' }, async ({ page }) => {
+  const empty = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+    'base64',
+  );
+  const requested: string[] = [];
+  await page.route(/disaportaldata\.gsi\.go\.jp|gbank\.gsj\.jp\/seamless/, (route) => {
+    requested.push(route.request().url());
+    return route.fulfill({ status: 200, contentType: 'image/png', body: empty });
+  });
+  // 背景地図の欄の候補に、主題図は無い。
+  const options = await page.locator('#basemap-source option').evaluateAll((els) => els.map((el) => (el as HTMLOptionElement).value));
+  expect(options).not.toContain('hazard-flood-l2');
+  expect(options).not.toContain('gsj-seamless-geology');
+
+  await showLayer(page, 'hazard-flood-l2');
+  await showLayer(page, 'gsj-seamless-geology');
+  expect(await shownTiles(page)).toEqual(['gsj-seamless-geology', 'hazard-flood-l2']);
+  // 背景地図 (淡色地図) の上に重なる。
+  await expect.poll(() => visibleBasemaps(page)).toEqual([BASEMAP.pale, 'hazard-flood-l2', 'gsj-seamless-geology']);
+  await expect.poll(() => requested.some((url) => url.includes('/01_flood_l2_shinsuishin_data/'))).toBe(true);
+  // 地質図は {z}/{y}/{x}。東京付近 (ズーム9) なら y は 200 前後、x は 450 前後。
+  await expect.poll(() => requested.find((url) => url.includes('/seamless/v2/api/1.3.1/tiles/'))).toBeTruthy();
+  const tile = requested.find((url) => url.includes('/tiles/'))!;
+  const [, , y, x] = tile.match(/tiles\/(\d+)\/(\d+)\/(\d+)\.png/)!.map(Number);
+  expect(y).toBeLessThan(x);
+});
+
+/**
+ * **PLATEAU の建物以外 (橋梁・道路など) の 3D Tiles も足せる。** ただし LOD とテクスチャは選ばせない (建物だけ)。
+ * 都市ごとのデータ (洪水浸水想定・都市計画など) は「出所だけ」のタブにある。
+ */
+test('PLATEAU の建物以外の 3D Tiles は足せ、都市ごとのデータは出所だけにある', async ({ page }) => {
+  await showLayer(page, 'plateau-3dtiles-brid');
+  const row = page.locator('.layer-row[data-layer="plateau-3dtiles-brid"]');
+  await expect(row).toHaveClass(/unsupported/);
+  // 組み合わせの設定は無い (▸ が出ない)。
+  await expect(row.locator('.layer-settings-button')).toBeHidden();
+
+  await openCatalogFor(page, 'plateau-fld');
+  await expect(page.locator('.catalog-tab[data-section="view"]')).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('[data-catalog-layer="plateau-fld"] .catalog-add')).toBeDisabled();
+  await expect(page.locator('[data-catalog-layer="geospatial-jp-catalog"] .catalog-add')).toBeDisabled();
+  await closeCatalog(page);
+});
+
+/**
  * **配っていない元データ (NASADEM) も、カタログにあることは見せる。** 足せないが、
  * ⓘ から中身と公開元が分かる。
  */
@@ -2600,8 +2650,10 @@ test('駅は線として配られている', async ({ page }) => {
  * 事業者種別で絞れる。選択肢はカタログの語彙から作っているので、
  * ここが空になると「絞り込みが黙って消えた」ことになる。
  */
-test('鉄道は事業者種別で絞れる', async ({ page }) => {
+test('鉄道は事業者種別で絞れる', async ({ page }, testInfo) => {
   test.skip(!(await hasRailway(page)), '鉄道のデータが無い');
+  // 単体では35秒ほど。全件の中では60秒を使い切ったことがある (2026-10-24、「解除」のあと消えるのを待つところで)。
+  testInfo.setTimeout(Math.max(testInfo.timeout, 120_000));
 
   await showRailway(page);
   const boxes = page.locator('#railway-types input[type="checkbox"]');
@@ -3756,11 +3808,15 @@ for (const [layer, label] of [
   });
 }
 
-/** 場所と施設 (Overture の land_use・infrastructure・places)。Collection ID と地図のソース。 */
+/**
+ * 場所と施設 (Overture の land_use・infrastructure・places と、国土数値情報の医療機関)。Collection ID と、種類の選択肢の1つ。
+ * **地図のソースは Collection ごと** (同じ種類の出所が複数ある)。
+ */
 const PLACES = [
-  { id: 'overture-open-spaces', kind: 'open_space', sample: '公園・緑地' },
-  { id: 'overture-amenities', kind: 'amenity', sample: '駐車場' },
-  { id: 'overture-facilities', kind: 'facility', sample: '役所' },
+  { id: 'overture-open-spaces', sample: '公園・緑地' },
+  { id: 'overture-amenities', sample: '駐車場' },
+  { id: 'overture-facilities', sample: '役所' },
+  { id: 'ksj-medical-facilities', sample: '診療所' },
 ] as const;
 
 /**
@@ -3769,8 +3825,8 @@ const PLACES = [
  */
 test('公園・駐車場・公共施設を種類で絞って描き、施設の吹き出しにライセンスが出る', async ({ page }, testInfo) => {
   test.skip(!(await bundledCollection(page, PLACES[0].id)), '場所と施設のデータが無い');
-  // 3つの出所を順に足して絞り込みを試すので、ほかのテストより長い。
-  testInfo.setTimeout(Math.max(testInfo.timeout, 120_000));
+  // 4つの出所を順に足して絞り込みを試すので、ほかのテストより長い。
+  testInfo.setTimeout(Math.max(testInfo.timeout, 160_000));
   await page.evaluate(() => {
     (window as unknown as TestWindow).__map!.jumpTo({ center: [139.7454, 35.6586], zoom: 15 });
   });
@@ -3778,7 +3834,7 @@ test('公園・駐車場・公共施設を種類で絞って描き、施設の�
     await showLayer(page, place.id);
     const status = page.locator(`[data-layer-status="${place.id}"]`);
     await expect(status).toContainText('件', { timeout: DATA_TIMEOUT });
-    expect(await sourceFeatureCount(page, `place-${place.kind}`)).toBeGreaterThan(0);
+    expect(await sourceFeatureCount(page, `place-${place.id}`)).toBeGreaterThan(0);
     // 種類の選択肢は、カタログの語彙を画面の言葉で。
     await openLayerSettings(page, place.id);
     const settings = page.locator(`[data-layer="${place.id}"] .layer-settings-slot`);
@@ -3786,16 +3842,20 @@ test('公園・駐車場・公共施設を種類で絞って描き、施設の�
     // 全部外すと引かない。
     await settings.locator('.bulk button', { hasText: '解除' }).click();
     await expect(status).toHaveText('種類が選ばれていません', { timeout: DATA_TIMEOUT });
-    await expect.poll(() => sourceFeatureCount(page, `place-${place.kind}`)).toBe(0);
+    await expect.poll(() => sourceFeatureCount(page, `place-${place.id}`)).toBe(0);
     await settings.locator('.bulk button', { hasText: '全部' }).click();
     await expect(status).toContainText('件', { timeout: DATA_TIMEOUT });
   }
+  // **同じ種類 (公共施設) の出所を2つ出しても、互いに上書きしない** (地図のソースが Collection ごと)。
+  expect(await sourceFeatureCount(page, 'place-overture-facilities')).toBeGreaterThan(0);
+  expect(await sourceFeatureCount(page, 'place-ksj-medical-facilities')).toBeGreaterThan(0);
 
   // 公共施設の点に乗ると、種類と、その行の出所のライセンスが出る。**ほかの行は隠す** (建物や駐車場の面が
   // 点に重なっていると、吹き出しはそちらのものになる)。
   await hideLayer(page, LAYER.plateauBuildings);
   await hideLayer(page, 'overture-open-spaces');
   await hideLayer(page, 'overture-amenities');
+  await hideLayer(page, 'ksj-medical-facilities');
   await expect(page.locator('#busy')).toBeHidden({ timeout: DATA_TIMEOUT });
   // 左下の一覧と右下の案内に隠れていない点を選ぶ (隠れていると乗れない)。
   const point = await page.evaluate(() => {
@@ -3803,7 +3863,7 @@ test('公園・駐車場・公共施設を種類で絞って描き、施設の�
     const { width, height } = map.getCanvas().getBoundingClientRect();
     return (
       map
-        .queryRenderedFeatures(undefined as never, { layers: ['place-facility-point'] })
+        .queryRenderedFeatures(undefined as never, { layers: ['place-overture-facilities-point'] })
         .map((feature) => map.project((feature.geometry as GeoJSON.Point).coordinates as [number, number]))
         .find((p) => p.x > 360 && p.x < width - 320 && p.y > 120 && p.y < height - 120) ?? null
     );

@@ -225,7 +225,7 @@
   <body>
     <header>
       <h1>japan-geodata-catalog ダッシュボード</h1>
-      <span class="meta">更新 2026-10-21 19:05 (日本時間)</span>
+      <span class="meta">更新 2026-10-24 13:10 (日本時間)</span>
       <span class="meta">
         <a href="https://strorkis.github.io/japan-geodata-catalog/">公開サイト (改名後の URL)</a> ·
         <a href="roadmap.md">方針 (roadmap)</a> ·
@@ -240,16 +240,16 @@
     <section class="kpis" aria-label="数字">
       <div class="card kpi">
         <div class="label">公開待ちの PR</div>
-        <div class="value">1 <small>件</small></div>
-        <span class="status you">公園・駐車場・公共施設 (feat/overture-open-spaces)。R2 に上げてから</span>
+        <div class="value">2 <small>件</small></div>
+        <span class="status you">脆弱性 (fix/dompurify-ctutils) と、主題図・3D Tiles・出所だけのもの・国土数値情報の施設 (feat/catalog-overlays-references。R2 に上げてから)</span>
       </div>
       <div class="card kpi">
         <div class="label">R2 の配信データ (手元の data/output)</div>
-        <div class="value">9.97 <small>GB / 無料枠 10 GB</small></div>
-        <div class="meter" role="img" aria-label="無料枠の99.7%">
-          <span style="width: 99.7%; background: var(--warning)"></span>
+        <div class="value">9.99 <small>GB / 無料枠 10 GB</small></div>
+        <div class="meter" role="img" aria-label="無料枠の99.9%">
+          <span style="width: 99.9%; background: var(--warning)"></span>
         </div>
-        <span class="status you">無料枠の99.7% (次に足すと超える。超えた分は払う方針)</span>
+        <span class="status you">無料枠の99.9% (超えた分は払う方針)</span>
       </div>
     </section>
 
@@ -258,17 +258,21 @@
       <h2>公開までの残り</h2>
       <ol class="steps">
         <li class="current">
-          <b>R2 に公園・駐車場・公共施設のデータとカタログを上げる</b><span class="status you">あなたの番</span>
+          <b>R2 に国土数値情報の施設とカタログを上げる</b><span class="status you">あなたの番</span>
           <span class="sub">
-            <code>docs/deploy.md</code> の「上げる順番」の 1→2→3 (2 に規約の本文 <code>LICENSES-*.md</code> を足した)。
-            新しいのは <code>overture/</code> の parquet 3つ (約100MB)・JSON・<code>LICENSES-places.md</code>・<code>items.parquet</code>
+            <code>docs/deploy.md</code> の「上げる順番」の 1→2→3。新しいのは <code>ksj/</code> の parquet 3つ (約23MB) と、
+            JSON (新しいサブカタログ <code>disaportal/</code>・<code>gsj/</code>・<code>geospatial-jp/</code> を含む) と <code>items.parquet</code>
           </span>
         </li>
         <li>
-          <b>ブランチ <code>feat/overture-open-spaces</code> を push → PR を見てマージ</b><span class="status you">あなたの番</span>
+          <b>ブランチ <code>fix/dompurify-ctutils</code> を push → マージ</b><span class="status you">あなたの番</span>
+          <span class="sub">dompurify (Cesium)・zod (deck.gl)・ctutils (Rust) の脆弱性。データは要らないので先に入れられる</span>
+        </li>
+        <li>
+          <b>ブランチ <code>feat/catalog-overlays-references</code> を push → PR を見てマージ</b><span class="status you">あなたの番</span>
           <span class="sub">
-            公園・広場・運動場、駐車場・トイレ・水飲み場、公共施設を「問い合わせできるデータ」に (Overture から)。種類で絞れ、周辺検索にも入る。
-            push のあと私が PR を作る。PR の「読むべき所」を見てから、マージコミットでマージ
+            ハザードマップ・地質図 (重ねる)、PLATEAU の建物以外の 3D Tiles、出所だけのもの (PLATEAU の都市ごとのデータ・G空間情報センター)、
+            国土数値情報の学校・役所と集会施設・医療機関。push のあと私が PR を作る。PR の「読むべき所」を見てから、マージコミットでマージ
           </span>
         </li>
       </ol>
@@ -280,24 +284,30 @@
         <h2>次にやること</h2>
         <ol class="tasks">
           <li>
-            <b>触って気付いたこと (10-19)</b> <span class="status todo">カタログのあと</span>
+            <b>deploy.md を整理する (10-24、利用者)</b> <span class="status todo">次</span>
+            <span class="sub">
+              日付ごとの過去の手順と経緯が積み上がり、いまの R2 に上げる手順がどれか分からない。いまの手順を1つにし、
+              過去の分と経緯は消すか別の文書へ (経緯は git の履歴にある)
+            </span>
+          </li>
+          <li>
+            <b>触って気付いたこと (10-19)</b>
             <span class="sub">吹き出しを出さないモード・建物を中心から ○ m まで・PLATEAU の整備範囲を細かく (大きさを測ってから相談)。roadmap「触って気付いたこと」</span>
           </li>
           <li>
-            <b>カタログに載せるものを増やす</b> <span class="status todo">次</span>
+            <b>カタログに載せるものを増やす (続き)</b>
             <span class="sub">
-              公園・駐車場・公共施設 (Overture) は済み。次は PLATEAU の建物以外 (全国まとめの 3D Tiles は表示するだけの地図、都市ごとのものは出所だけ)・
-              重ねるハザードマップ・国土数値情報 (都市公園・公共施設・避難施設)・シームレス地質図・G空間情報センターと自治体の公開データ
-              (利用者が選んだ。載せる前に規約の本文を確かめる)
+              G空間情報センター (CKAN API) から自治体の公開データ・国土地理院の指定緊急避難場所 (全国のファイルがあるか)・
+              画像のオープンデータ (Mapillary・OpenAerialMap。日本にどれだけあるかから)
             </span>
+          </li>
+          <li>
+            <b>AI から使えるようにする (案)</b>
+            <span class="sub">利用者側のエージェントで動かす。地図に出す方法 (URL を組む・ファイルを開く・MCP の Apps) を決める。roadmap「行き先の案」</span>
           </li>
           <li>
             <b>スタイルと 3D Tiles の不透明度</b>
             <span class="sub">スタイルを Portolan の <code>style</code> アセットとして持つ。データの行の描き方を部品にするのは TOBE</span>
-          </li>
-          <li>
-            <b>ジオコーダーを並べる</b>
-            <span class="sub">住所の正規化 (Geolonia の normalize-japanese-addresses) と Nominatim (押したときだけ・毎秒1回まで)</span>
           </li>
         </ol>
       </section>

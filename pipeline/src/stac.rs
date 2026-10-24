@@ -243,6 +243,26 @@ const SUB_CATALOGS: &[SubCatalog] = &[
         mirror: false,
     },
     SubCatalog {
+        dir: "disaportal",
+        title: "ハザードマップポータルサイト",
+        description: "国土交通省のハザードマップポータルサイトが、オープンデータとして公開している地図タイルです (配信は国土地理院)。\
+                      このカタログでは複製せず、公開元の配信をそのまま使っています。",
+        mirror: false,
+    },
+    SubCatalog {
+        dir: "gsj",
+        title: "産総研 地質調査総合センター",
+        description: "産業技術総合研究所 地質調査総合センターが公開している地質図です。\
+                      このカタログでは複製せず、公開元の配信をそのまま使っています。",
+        mirror: false,
+    },
+    SubCatalog {
+        dir: "geospatial-jp",
+        title: "G空間情報センター",
+        description: "国・自治体・企業などの地理空間データを集めたカタログです。このカタログでは複製せず、入口への案内だけを載せています。",
+        mirror: false,
+    },
+    SubCatalog {
         dir: "openfreemap",
         title: "OpenFreeMap",
         description: "OpenStreetMap のデータから作られた世界の背景地図です。このカタログでは複製せず、公開元の配信をそのまま使っています。",
@@ -525,7 +545,7 @@ fn collection(
     // (`build_catalog` が写す)。
     for (_, _, name) in crate::catalog::LICENSE_FILES
         .iter()
-        .filter(|(kind, _, _)| *kind == first.kind)
+        .filter(|(collection, _, _)| *collection == id)
     {
         body["links"]
             .as_array_mut()
@@ -829,6 +849,8 @@ fn raster_collection(
             RasterRole::ThreeDTiles => "3d_tiles",
             RasterRole::Reference => "reference",
             RasterRole::VectorBasemap => "vector_basemap",
+            // 主題図も地図タイル。背景地図に選べないことは `duck:overlay` で言う。
+            RasterRole::Overlay => "raster_tiles",
         },
         "providers": [{
             "name": raster.attribution.provider,
@@ -846,10 +868,14 @@ fn raster_collection(
     // (以前は 0 を書いていて、STAC Browser に「Tile Size 0」と出た)。
     if matches!(
         raster.role,
-        RasterRole::Basemap | RasterRole::Terrain | RasterRole::VectorBasemap
+        RasterRole::Basemap | RasterRole::Terrain | RasterRole::VectorBasemap | RasterRole::Overlay
     ) {
         body["duck:zoom"] = json!([raster.minzoom, raster.maxzoom]);
         body["duck:tile_size"] = json!(raster.tile_size);
+    }
+    // **上に重ねる主題図** (ハザードマップ・地質図)。UI は背景地図の欄の候補に入れない。
+    if matches!(raster.role, RasterRole::Overlay) {
+        body["duck:overlay"] = json!(true);
     }
     // 同じ役割 (背景地図・地形) の中で既定に使うもの。
     if raster.default {

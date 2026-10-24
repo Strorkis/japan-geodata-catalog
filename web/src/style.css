@@ -1760,7 +1760,13 @@ a.lang-option {
   padding: 0.1rem 0.2rem;
 }
 
-.layer-zoom-button[hidden] {
+/* **行のボタンの `hidden` を効かせる。** 下の「押しやすさ」で `display: inline-grid` を付けているので、これが無いと
+   属性で隠しても見えたままになる (設定の無い行に、押しても何も開かない ▸ が出ていた。2026-10-21 に見つけた)。 */
+.layer-zoom-button[hidden],
+.layer-settings-button[hidden],
+.layer-expander[hidden],
+.layer-detail-button[hidden],
+.layer-remove-button[hidden] {
   display: none;
 }
 

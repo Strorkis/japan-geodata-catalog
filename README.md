@@ -98,6 +98,7 @@ PLATEAU・国土数値情報・国勢調査・位置参照情報から作った�
 | 送電線・川・公園・広場・運動場・駐車場・トイレ・水飲み場 (Overture) | Overture Maps / © OpenStreetMap contributors (ODbL 1.0) |
 | 公共施設など (Overture) | Overture Maps · Data from Meta, Microsoft (CDLA Permissive 2.0) · © Foursquare Labs, Inc. (Apache 2.0) · Data from AllThePlaces (CC0 1.0) · modified by japan-geodata-catalog |
 | 鉄道路線・駅 | 「国土数値情報（鉄道データ）」（国土交通省）をもとに japan-geodata-catalog 作成 |
+| 学校・役所と集会施設・医療機関 | 「国土数値情報（学校データ）」「国土数値情報（市町村役場等及び公的集会施設データ）」「国土数値情報（医療機関データ）」（国土交通省）をもとに japan-geodata-catalog 作成 (CC BY 4.0) |
 | 人口メッシュ | 「令和2年国勢調査 地域メッシュ統計」（総務省統計局）をもとに japan-geodata-catalog 作成 |
 | 大字・町丁目 / 街区 | 大字・町丁目位置参照情報　国土交通省 / 街区レベル位置参照情報　国土交通省 (japan-geodata-catalog が加工) |
 
@@ -106,8 +107,10 @@ PLATEAU・国土数値情報・国勢調査・位置参照情報から作った�
 
 **公開元を指すだけのもの** (複製しない。地図タイル・標高・3D Tiles は公開元から直接読む。
 元データは配らずに出所と条件だけ載せる): 国土地理院の地図タイル・ベクトルタイル・標高タイル、
-Mapterhorn と Re:Earth の標高、Re:Earth Buildings と PLATEAU の 3D Tiles、
+Mapterhorn と Re:Earth の標高、Re:Earth Buildings と PLATEAU の 3D Tiles (建物と、橋梁・道路・植生など12種類)、
+ハザードマップポータルサイトの地図タイル (洪水・内水・高潮・津波)、産総研のシームレス地質図、
 基盤地図情報 (標高)・国土数値情報 N03 (どちらも複製に測量法の承認が要る)、
+PLATEAU の都市ごとのデータ (洪水浸水想定・都市計画など)・G空間情報センター (入口)、
 AW3D30 (JAXA)・NASADEM・ASTER GDEM (NASA)。出典はカタログと画面の「出典」に出る。
 
 **この表はカタログ (`duck:attribution`) の文言と同じ。** 地図に出る出典表示はカタログから

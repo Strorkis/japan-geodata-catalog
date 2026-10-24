@@ -304,6 +304,326 @@ const EN: &[(&str, &str)] = &[
         "CDLA Permissive 2.0 (partly Apache-2.0 and CC0 1.0)",
     ),
     ("規約の本文", "Full license texts"),
+    // ---- 国土数値情報の施設 (2026-10-21) ----
+    ("2020年度 (令和2年度)", "Fiscal 2020"),
+    ("2022年 (令和4年)", "2022"),
+    ("2023年度 (令和5年度)", "Fiscal 2023"),
+    ("学校", "Schools"),
+    (
+        "小学校・中学校・高等学校・特別支援学校・大学・短期大学・高等専門学校・幼稚園・認定こども園の点です。2023年度 (令和5年度) のものです。",
+        "Points of elementary, junior high, high and special-needs schools, universities, junior colleges, colleges of \
+         technology, kindergartens and certified centers for early childhood education. As of fiscal 2023.",
+    ),
+    (
+        "国土数値情報の学校データから、小学校・中学校・高等学校・大学・幼稚園などを取り出し (各種学校と専修学校は除きました)、学校の分類のコードに名前と種類を添えて、座標系を WGS84 に変えて GeoParquet にしました。行は場所ごとに並べ替えています。",
+        "Extracted elementary, junior high and high schools, universities, kindergartens and others from the National Land \
+         Numerical Information school data (miscellaneous and specialized training schools were left out), added names and \
+         kinds to the school class codes, converted the coordinates to WGS84 and wrote them as GeoParquet. Rows are sorted by location.",
+    ),
+    (
+        "役所・公民館・集会施設",
+        "Government offices, community halls and meeting facilities",
+    ),
+    (
+        "市役所・区役所・町村役場とその支所、行政サービスの施設、公立公民館、集会施設の点です。2022年 (令和4年) のものです。",
+        "Points of city, ward, town and village offices and their branches, other government service facilities, public \
+         community halls and meeting facilities. As of 2022.",
+    ),
+    (
+        "国土数値情報の市町村役場等及び公的集会施設データの都道府県ごとのファイルをまとめ、施設の分類のコードに名前と種類を添えて、座標系を WGS84 に変えて GeoParquet にしました。行は場所ごとに並べ替えています。",
+        "Combined the per-prefecture files of the National Land Numerical Information municipal offices and public meeting \
+         facilities data, added names and kinds to the facility class codes, converted the coordinates to WGS84 and wrote \
+         them as GeoParquet. Rows are sorted by location.",
+    ),
+    ("医療機関", "Medical institutions"),
+    (
+        "病院・診療所・歯科診療所の点です。2020年度 (令和2年度) のものです。診療科目・病床数・救急告示などの属性は原典にあります (このファイルには入れていません)。",
+        "Points of hospitals, clinics and dental clinics. As of fiscal 2020. Attributes such as departments, bed counts and \
+         emergency designation are in the original (not in this file).",
+    ),
+    (
+        "国土数値情報の医療機関データから名前・分類・住所を取り出し、分類のコードに名前と種類を添えて、座標系を WGS84 に変えて GeoParquet にしました。行は場所ごとに並べ替えています。",
+        "Extracted names, classes and addresses from the National Land Numerical Information medical institution data, added \
+         names and kinds to the class codes, converted the coordinates to WGS84 and wrote them as GeoParquet. Rows are sorted by location.",
+    ),
+    (
+        "CC BY 4.0 (国土数値情報)",
+        "CC BY 4.0 (National Land Numerical Information)",
+    ),
+    // ---- 上に重ねる主題図 (ハザードマップ・地質図) と、出所だけのもの (2026-10-21) ----
+    ("ハザードマップポータルサイト", "Hazard Map Portal Site"),
+    (
+        "産業技術総合研究所 地質調査総合センター",
+        "Geological Survey of Japan, AIST",
+    ),
+    (
+        "一般社団法人 社会基盤情報流通推進協議会",
+        "Association for Promotion of Infrastructure Geospatial Information Distribution (AIGID)",
+    ),
+    (
+        "国土交通省のハザードマップポータルサイトが、オープンデータとして公開している地図タイルです (配信は国土地理院)。このカタログでは複製せず、公開元の配信をそのまま使っています。",
+        "Map tiles published as open data by the Hazard Map Portal Site of the Ministry of Land, Infrastructure, Transport \
+         and Tourism (served by the Geospatial Information Authority of Japan). This catalog does not copy them; it uses \
+         the publisher's feed as it is.",
+    ),
+    (
+        "ハザードマップポータルサイトの利用規約 (公共データ利用規約 第1.0版)",
+        "Hazard Map Portal Site terms (Public Data License 1.0)",
+    ),
+    (
+        "洪水浸水想定区域 (想定最大規模)",
+        "Flood inundation (maximum assumed scale)",
+    ),
+    (
+        "ハザードマップポータルサイトのオープンデータの、洪水浸水想定区域 (想定最大規模) の地図タイルです。国と都道府県が管理する河川をまとめたもので、まだ指定されていない川はありません。宅地建物取引の重要事項説明には使えません。ズーム2〜17です。",
+        "Map tiles of assumed flood inundation areas (maximum assumed scale) from the Hazard Map Portal Site open data. \
+         They combine rivers managed by the national and prefectural governments; rivers not yet designated are not \
+         included. They cannot be used for real-estate disclosure. Zoom 2–17.",
+    ),
+    (
+        "内水 (雨水出水) 浸水想定区域",
+        "Inland flooding (stormwater)",
+    ),
+    (
+        "ハザードマップポータルサイトのオープンデータの、内水 (雨水出水) 浸水想定区域の地図タイルです。深さ0.1m未満は描かれていません。ズーム2〜17です。",
+        "Map tiles of assumed inland (stormwater) flooding areas from the Hazard Map Portal Site open data. Depths under \
+         0.1 m are not drawn. Zoom 2–17.",
+    ),
+    ("高潮浸水想定区域", "Storm surge inundation"),
+    (
+        "ハザードマップポータルサイトのオープンデータの、高潮浸水想定区域の地図タイルです。ズーム2〜17です。",
+        "Map tiles of assumed storm surge inundation areas from the Hazard Map Portal Site open data. Zoom 2–17.",
+    ),
+    ("津波浸水想定", "Tsunami inundation"),
+    (
+        "ハザードマップポータルサイトのオープンデータの、津波浸水想定の地図タイルです。ズーム2〜17です。",
+        "Map tiles of assumed tsunami inundation from the Hazard Map Portal Site open data. Zoom 2–17.",
+    ),
+    (
+        "産総研 地質調査総合センター",
+        "Geological Survey of Japan, AIST",
+    ),
+    (
+        "産業技術総合研究所 地質調査総合センターが公開している地質図です。このカタログでは複製せず、公開元の配信をそのまま使っています。",
+        "Geological maps published by the Geological Survey of Japan, AIST. This catalog does not copy them; it uses the \
+         publisher's feed as it is.",
+    ),
+    (
+        "20万分の1日本シームレス地質図 V2",
+        "Seamless Digital Geological Map of Japan 1:200,000 V2",
+    ),
+    (
+        "産総研 地質調査総合センターの、日本全国の地質図の地図タイルです。地層や岩石の種類で塗り分けてあり、寄ると地質の境界と断層も描かれます。ズーム0〜13です。",
+        "Map tiles of the nationwide geological map by the Geological Survey of Japan, AIST. Areas are colored by rock and \
+         stratum type, and geological boundaries and faults appear when zoomed in. Zoom 0–13.",
+    ),
+    ("G空間情報センター", "G-Spatial Information Center"),
+    (
+        "国・自治体・企業などの地理空間データを集めたカタログです。このカタログでは複製せず、入口への案内だけを載せています。",
+        "A catalog of geospatial data from national and local governments, companies and others. This catalog does not \
+         copy it; it only points to the entrance.",
+    ),
+    (
+        "G空間情報センターのデータカタログ",
+        "G-Spatial Information Center data catalog",
+    ),
+    (
+        "国・自治体・企業などの地理空間データを集めたカタログです。自治体の公共施設一覧や避難所なども探せます。条件はデータセットごとに違うので、使う前にそれぞれのページで確かめてください。公式の API (CKAN) で検索でき、読むだけなら登録は要りません。このカタログでは複製せず、入口への案内だけを載せています。",
+        "A catalog of geospatial data from national and local governments, companies and others, including municipal \
+         lists of public facilities and shelters. Terms differ per dataset, so check each page before use. It can be \
+         searched with the official API (CKAN) without registration for reading. This catalog does not copy it; it only \
+         points to the entrance.",
+    ),
+    (
+        "データセットごとに違います (G空間情報センター利用約款)",
+        "Differs per dataset (G-Spatial Information Center terms of use)",
+    ),
+    // PLATEAU の建物以外の 3D Tiles。説明の終わりは共通。
+    (
+        "道路 (3D Tiles・公式配信)",
+        "Roads (3D Tiles, official feed)",
+    ),
+    (
+        "PLATEAU 配信サービスが配っている道路の 3D Tiles です。車道・歩道などの面を持ちます。全国の都市を1つにまとめたもので、MapLibre だけでは描けず、Three.js・Cesium・Navara で描けます。配信サービスは試験運用で、提供期間や品質は保証されていません。",
+        "3D Tiles of roads from the PLATEAU delivery service, with carriageway and sidewalk areas. All cities are combined \
+         into one; MapLibre alone cannot draw them, but Three.js, Cesium and Navara can. The service is a trial, and its \
+         period and quality are not guaranteed.",
+    ),
+    (
+        "水部 (3D Tiles・公式配信)",
+        "Water bodies (3D Tiles, official feed)",
+    ),
+    (
+        "PLATEAU 配信サービスが配っている水部 (川・池・海など) の 3D Tiles です。全国の都市を1つにまとめたもので、MapLibre だけでは描けず、Three.js・Cesium・Navara で描けます。配信サービスは試験運用で、提供期間や品質は保証されていません。",
+        "3D Tiles of water bodies (rivers, ponds, sea) from the PLATEAU delivery service. All cities are combined into one; \
+         MapLibre alone cannot draw them, but Three.js, Cesium and Navara can. The service is a trial, and its period and \
+         quality are not guaranteed.",
+    ),
+    (
+        "都市設備 (3D Tiles・公式配信)",
+        "City furniture (3D Tiles, official feed)",
+    ),
+    (
+        "PLATEAU 配信サービスが配っている都市設備 (電柱・標識・ベンチなど) の 3D Tiles です。全国の都市を1つにまとめたもので、MapLibre だけでは描けず、Three.js・Cesium・Navara で描けます。配信サービスは試験運用で、提供期間や品質は保証されていません。",
+        "3D Tiles of city furniture (utility poles, signs, benches) from the PLATEAU delivery service. All cities are \
+         combined into one; MapLibre alone cannot draw them, but Three.js, Cesium and Navara can. The service is a trial, \
+         and its period and quality are not guaranteed.",
+    ),
+    (
+        "橋梁 (3D Tiles・公式配信)",
+        "Bridges (3D Tiles, official feed)",
+    ),
+    (
+        "PLATEAU 配信サービスが配っている橋梁の 3D Tiles です。全国の都市を1つにまとめたもので、MapLibre だけでは描けず、Three.js・Cesium・Navara で描けます。配信サービスは試験運用で、提供期間や品質は保証されていません。",
+        "3D Tiles of bridges from the PLATEAU delivery service. All cities are combined into one; MapLibre alone cannot \
+         draw them, but Three.js, Cesium and Navara can. The service is a trial, and its period and quality are not guaranteed.",
+    ),
+    (
+        "植生 (3D Tiles・公式配信)",
+        "Vegetation (3D Tiles, official feed)",
+    ),
+    (
+        "PLATEAU 配信サービスが配っている植生 (樹木・植栽) の 3D Tiles です。全国の都市を1つにまとめたもので、MapLibre だけでは描けず、Three.js・Cesium・Navara で描けます。配信サービスは試験運用で、提供期間や品質は保証されていません。",
+        "3D Tiles of vegetation (trees, plantings) from the PLATEAU delivery service. All cities are combined into one; \
+         MapLibre alone cannot draw them, but Three.js, Cesium and Navara can. The service is a trial, and its period and \
+         quality are not guaranteed.",
+    ),
+    (
+        "徒歩道 (3D Tiles・公式配信)",
+        "Footpaths (3D Tiles, official feed)",
+    ),
+    (
+        "PLATEAU 配信サービスが配っている徒歩道の 3D Tiles です。全国の都市を1つにまとめたもので、MapLibre だけでは描けず、Three.js・Cesium・Navara で描けます。配信サービスは試験運用で、提供期間や品質は保証されていません。",
+        "3D Tiles of footpaths from the PLATEAU delivery service. All cities are combined into one; MapLibre alone cannot \
+         draw them, but Three.js, Cesium and Navara can. The service is a trial, and its period and quality are not guaranteed.",
+    ),
+    (
+        "汎用都市オブジェクト (3D Tiles・公式配信)",
+        "Generic city objects (3D Tiles, official feed)",
+    ),
+    (
+        "PLATEAU 配信サービスが配っている汎用都市オブジェクト (ほかの種類に当てはまらない地物) の 3D Tiles です。全国の都市を1つにまとめたもので、MapLibre だけでは描けず、Three.js・Cesium・Navara で描けます。配信サービスは試験運用で、提供期間や品質は保証されていません。",
+        "3D Tiles of generic city objects (features that fit no other type) from the PLATEAU delivery service. All cities \
+         are combined into one; MapLibre alone cannot draw them, but Three.js, Cesium and Navara can. The service is a \
+         trial, and its period and quality are not guaranteed.",
+    ),
+    (
+        "地下街 (3D Tiles・公式配信)",
+        "Underground malls (3D Tiles, official feed)",
+    ),
+    (
+        "PLATEAU 配信サービスが配っている地下街の 3D Tiles です。全国の都市を1つにまとめたもので、MapLibre だけでは描けず、Three.js・Cesium・Navara で描けます。配信サービスは試験運用で、提供期間や品質は保証されていません。",
+        "3D Tiles of underground malls from the PLATEAU delivery service. All cities are combined into one; MapLibre alone \
+         cannot draw them, but Three.js, Cesium and Navara can. The service is a trial, and its period and quality are not \
+         guaranteed.",
+    ),
+    (
+        "広場 (3D Tiles・公式配信)",
+        "Squares (3D Tiles, official feed)",
+    ),
+    (
+        "PLATEAU 配信サービスが配っている広場 (駅前広場など) の 3D Tiles です。全国の都市を1つにまとめたもので、MapLibre だけでは描けず、Three.js・Cesium・Navara で描けます。配信サービスは試験運用で、提供期間や品質は保証されていません。",
+        "3D Tiles of squares (such as station plazas) from the PLATEAU delivery service. All cities are combined into one; \
+         MapLibre alone cannot draw them, but Three.js, Cesium and Navara can. The service is a trial, and its period and \
+         quality are not guaranteed.",
+    ),
+    (
+        "鉄道 (3D Tiles・公式配信)",
+        "Railways (3D Tiles, official feed)",
+    ),
+    (
+        "PLATEAU 配信サービスが配っている鉄道の 3D Tiles です。全国の都市を1つにまとめたもので、MapLibre だけでは描けず、Three.js・Cesium・Navara で描けます。配信サービスは試験運用で、提供期間や品質は保証されていません。",
+        "3D Tiles of railways from the PLATEAU delivery service. All cities are combined into one; MapLibre alone cannot \
+         draw them, but Three.js, Cesium and Navara can. The service is a trial, and its period and quality are not guaranteed.",
+    ),
+    (
+        "その他の構造物 (3D Tiles・公式配信)",
+        "Other structures (3D Tiles, official feed)",
+    ),
+    (
+        "PLATEAU 配信サービスが配っているその他の構造物 (擁壁・堤防など) の 3D Tiles です。全国の都市を1つにまとめたもので、MapLibre だけでは描けず、Three.js・Cesium・Navara で描けます。配信サービスは試験運用で、提供期間や品質は保証されていません。",
+        "3D Tiles of other structures (retaining walls, levees) from the PLATEAU delivery service. All cities are combined \
+         into one; MapLibre alone cannot draw them, but Three.js, Cesium and Navara can. The service is a trial, and its \
+         period and quality are not guaranteed.",
+    ),
+    (
+        "地下埋設物 (3D Tiles・公式配信)",
+        "Underground utilities (3D Tiles, official feed)",
+    ),
+    (
+        "PLATEAU 配信サービスが配っている地下埋設物 (管路など) の 3D Tiles です。全国の都市を1つにまとめたもので、MapLibre だけでは描けず、Three.js・Cesium・Navara で描けます。配信サービスは試験運用で、提供期間や品質は保証されていません。",
+        "3D Tiles of underground utilities (pipes) from the PLATEAU delivery service. All cities are combined into one; \
+         MapLibre alone cannot draw them, but Three.js, Cesium and Navara can. The service is a trial, and its period and \
+         quality are not guaranteed.",
+    ),
+    // PLATEAU の都市ごとのデータ (出所だけ)。
+    ("土地利用 (PLATEAU)", "Land use (PLATEAU)"),
+    (
+        "PLATEAU の土地利用モデルです (290都市)。都市計画基礎調査の土地利用の区分を面で持ちます。都市ごとの MVT と CityGML で配られていて、このカタログでは出所と条件だけを載せています。",
+        "PLATEAU land use models (290 cities), with land-use classes from the basic urban planning survey as areas. They \
+         are distributed per city as MVT and CityGML; this catalog lists only the source and terms.",
+    ),
+    (
+        "都市計画決定情報 (PLATEAU)",
+        "Urban planning decisions (PLATEAU)",
+    ),
+    (
+        "PLATEAU の都市計画決定情報モデルです (283都市)。用途地域・地区計画・都市施設 (公園・道路など) の区域を面で持ちます。都市ごとの MVT と CityGML で配られていて、このカタログでは出所と条件だけを載せています。",
+        "PLATEAU urban planning decision models (283 cities), with zoning, district plans and urban facilities (parks, \
+         roads) as areas. They are distributed per city as MVT and CityGML; this catalog lists only the source and terms.",
+    ),
+    ("洪水浸水想定区域 (PLATEAU)", "Flood inundation (PLATEAU)"),
+    (
+        "PLATEAU の洪水浸水想定区域モデルです (282都市)。浸水の深さを 3D で持ちます。都市ごと・河川ごとの 3D Tiles と CityGML で配られていて、このカタログでは出所と条件だけを載せています。全国の地図タイルは「洪水浸水想定区域 (想定最大規模)」にあります。",
+        "PLATEAU flood inundation models (282 cities), with inundation depth in 3D. They are distributed per city and per \
+         river as 3D Tiles and CityGML; this catalog lists only the source and terms. Nationwide map tiles are in \
+         \"Flood inundation (maximum assumed scale)\".",
+    ),
+    (
+        "土砂災害警戒区域 (PLATEAU)",
+        "Landslide warning areas (PLATEAU)",
+    ),
+    (
+        "PLATEAU の土砂災害警戒区域モデルです (252都市)。都市ごとの MVT と CityGML で配られていて、このカタログでは出所と条件だけを載せています。",
+        "PLATEAU landslide warning area models (252 cities). They are distributed per city as MVT and CityGML; this \
+         catalog lists only the source and terms.",
+    ),
+    ("津波浸水想定区域 (PLATEAU)", "Tsunami inundation (PLATEAU)"),
+    (
+        "PLATEAU の津波浸水想定区域モデルです (104都市)。浸水の深さを 3D で持ちます。都市ごとの 3D Tiles と CityGML で配られていて、このカタログでは出所と条件だけを載せています。",
+        "PLATEAU tsunami inundation models (104 cities), with inundation depth in 3D. They are distributed per city as 3D \
+         Tiles and CityGML; this catalog lists only the source and terms.",
+    ),
+    (
+        "高潮浸水想定区域 (PLATEAU)",
+        "Storm surge inundation (PLATEAU)",
+    ),
+    (
+        "PLATEAU の高潮浸水想定区域モデルです (75都市)。浸水の深さを 3D で持ちます。都市ごとの 3D Tiles と CityGML で配られていて、このカタログでは出所と条件だけを載せています。",
+        "PLATEAU storm surge inundation models (75 cities), with inundation depth in 3D. They are distributed per city as \
+         3D Tiles and CityGML; this catalog lists only the source and terms.",
+    ),
+    ("区域 (PLATEAU)", "Areas (PLATEAU)"),
+    (
+        "PLATEAU の区域モデルです (36都市)。法令などで決まる区域を面で持ちます。都市ごとの MVT と CityGML で配られていて、このカタログでは出所と条件だけを載せています。",
+        "PLATEAU area models (36 cities), with areas defined by laws and regulations. They are distributed per city as MVT \
+         and CityGML; this catalog lists only the source and terms.",
+    ),
+    ("内水浸水想定区域 (PLATEAU)", "Inland flooding (PLATEAU)"),
+    (
+        "PLATEAU の内水浸水想定区域モデルです (28都市)。浸水の深さを 3D で持ちます。都市ごとの 3D Tiles と CityGML で配られていて、このカタログでは出所と条件だけを載せています。",
+        "PLATEAU inland flooding models (28 cities), with inundation depth in 3D. They are distributed per city as 3D Tiles \
+         and CityGML; this catalog lists only the source and terms.",
+    ),
+    (
+        "ため池ハザードマップ (PLATEAU)",
+        "Irrigation pond hazard maps (PLATEAU)",
+    ),
+    (
+        "PLATEAU のため池ハザードマップモデルです (3都市)。浸水の深さを 3D で持ちます。都市ごと・ため池ごとの 3D Tiles と CityGML で配られていて、このカタログでは出所と条件だけを載せています。",
+        "PLATEAU irrigation pond hazard map models (3 cities), with inundation depth in 3D. They are distributed per city \
+         and per pond as 3D Tiles and CityGML; this catalog lists only the source and terms.",
+    ),
     ("建物の整備範囲", "Building coverage"),
     (
         "PLATEAU の建物がある場所を、1km四方のメッシュで示したものです。",

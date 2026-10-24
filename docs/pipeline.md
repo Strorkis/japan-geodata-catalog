@@ -549,6 +549,34 @@ places まで ODbL の派生データベースになる)。どれも `category` 
   `overture/LICENSES-places.md` に写し、Collection から `rel: license` で指す
 - 東京の中心部 (23区あたり) で、駐車場 2.1万・公園 4,634・運動場 2,994・遊び場 754・広場 76 (land_use と infrastructure、2026-10-21)
 
+### 学校・役所と集会施設・医療機関 (国土数値情報、2026-10-23)
+
+全国の zip は国土数値情報のページから手で落とす (`data/ksj/P29/P29-23_GML.zip`・`data/ksj/P05/P05-22_GML.zip`・
+`data/ksj/P04/P04-20_GML.zip`)。どれも CC BY 4.0。
+
+```sh
+cargo run --release --bin ksj_facilities_to_geoparquet -- P29 ../data/ksj/P29/P29-23_GML.zip ../data/ksj/tmp
+cargo run --release --bin ksj_facilities_to_geoparquet -- P05 ../data/ksj/P05/P05-22_GML.zip ../data/ksj/tmp
+cargo run --release --bin ksj_facilities_to_geoparquet -- P04 ../data/ksj/P04/P04-20_GML.zip ../data/ksj/tmp
+# 並べ直し (3つとも)
+cargo run --release --bin optimize_geoparquet -- \
+  ../data/ksj/tmp/ksj_schools.parquet ../data/output/ksj/ksj_schools.parquet
+```
+
+**Overture の places と同じ列にする** (`name`・`category`・`class`・`address`・`source`・`license`)。画面と周辺検索は
+公共施設と同じ扱いで、種類 (`category`) で絞れる。`class` は国土数値情報の分類の名前 (「小学校」「支所・出張所・連絡所」など)。
+
+| ファイル | 原典 | 種類 | 件数 / 配信 |
+| --- | --- | --- | --- |
+| `ksj_schools` | P29 (2023年度) | 学校 3.5万・幼稚園とこども園 1.6万・大学と短大と高専 1,586 | 5.3万 / 3.9MB |
+| `ksj_public_offices` | P05 (2022年) | 役所 (本庁・支所・行政サービス施設) 8,742・公民館と集会施設 7.1万 | 8.0万 / 5.7MB |
+| `ksj_medical_facilities` | P04 (2020年度) | 病院 8,269・診療所 10.4万・歯科診療所 6.9万 | 18.1万 / 13.3MB |
+
+- **zip の作りがデータごとに違う。** P04・P29 は全国の GeoJSON が1つ。P05 は都道府県ごとの zip を束ねた zip (展開せず、メモリの上で開く)
+- **分類のコードは文字列でも数でも来る** (P04 は数)。知らないコードが来たら止める (黙って落とさない)
+- 学校の各種学校 (16015)・専修学校 (16016) は入れない (自動車学校などが混ざる)
+- 座標は JGD2011 なので WGS84 に変える。医療機関の診療科目・病床数などは原典にあるが入れていない
+
 ### 海域を削る
 
 Overtureの `division_area` は `class='land'` で絞ってもなお湾を跨いでいる。

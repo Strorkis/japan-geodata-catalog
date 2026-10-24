@@ -508,6 +508,51 @@ const MLIT_ISJ_BLOCK: Attribution = Attribution {
     terms: ISJ_TERMS,
 };
 
+/// 国土数値情報のうち **CC BY 4.0** のもの (学校 P29 の2023年度・市町村役場等 P05 の2022年・医療機関 P04 の2020年度)。
+/// 配布ページに「オープンデータ（CC_BY_4.0）」とあり、複製に承認が要るとは書かれていない (2026-10-21 に読んだ)。
+/// 出典は国土数値情報の書き方 (「をもとに○○作成」)。
+const KSJ_CC_BY: Terms = Terms {
+    name: "CC BY 4.0 (国土数値情報)",
+    url: "https://creativecommons.org/licenses/by/4.0/deed.ja",
+    commercial: Commercial::Allowed,
+    attribution_required: true,
+    note_modification: true,
+    share_alike: false,
+};
+const MLIT_KSJ_SCHOOL: Attribution = Attribution {
+    text: concat!(
+        "「国土数値情報（学校データ）」（国土交通省）をもとに ",
+        creator!(),
+        " 作成"
+    ),
+    url: "https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-P29-2023.html",
+    license: "CC-BY-4.0",
+    provider: "国土交通省",
+    terms: KSJ_CC_BY,
+};
+const MLIT_KSJ_PUBLIC_OFFICE: Attribution = Attribution {
+    text: concat!(
+        "「国土数値情報（市町村役場等及び公的集会施設データ）」（国土交通省）をもとに ",
+        creator!(),
+        " 作成"
+    ),
+    url: "https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-P05-2022.html",
+    license: "CC-BY-4.0",
+    provider: "国土交通省",
+    terms: KSJ_CC_BY,
+};
+const MLIT_KSJ_MEDICAL: Attribution = Attribution {
+    text: concat!(
+        "「国土数値情報（医療機関データ）」（国土交通省）をもとに ",
+        creator!(),
+        " 作成"
+    ),
+    url: "https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-P04-2020.html",
+    license: "CC-BY-4.0",
+    provider: "国土交通省",
+    terms: KSJ_CC_BY,
+};
+
 /// 国土数値情報の鉄道データ (N02)。**2020年度以降はオープンデータ扱い**で、
 /// 行政区域 (N03) と違って複製に国土地理院長の承認を求める記載が無い。
 /// 出所ごとに条件が違うので、行政区域とは別の出典にしてある。
@@ -598,10 +643,11 @@ const OVERTURE_PLACES: Attribution = Attribution {
     },
 };
 
-/// **データと一緒に置く規約の本文** (規約が「本文をデータと一緒に」と求めるもの)。`(種別, パイプラインの licenses/ の
+/// **データと一緒に置く規約の本文** (規約が「本文をデータと一緒に」と求めるもの)。`(Collection の ID, パイプラインの licenses/ の
 /// ファイル, 配信先の名前)`。配信先は Collection と同じディレクトリで、Collection から `rel: license` で指す。
-pub const LICENSE_FILES: &[(DatasetKind, &str, &str)] = &[(
-    DatasetKind::Facility,
+/// **種別ではなく Collection で引く** (同じ「施設」でも、国土数値情報は CC BY 4.0 で本文を置く求めが無い)。
+pub const LICENSE_FILES: &[(&str, &str, &str)] = &[(
+    "overture-facilities",
     "overture-places.md",
     "LICENSES-places.md",
 )];
@@ -721,6 +767,54 @@ const DESCRIPTIONS: &[(&str, Description)] = &[
             summary_columns: &[],
             mesh_digits: None,
             via: "https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N03-2026.html",
+        },
+    ),
+    // 施設 (点)。Overture の公共施設と同じ列・同じ種別 (Facility) にそろえる (crate::ksj_facility)。
+    (
+        "ksj_schools",
+        Description {
+            kind: DatasetKind::Facility,
+            collection: "ksj-schools",
+            lineage: "国土数値情報の学校データから、小学校・中学校・高等学校・大学・幼稚園などを取り出し (各種学校と専修学校は除きました)、\
+                      学校の分類のコードに名前と種類を添えて、座標系を WGS84 に変えて GeoParquet にしました。行は場所ごとに並べ替えています。",
+            title: "学校",
+            description: "小学校・中学校・高等学校・特別支援学校・大学・短期大学・高等専門学校・幼稚園・認定こども園の点です。\
+                          2023年度 (令和5年度) のものです。",
+            attribution: MLIT_KSJ_SCHOOL,
+            summary_columns: &["category"],
+            mesh_digits: None,
+            via: "https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-P29-2023.html",
+        },
+    ),
+    (
+        "ksj_public_offices",
+        Description {
+            kind: DatasetKind::Facility,
+            collection: "ksj-public-offices",
+            lineage: "国土数値情報の市町村役場等及び公的集会施設データの都道府県ごとのファイルをまとめ、施設の分類のコードに名前と種類を添えて、\
+                      座標系を WGS84 に変えて GeoParquet にしました。行は場所ごとに並べ替えています。",
+            title: "役所・公民館・集会施設",
+            description: "市役所・区役所・町村役場とその支所、行政サービスの施設、公立公民館、集会施設の点です。2022年 (令和4年) のものです。",
+            attribution: MLIT_KSJ_PUBLIC_OFFICE,
+            summary_columns: &["category"],
+            mesh_digits: None,
+            via: "https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-P05-2022.html",
+        },
+    ),
+    (
+        "ksj_medical_facilities",
+        Description {
+            kind: DatasetKind::Facility,
+            collection: "ksj-medical-facilities",
+            lineage: "国土数値情報の医療機関データから名前・分類・住所を取り出し、分類のコードに名前と種類を添えて、\
+                      座標系を WGS84 に変えて GeoParquet にしました。行は場所ごとに並べ替えています。",
+            title: "医療機関",
+            description: "病院・診療所・歯科診療所の点です。2020年度 (令和2年度) のものです。診療科目・病床数・救急告示などの属性は\
+                          原典にあります (このファイルには入れていません)。",
+            attribution: MLIT_KSJ_MEDICAL,
+            summary_columns: &["category"],
+            mesh_digits: None,
+            via: "https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-P04-2020.html",
         },
     ),
     (
