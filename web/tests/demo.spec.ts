@@ -2650,8 +2650,10 @@ test('駅は線として配られている', async ({ page }) => {
  * 事業者種別で絞れる。選択肢はカタログの語彙から作っているので、
  * ここが空になると「絞り込みが黙って消えた」ことになる。
  */
-test('鉄道は事業者種別で絞れる', async ({ page }) => {
+test('鉄道は事業者種別で絞れる', async ({ page }, testInfo) => {
   test.skip(!(await hasRailway(page)), '鉄道のデータが無い');
+  // 単体では35秒ほど。全件の中では60秒を使い切ったことがある (2026-10-24、「解除」のあと消えるのを待つところで)。
+  testInfo.setTimeout(Math.max(testInfo.timeout, 120_000));
 
   await showRailway(page);
   const boxes = page.locator('#railway-types input[type="checkbox"]');
