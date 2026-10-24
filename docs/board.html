@@ -225,7 +225,7 @@
   <body>
     <header>
       <h1>japan-geodata-catalog ダッシュボード</h1>
-      <span class="meta">更新 2026-10-23 22:35 (日本時間)</span>
+      <span class="meta">更新 2026-10-24 13:10 (日本時間)</span>
       <span class="meta">
         <a href="https://strorkis.github.io/japan-geodata-catalog/">公開サイト (改名後の URL)</a> ·
         <a href="roadmap.md">方針 (roadmap)</a> ·
@@ -240,8 +240,8 @@
     <section class="kpis" aria-label="数字">
       <div class="card kpi">
         <div class="label">公開待ちの PR</div>
-        <div class="value">1 <small>件</small></div>
-        <span class="status you">主題図・3D Tiles・出所だけのもの・国土数値情報の施設 (feat/catalog-overlays-references)。R2 に上げてから</span>
+        <div class="value">2 <small>件</small></div>
+        <span class="status you">脆弱性 (fix/dompurify-ctutils) と、主題図・3D Tiles・出所だけのもの・国土数値情報の施設 (feat/catalog-overlays-references。R2 に上げてから)</span>
       </div>
       <div class="card kpi">
         <div class="label">R2 の配信データ (手元の data/output)</div>
@@ -258,15 +258,15 @@
       <h2>公開までの残り</h2>
       <ol class="steps">
         <li class="current">
-          <b>全件の E2E (本番ビルド) を1回流す</b><span class="status todo">私の番</span>
-          <span class="sub">関わるテスト (場所と施設・周辺検索) は通っている</span>
-        </li>
-        <li>
           <b>R2 に国土数値情報の施設とカタログを上げる</b><span class="status you">あなたの番</span>
           <span class="sub">
             <code>docs/deploy.md</code> の「上げる順番」の 1→2→3。新しいのは <code>ksj/</code> の parquet 3つ (約23MB) と、
             JSON (新しいサブカタログ <code>disaportal/</code>・<code>gsj/</code>・<code>geospatial-jp/</code> を含む) と <code>items.parquet</code>
           </span>
+        </li>
+        <li>
+          <b>ブランチ <code>fix/dompurify-ctutils</code> を push → マージ</b><span class="status you">あなたの番</span>
+          <span class="sub">dompurify (Cesium)・zod (deck.gl)・ctutils (Rust) の脆弱性。データは要らないので先に入れられる</span>
         </li>
         <li>
           <b>ブランチ <code>feat/catalog-overlays-references</code> を push → PR を見てマージ</b><span class="status you">あなたの番</span>
