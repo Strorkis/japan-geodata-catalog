@@ -2,8 +2,11 @@
 <!--
   利用者が見るべきことを1枚にまとめたダッシュボード。**作業の区切りごとに更新する** (AGENTS.md)。
   **全体が一目で分かるよう、判断と行動に要るものだけを載せる** (2026-10-12 に絞った):
-  あなたの番 (確かめてほしいこと・公開までの残り)・次にやること (5つまで。ほかは roadmap)・待ち・未決の問い、
-  数字は行動に結び付くものだけ (公開待ちの PR・R2 の無料枠)。
+  あなたの番 (確かめてほしいこと・公開までの残り)・次の3つ (順番)・待ち・未決の問い、
+  数字は行動に結び付くものだけ (公開待ちの PR・やることの件数・R2 の無料枠)。
+  **やることは全部載せる** (2026-10-24、利用者)。「次にやること (5つまで)」だと5つしか無いように見えた。
+  最初の画面には次の3つと件数だけ、全部は下の「やることの全部」に分類ごとに並べ、上の帯 (スクロールしても残る) から飛べるようにする。
+  件数は帯・数字の欄・一覧の見出しの3か所に書くので揃える。
   細かい経緯や根拠はここに書かず、各ドキュメントへのリンクにする (コードの読みどころは tour.html)。
   **済んだものは消す** (移さない。決めたことと経緯は roadmap.md に、何をしたかは git の履歴にある)。
   **利用者に確かめてほしいことは「確かめてほしいこと」に具体的な手順で書く** (開く URL・押すもの・見るべき点)。
@@ -220,12 +223,50 @@
       .tasks .sub {
         display: block;
       }
+
+      /* ---- 節へ飛ぶ帯 (スクロールしても上に残る) ---- */
+      nav.jump {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.2rem 1rem;
+        margin: 0 -1.5rem 0.8rem;
+        padding: 0.45rem 1.5rem;
+        border-bottom: 1px solid var(--hairline);
+        background: var(--page);
+        font-size: 0.85rem;
+      }
+      section[id] {
+        scroll-margin-top: 3rem;
+      }
+      .kpi .value a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      /* ---- やることの全部 (分類ごと) ---- */
+      .groups {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
+        gap: 0.8rem;
+        align-items: start;
+      }
+      .groups h3 {
+        margin: 0 0 0.3rem;
+        font-size: 0.9rem;
+      }
+      .groups h3 small {
+        color: var(--muted);
+        font-weight: 500;
+      }
     </style>
   </head>
   <body>
     <header>
       <h1>japan-geodata-catalog ダッシュボード</h1>
-      <span class="meta">更新 2026-10-24 13:10 (日本時間)</span>
+      <span class="meta">更新 2026-10-24 18:30 (日本時間)</span>
       <span class="meta">
         <a href="https://strorkis.github.io/japan-geodata-catalog/">公開サイト (改名後の URL)</a> ·
         <a href="roadmap.md">方針 (roadmap)</a> ·
@@ -236,12 +277,27 @@
       </span>
     </header>
 
+    <!-- ===== 節へ飛ぶ帯 ===== -->
+    <nav class="jump" aria-label="この中の節">
+      <a href="#yours">あなたの番</a>
+      <a href="#next">次の3つ</a>
+      <a href="#all">やることの全部 (27件)</a>
+      <a href="#waiting">待ち</a>
+      <a href="#questions">未決の問い</a>
+    </nav>
+
     <!-- ===== 数字 (行動に結び付くものだけ) ===== -->
     <section class="kpis" aria-label="数字">
       <div class="card kpi">
         <div class="label">公開待ちの PR</div>
-        <div class="value">2 <small>件</small></div>
-        <span class="status you">脆弱性 (fix/dompurify-ctutils) と、主題図・3D Tiles・出所だけのもの・国土数値情報の施設 (feat/catalog-overlays-references。R2 に上げてから)</span>
+        <div class="value">1 <small>件</small></div>
+        <span class="status you">#16 を見てマージ</span>
+        <span class="sub">主題図・3D Tiles・出所だけのもの・国土数値情報の施設 (R2 には上げてもらった)</span>
+      </div>
+      <div class="card kpi">
+        <div class="label">やること</div>
+        <div class="value"><a href="#all">27 <small>件 → 一覧へ</small></a></div>
+        <span class="sub">分類ごとに全部並べてある (下へスクロール)。次は deploy.md の整理</span>
       </div>
       <div class="card kpi">
         <div class="label">R2 の配信データ (手元の data/output)</div>
@@ -254,34 +310,23 @@
     </section>
 
     <!-- ===== 公開までの残り ===== -->
-    <section class="card row" aria-label="公開までの残り">
+    <section class="card row" id="yours" aria-label="公開までの残り">
       <h2>公開までの残り</h2>
       <ol class="steps">
         <li class="current">
-          <b>R2 に国土数値情報の施設とカタログを上げる</b><span class="status you">あなたの番</span>
-          <span class="sub">
-            <code>docs/deploy.md</code> の「上げる順番」の 1→2→3。新しいのは <code>ksj/</code> の parquet 3つ (約23MB) と、
-            JSON (新しいサブカタログ <code>disaportal/</code>・<code>gsj/</code>・<code>geospatial-jp/</code> を含む) と <code>items.parquet</code>
-          </span>
-        </li>
-        <li>
-          <b>ブランチ <code>fix/dompurify-ctutils</code> を push → マージ</b><span class="status you">あなたの番</span>
-          <span class="sub">dompurify (Cesium)・zod (deck.gl)・ctutils (Rust) の脆弱性。データは要らないので先に入れられる</span>
-        </li>
-        <li>
-          <b>ブランチ <code>feat/catalog-overlays-references</code> を push → PR を見てマージ</b><span class="status you">あなたの番</span>
+          <b>PR #16 を見てマージ</b><span class="status you">あなたの番</span>
           <span class="sub">
             ハザードマップ・地質図 (重ねる)、PLATEAU の建物以外の 3D Tiles、出所だけのもの (PLATEAU の都市ごとのデータ・G空間情報センター)、
-            国土数値情報の学校・役所と集会施設・医療機関。push のあと私が PR を作る。PR の「読むべき所」を見てから、マージコミットでマージ
+            国土数値情報の学校・役所と集会施設・医療機関。PR の「読むべき所」を見てから、マージコミットでマージ
           </span>
         </li>
       </ol>
     </section>
 
     <div class="row three">
-      <!-- ===== 次にやること (5つまで。ほかは roadmap) ===== -->
-      <section class="card" aria-label="次にやること">
-        <h2>次にやること</h2>
+      <!-- ===== 次の3つ (順番。全部は下の「やることの全部」) ===== -->
+      <section class="card" id="next" aria-label="次の3つ">
+        <h2>次の3つ <small class="sub">(順番。<a href="#all">全部で27件</a>)</small></h2>
         <ol class="tasks">
           <li>
             <b>deploy.md を整理する (10-24、利用者)</b> <span class="status todo">次</span>
@@ -292,28 +337,17 @@
           </li>
           <li>
             <b>触って気付いたこと (10-19)</b>
-            <span class="sub">吹き出しを出さないモード・建物を中心から ○ m まで・PLATEAU の整備範囲を細かく (大きさを測ってから相談)。roadmap「触って気付いたこと」</span>
+            <span class="sub">吹き出しを出さないモード・建物を中心から ○ m まで・PLATEAU の整備範囲を細かく (大きさを測ってから相談)</span>
           </li>
           <li>
             <b>カタログに載せるものを増やす (続き)</b>
-            <span class="sub">
-              G空間情報センター (CKAN API) から自治体の公開データ・国土地理院の指定緊急避難場所 (全国のファイルがあるか)・
-              画像のオープンデータ (Mapillary・OpenAerialMap。日本にどれだけあるかから)
-            </span>
-          </li>
-          <li>
-            <b>AI から使えるようにする (案)</b>
-            <span class="sub">利用者側のエージェントで動かす。地図に出す方法 (URL を組む・ファイルを開く・MCP の Apps) を決める。roadmap「行き先の案」</span>
-          </li>
-          <li>
-            <b>スタイルと 3D Tiles の不透明度</b>
-            <span class="sub">スタイルを Portolan の <code>style</code> アセットとして持つ。データの行の描き方を部品にするのは TOBE</span>
+            <span class="sub">自治体の公開データ (G空間情報センター)・指定緊急避難場所・画像のオープンデータ</span>
           </li>
         </ol>
       </section>
 
       <!-- ===== 待ち ===== -->
-      <section class="card" aria-label="待ち">
+      <section class="card" id="waiting" aria-label="待ち">
         <h2>待ち (こちらから動かせない)</h2>
         <ul class="tasks">
           <li>
@@ -324,7 +358,7 @@
       </section>
 
       <!-- ===== 未決の問い ===== -->
-      <section class="card" aria-label="未決の問い">
+      <section class="card" id="questions" aria-label="未決の問い">
         <h2>未決の問い</h2>
         <ul class="tasks">
           <li>
@@ -338,5 +372,69 @@
         </ul>
       </section>
     </div>
+
+    <!-- ===== やることの全部 (分類ごと。件数は帯と数字の欄にも書くので揃える) ===== -->
+    <section class="card row" id="all" aria-label="やることの全部">
+      <h2>やることの全部 <small class="sub">(27件。順番は上の「次の3つ」だけ決めてある。詳しくは <a href="roadmap.md">roadmap</a>)</small></h2>
+      <div class="groups">
+        <div>
+          <h3>文書・運用 <small>3</small></h3>
+          <ul class="tasks">
+            <li><b>deploy.md を整理する</b> <span class="status todo">次</span><span class="sub">いまの R2 の手順を1つに</span></li>
+            <li><b>測ったことを記事にまとめる</b><span class="sub">GeoParquet の並べ方の知見 (docs/geoparquet-layout.md) を外に出す</span></li>
+            <li><b>パッケージごとの README</b><span class="sub">使い方の見本。部品の口が落ち着いてから</span></li>
+          </ul>
+        </div>
+        <div>
+          <h3>画面 <small>6</small></h3>
+          <ul class="tasks">
+            <li><b>吹き出しを出さないモード</b><span class="sub">出しているデータが多いと邪魔になる (10-19)</span></li>
+            <li><b>表示量を項目ごとに</b><span class="sub">建物を「中心から ○ m」で加減するなど (10-19)</span></li>
+            <li><b>PLATEAU の整備範囲を細かく</b><span class="sub">いまは 1km のメッシュ。大きさを測ってから相談 (10-19)</span></li>
+            <li><b>スタイルと 3D Tiles の不透明度</b><span class="sub">スタイルを Portolan の <code>style</code> アセットとして持つ</span></li>
+            <li><b>ジオコーダーを並べる</b><span class="sub">住所の正規化 (Geolonia の normalize-japanese-addresses) と Nominatim (押したときだけ・毎秒1回まで)</span></li>
+            <li><b>路線のハイライトの見え方</b><span class="sub">破線が駅 (太い実線) と似ている</span></li>
+          </ul>
+        </div>
+        <div>
+          <h3>データ・カタログ <small>9</small></h3>
+          <ul class="tasks">
+            <li><b>自治体の公開データ</b><span class="sub">G空間情報センターの CKAN API から辿る</span></li>
+            <li><b>国土地理院の指定緊急避難場所</b><span class="sub">全国を1つにしたファイルがあるかから (市町村ごとしか無ければ集めない)</span></li>
+            <li><b>画像のオープンデータ</b><span class="sub">Mapillary・OpenAerialMap。日本にどれだけあるか、トークンの扱い (10-23)</span></li>
+            <li><b>PLATEAU の都市ごとのデータを変換する</b><span class="sub">土地利用・洪水浸水想定など。いまは出所だけ</span></li>
+            <li><b>ハザードマップの土砂災害の層</b><span class="sub">47都道府県の利用条件を読んでから</span></li>
+            <li><b>観点 (問い合わせのひな形)</b><span class="sub">複数のデータにまたがる条件に名前を付けて、データとして持つ</span></li>
+            <li><b>昼間人口メッシュ</b><span class="sub">変換はいまの人口メッシュのまま使える。手間はダウンロード (47回)</span></li>
+            <li><b>点群</b><span class="sub">生データは配らず、COPC か DSM などの派生物に</span></li>
+            <li><b>住所の精度 (ABR)</b><span class="sub">急がない</span></li>
+          </ul>
+        </div>
+        <div>
+          <h3>地図のエンジン・部品 <small>5</small></h3>
+          <ul class="tasks">
+            <li><b>Cesium・Navara でもデータの行・吹き出し・検索</b><span class="sub">いまは灰色</span></li>
+            <li><b>Navara でベクトルタイル</b><span class="sub">PMTiles を中継する口が要る</span></li>
+            <li><b>deck.gl の建物を地形の高さに</b><span class="sub">ヘッドレスでは消えた。GPU のあるブラウザで試す</span></li>
+            <li><b>描く処理を部品にする</b><span class="sub">引いて GeoJSON にする処理とサイトの HTML を分ける</span></li>
+            <li><b>3D Tiles 2.0 と 3DGS</b><span class="sub">構想</span></li>
+          </ul>
+        </div>
+        <div>
+          <h3>AI・行き先 <small>3</small></h3>
+          <ul class="tasks">
+            <li><b>AI から使えるようにする</b><span class="sub">利用者側のエージェントで動かす。まず URL に出す行・印まで書けるように (10-23)</span></li>
+            <li><b>STAC Browser の拡張で試す</b><span class="sub">actions・widgets の差し込み口。手元の設定・フォークで</span></li>
+            <li><b>Portolan の reading-portolan skill で読めるか</b><span class="sub">このカタログがそのまま読めるかを安く確かめる</span></li>
+          </ul>
+        </div>
+        <div>
+          <h3>調べること <small>1</small></h3>
+          <ul class="tasks">
+            <li><b>ほかの配信の形式</b><span class="sub">MLT・FlatGeobuf・GeoZarr・SedonaDB</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
   </body>
 </html>
